@@ -1,0 +1,40 @@
+# --- Artefatos de trabalho do Claude / planejamento (não versionar) ---
+CLAUDE.md
+claude.md
+plano.md
+.claude/
+memoria/
+memory/
+
+# --- R ---
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+.Renviron
+
+# Pacote R compilado / build
+src/*.o
+src/*.so
+src/*.dll
+src/*.dylib
+src/Makevars.local
+*.tar.gz
+..Rcheck/
+*.Rcheck/
+revdep/
+
+# cpp11 / Rcpp gerados localmente (mantemos os commitados, ignoramos lixo de build)
+src/RcppExports.o
+symbols.rds
+
+# Vendoring temporário do upstream PyVRP
+src/vendor/.cache/
+tools/pyvrp-upstream/
+
+# --- Sistema / editores ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
