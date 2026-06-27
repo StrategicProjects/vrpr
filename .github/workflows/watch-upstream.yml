@@ -1,0 +1,67 @@
+name: watch-pyvrp-upstream
+
+# Monitora releases estáveis do PyVRP. Quando a última release for mais nova que
+# a versão vendorizada (tools/PYVRP_VERSION), abre/atualiza uma issue de tracking.
+# Não toca no código — só notifica, para revisão humana antes de re-vendorizar.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # toda segunda, 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comparar versão vendorizada com a última release do PyVRP
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pinned="$(tr -d '[:space:]' < tools/PYVRP_VERSION)"
+          # /releases/latest ignora pre-releases (ex.: 0.14.0a0), que é o que queremos.
+          latest="$(gh api repos/PyVRP/PyVRP/releases/latest --jq '.tag_name')"
+
+          echo "Vendorizado: $pinned | Última estável upstream: $latest"
+
+          if [ "$pinned" = "$latest" ]; then
+            echo "Em dia. Nada a fazer."
+            exit 0
+          fi
+
+          title="Atualização do PyVRP disponível: ${latest}"
+          body=$(cat <<EOF
+          O PyVRP publicou uma nova release estável.
+
+          - Vendorizado em \`vrpr\`: **${pinned}**
+          - Última estável upstream: **${latest}**
+          - Notas: https://github.com/PyVRP/PyVRP/releases/tag/${latest}
+
+          ### Checklist de re-vendoring
+          - [ ] Revisar changelog (mudanças no modelo de dados / API / algoritmo)
+          - [ ] Rodar \`tools/vendor.R\` para trazer \`src/vendor/pyvrp/\` na tag ${latest}
+          - [ ] Reconciliar \`bindings.cpp\` (cpp11) com mudanças no \`bindings.cpp\` upstream
+          - [ ] Atualizar \`tools/PYVRP_VERSION\` para ${latest}
+          - [ ] Rodar testes de paridade (seed fixo) e \`R CMD check\`
+
+          _Aberto automaticamente por \`.github/workflows/watch-upstream.yml\`._
+          EOF
+          )
+
+          # Atualiza a issue de tracking existente (mesmo título) ou cria uma nova.
+          existing="$(gh issue list --state open --search "in:title PyVRP disponível" --json number,title \
+            --jq ".[] | select(.title==\"${title}\") | .number" | head -n1)"
+
+          if [ -n "${existing:-}" ]; then
+            echo "Issue #${existing} já existe para ${latest}. Nada a fazer."
+          else
+            gh issue create --title "$title" --body "$body" --label "upstream" || \
+              gh issue create --title "$title" --body "$body"
+          fi
