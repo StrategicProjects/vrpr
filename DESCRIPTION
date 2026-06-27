@@ -1,0 +1,35 @@
+Package: vrpr
+Title: Vehicle Routing Problem Solver (PyVRP for R)
+Version: 0.0.0.9000
+Authors@R: c(
+    person("First", "Last", email = "leite@de.ufpe.br",
+           role = c("aut", "cre"),
+           comment = "TODO: preencher nome do(a) mantenedor(a)"),
+    person(family = "PyVRP contributors", role = c("ctb", "cph"),
+           comment = "Autores do nucleo C++ PyVRP vendorizado (MIT)")
+  )
+Description: A high-performance, tidyverse-style interface to vehicle routing
+    problem (VRP) solving. Ports the PyVRP C++ core to R via cpp11, with no
+    Python runtime dependency. Supports capacitated VRP, time windows, multiple
+    depots, heterogeneous fleets and prize-collecting variants, driven by an
+    iterated local search metaheuristic.
+License: MIT + file LICENSE
+URL: https://github.com/StrategicProjects/vrpr
+BugReports: https://github.com/StrategicProjects/vrpr/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.3)
+Imports:
+    cli,
+    rlang,
+    tibble,
+    vctrs
+LinkingTo:
+    cpp11
+Suggests:
+    reticulate,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+SystemRequirements: C++20
+Config/roxygen2/version: 8.0.0

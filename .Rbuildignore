@@ -1,0 +1,15 @@
+^plano\.md$
+^CLAUDE\.md$
+^claude\.md$
+^\.claude$
+^memoria$
+^memory$
+^tools$
+^\.github$
+^\.gitignore$
+^LICENSE\.note$
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.md$
+^\.vscode$
+^\.idea$

@@ -1,0 +1,3 @@
+CXX_STD = CXX20
+
+# Ver src/Makevars para notas sobre a futura ligação do núcleo vendorizado.

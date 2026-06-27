@@ -1,0 +1,5 @@
+source: https://github.com/PyVRP/PyVRP
+tag: v0.13.4
+vendored_from: PyVRP/PyVRP/pyvrp/cpp
+n_source_files: 45
+note: bindings.* (pybind11) e logging.h (spdlog) devem ser substituídos pela camada cpp11.
