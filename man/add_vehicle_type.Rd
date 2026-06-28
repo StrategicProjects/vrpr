@@ -13,7 +13,10 @@ add_vehicle_type(
   tw_late = Inf,
   max_duration = Inf,
   unit_distance_cost = 1,
-  unit_duration_cost = 0
+  unit_duration_cost = 0,
+  depot = 1L,
+  start_depot = depot,
+  end_depot = depot
 )
 }
 \arguments{
@@ -33,6 +36,13 @@ deixa o fim do turno irrestrito.}
 \item{unit_distance_cost, unit_duration_cost}{Custos variáveis por unidade de
 distância e de duração deste tipo. Diferenciar estes (e \code{capacity},
 \code{fixed_cost}) entre chamadas habilita a \strong{frota heterogênea}.}
+
+\item{depot}{Índice (1-based) do depósito de onde os veículos deste tipo saem
+e ao qual retornam. Atalho para definir \code{start_depot} e \code{end_depot} juntos.}
+
+\item{start_depot, end_depot}{Índices (1-based) dos depósitos de partida e de
+retorno, na ordem de \code{\link[=add_depot]{add_depot()}}. Diferenciá-los entre tipos habilita o
+\strong{MDVRP} (múltiplos depósitos).}
 }
 \value{
 O \code{vrpr_model} atualizado.
@@ -42,5 +52,5 @@ Adicionar um tipo de veículo ao modelo
 }
 \details{
 Chame \code{add_vehicle_type()} várias vezes para uma frota com múltiplos
-tipos de veículo (capacidades, custos e turnos distintos).
+tipos de veículo (capacidades, custos, turnos ou depósitos distintos).
 }

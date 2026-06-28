@@ -41,6 +41,18 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
   vt <- with_vehicle_defaults(model$vehicle_types)
   cl <- model$clients
 
+  # Depósitos: 1-based no modelo -> índices de localização 0-based (depósitos
+  # ocupam as localizações 0..D-1).
+  n_depots <- nrow(model$depots)
+  for (col in c("start_depot", "end_depot")) {
+    d <- vt[[col]]
+    if (any(d < 1L | d > n_depots)) {
+      cli::cli_abort(
+        "{.field {col}} deve estar em 1..{n_depots} (nº de depósitos)."
+      )
+    }
+  }
+
   ptr <- vrpr_problem_data_create(
     depot_x = as.double(model$depots$x),
     depot_y = as.double(model$depots$y),
@@ -66,8 +78,8 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     veh_max_distance = as.double(vt$max_distance),
     veh_unit_distance_cost = as.double(vt$unit_distance_cost),
     veh_unit_duration_cost = as.double(vt$unit_duration_cost),
-    veh_start_depot = as.integer(vt$start_depot),
-    veh_end_depot = as.integer(vt$end_depot),
+    veh_start_depot = as.integer(vt$start_depot - 1L),
+    veh_end_depot = as.integer(vt$end_depot - 1L),
     distance = distance,
     duration = duration
   )
@@ -112,15 +124,8 @@ check_square_matrix <- function(m, n, arg, call = rlang::caller_env()) {
   }
 }
 
-# Preenche colunas de veículo opcionais com defaults sensatos (espelham o PyVRP).
+# Preenche `max_distance` (única coluna que ainda não vem do modelo).
 with_vehicle_defaults <- function(vt) {
-  defaults <- list(
-    tw_early = 0, tw_late = Inf, max_distance = Inf,
-    unit_distance_cost = 1, unit_duration_cost = 0,
-    start_depot = 0L, end_depot = 0L
-  )
-  for (col in names(defaults)) {
-    if (is.null(vt[[col]])) vt[[col]] <- defaults[[col]]
-  }
+  if (is.null(vt[["max_distance"]])) vt[["max_distance"]] <- Inf
   vt
 }

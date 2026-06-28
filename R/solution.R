@@ -84,9 +84,10 @@ solution_cost <- function(solution, cost_evaluator = NULL) {
 #'
 #' @param x Um [vrp_solution()].
 #' @param ... Não usado.
-#' @return Um tibble com uma linha por visita: `route_id`, `position`, `client`,
-#'   `vehicle_type`, `start_service` (início do serviço) e `wait` (espera). As
-#'   duas últimas só são significativas quando há janelas de tempo (VRPTW).
+#' @return Um tibble com uma linha por visita: `route_id`, `depot` (depósito de
+#'   partida, 1-based), `position`, `client`, `vehicle_type`, `start_service`
+#'   (início do serviço) e `wait` (espera). As duas últimas só são significativas
+#'   quando há janelas de tempo (VRPTW); `depot` varia no MDVRP.
 #' @export
 routes <- function(x, ...) {
   UseMethod("routes")
@@ -97,7 +98,7 @@ routes.vrpr_solution <- function(x, ...) {
   detail <- vrpr_solution_routes(x$ptr, x$n_depots)
   if (length(detail) == 0) {
     return(tibble::tibble(
-      route_id = integer(), position = integer(),
+      route_id = integer(), depot = integer(), position = integer(),
       client = integer(), vehicle_type = integer(),
       start_service = double(), wait = double()
     ))
@@ -108,6 +109,7 @@ routes.vrpr_solution <- function(x, ...) {
     clients <- r$visits - x$n_depots + 1L
     tibble::tibble(
       route_id = i,
+      depot = r$start_depot + 1L, # localização 0-based -> depósito 1-based
       position = seq_along(clients),
       client = as.integer(clients),
       vehicle_type = r$vehicle_type + 1L,

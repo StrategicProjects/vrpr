@@ -12,13 +12,15 @@ mas nenhum solver moderno, forte e amigável para VRP de produção.
 
 ## Status
 
-🚧 **Desenvolvimento inicial** — **CVRP, VRPTW** (janelas de tempo) e **frota heterogênea** já
-resolvem end-to-end. Múltiplos depósitos e prize-collecting estão no roadmap (Fase 2).
+🚧 **Desenvolvimento inicial** — **CVRP, VRPTW** (janelas de tempo), **frota heterogênea** e
+**múltiplos depósitos (MDVRP)** já resolvem end-to-end. Prize-collecting está no roadmap (Fase 2).
 
 - **VRPTW:** acrescente `tw_early`, `tw_late`, `service` aos clientes; `routes()` traz
   `start_service` e `wait` por visita.
 - **Frota heterogênea:** chame `add_vehicle_type()` várias vezes com capacidades, custos
   (`fixed_cost`, `unit_distance_cost`) e turnos distintos.
+- **MDVRP:** chame `add_depot()` várias vezes e use `add_vehicle_type(depot = i)` para basear
+  cada tipo de veículo num depósito; `routes()` traz a coluna `depot`.
 
 ```r
 library(vrpr)

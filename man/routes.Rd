@@ -12,9 +12,10 @@ routes(x, ...)
 \item{...}{Não usado.}
 }
 \value{
-Um tibble com uma linha por visita: \code{route_id}, \code{position}, \code{client},
-\code{vehicle_type}, \code{start_service} (início do serviço) e \code{wait} (espera). As
-duas últimas só são significativas quando há janelas de tempo (VRPTW).
+Um tibble com uma linha por visita: \code{route_id}, \code{depot} (depósito de
+partida, 1-based), \code{position}, \code{client}, \code{vehicle_type}, \code{start_service}
+(início do serviço) e \code{wait} (espera). As duas últimas só são significativas
+quando há janelas de tempo (VRPTW); \code{depot} varia no MDVRP.
 }
 \description{
 Rotas de uma solução, em formato longo (tidy)

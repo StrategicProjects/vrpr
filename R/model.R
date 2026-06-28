@@ -37,7 +37,8 @@ vrp_model <- function() {
       vehicle_types = tibble::tibble(
         num_available = integer(), capacity = double(), fixed_cost = double(),
         tw_early = double(), tw_late = double(), max_duration = double(),
-        unit_distance_cost = double(), unit_duration_cost = double()
+        unit_distance_cost = double(), unit_duration_cost = double(),
+        start_depot = integer(), end_depot = integer()
       )
     ),
     class = "vrpr_model"
@@ -95,13 +96,19 @@ add_clients <- function(model, data) {
 #' @param unit_distance_cost,unit_duration_cost Custos variáveis por unidade de
 #'   distância e de duração deste tipo. Diferenciar estes (e `capacity`,
 #'   `fixed_cost`) entre chamadas habilita a **frota heterogênea**.
+#' @param depot Índice (1-based) do depósito de onde os veículos deste tipo saem
+#'   e ao qual retornam. Atalho para definir `start_depot` e `end_depot` juntos.
+#' @param start_depot,end_depot Índices (1-based) dos depósitos de partida e de
+#'   retorno, na ordem de [add_depot()]. Diferenciá-los entre tipos habilita o
+#'   **MDVRP** (múltiplos depósitos).
 #' @details Chame `add_vehicle_type()` várias vezes para uma frota com múltiplos
-#'   tipos de veículo (capacidades, custos e turnos distintos).
+#'   tipos de veículo (capacidades, custos, turnos ou depósitos distintos).
 #' @return O `vrpr_model` atualizado.
 #' @export
 add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0,
                              tw_early = 0, tw_late = Inf, max_duration = Inf,
-                             unit_distance_cost = 1, unit_duration_cost = 0) {
+                             unit_distance_cost = 1, unit_duration_cost = 0,
+                             depot = 1L, start_depot = depot, end_depot = depot) {
   check_model(model)
   model$vehicle_types <- tibble::add_row(
     model$vehicle_types,
@@ -112,7 +119,9 @@ add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0,
     tw_late = as.double(tw_late),
     max_duration = as.double(max_duration),
     unit_distance_cost = as.double(unit_distance_cost),
-    unit_duration_cost = as.double(unit_duration_cost)
+    unit_duration_cost = as.double(unit_duration_cost),
+    start_depot = as.integer(start_depot),
+    end_depot = as.integer(end_depot)
   )
   model
 }
