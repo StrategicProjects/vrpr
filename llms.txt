@@ -1,29 +1,47 @@
 # vrpr
 
-> PyVRP for R — a production-grade vehicle routing problem (VRP) solver.
+> A production-grade vehicle routing problem (VRP) solver for R.
 
-`vrpr` ports the [PyVRP](https://github.com/PyVRP/PyVRP) solver (a
-high-performance, MIT-licensed C++ core) to an idiomatic **R** package
-in the **tidyverse** style: a pipe-friendly API, data in tibbles,
-logging via [`{cli}`](https://cli.r-lib.org), and the C++ core rewired
-with [`{cpp11}`](https://cpp11.r-lib.org) — with **no Python runtime
+**vrpr** brings the state-of-the-art
+[PyVRP](https://github.com/PyVRP/PyVRP) solver to R. It vendors PyVRP’s
+high-performance C++ core and rewires it with
+[cpp11](https://cpp11.r-lib.org), wrapped in an idiomatic,
+**tidyverse-style** API: a pipe-friendly model builder, data in tibbles,
+and logging via [cli](https://cli.r-lib.org) — with **no Python runtime
 dependency**.
 
 It fills a real gap in the R ecosystem: there are `ompr`, `ROI`,
 `lpSolve`, `igraph` and `dodgr`, but no modern, strong, friendly solver
-for production VRP.
+for production vehicle routing.
 
-## Status
+![A CVRP solution drawn by vrpr](reference/figures/README-example.png)
 
-🚧 **Early development** — **all PyVRP variants** already solve
-end-to-end: CVRP, VRPTW (time windows), heterogeneous fleet, MDVRP
-(multiple depots), prize-collecting (optional clients + groups),
-simultaneous pickup and delivery / backhaul, and multi-trip. Next:
-vignettes, CI, CRAN.
+## Highlights
 
-**Parity with PyVRP** is verified (see `tools/benchmark/`): the
-objective is identical bit for bit and, on the X-n101-k25 instance
-(optimum 27591), both reach the optimum in 10 s.
+- **All the classic VRP variants**, from one tidy interface: capacitated
+  VRP, time windows (VRPTW), heterogeneous fleets, multiple depots
+  (MDVRP), prize-collecting with optional clients and mutually exclusive
+  groups, simultaneous pickup & delivery / backhaul, and multi-trip
+  routes.
+- **Fast** — the search runs entirely in PyVRP’s C++ core (iterated
+  local search with late-acceptance hill-climbing). No Python required.
+- **Verified parity with PyVRP** — identical objective, and on the
+  X-n101-k25 benchmark (optimum
+  27591. both reach the optimum in 10 s (see `tools/benchmark/`).
+- **Reads standard instances** (VRPLIB / TSPLIB and Solomon) and
+  **plots** solutions with ggplot2.
+
+## Installation
+
+``` r
+
+# install.packages("pak")
+pak::pak("StrategicProjects/vrpr")
+```
+
+A C++20 toolchain is required to build from source (R \>= 4.3).
+
+## Quick start
 
 ``` r
 
@@ -41,37 +59,29 @@ res <- vrp_model() |>
   vrp_solve(stop = max_runtime(2))
 
 cost(res)      # objective cost
-routes(res)    # tibble: route_id, position, client, vehicle_type
+routes(res)    # tibble: route_id, depot, position, client, vehicle_type, ...
 summary(res)   # one-row summary
+plot(res)      # the routes, with {ggplot2}
 ```
 
 ## Variants
 
-- **VRPTW:** add `tw_early`, `tw_late`, `service` to clients;
-  [`routes()`](https://strategicprojects.github.io/vrpr/reference/routes.md)
-  reports `start_service` and `wait` per visit.
-- **Heterogeneous fleet:** call
-  [`add_vehicle_type()`](https://strategicprojects.github.io/vrpr/reference/add_vehicle_type.md)
-  several times with different capacities, costs (`fixed_cost`,
-  `unit_distance_cost`) and shifts.
-- **MDVRP:** call
-  [`add_depot()`](https://strategicprojects.github.io/vrpr/reference/add_depot.md)
-  several times and use `add_vehicle_type(depot = i)` to base each
-  vehicle type at a depot;
-  [`routes()`](https://strategicprojects.github.io/vrpr/reference/routes.md)
-  reports the `depot` column.
-- **Prize-collecting:** mark clients with `required = FALSE` and
-  `prize`; the solver decides which to visit.
-  [`add_client_group()`](https://strategicprojects.github.io/vrpr/reference/add_client_group.md)
-  defines mutually exclusive alternatives. See the skipped ones with
-  [`unvisited_clients()`](https://strategicprojects.github.io/vrpr/reference/unvisited_clients.md).
-- **Pickup & delivery / backhaul:** add a `pickup` column to clients
-  (the collected load counts toward capacity along the route).
-- **Multi-trip:** `add_vehicle_type(reload_depots = i, max_reloads = k)`
-  lets a vehicle return to a depot to reload and make several trips
-  (`summary()$num_trips`).
+| Variant | How |
+|----|----|
+| Time windows (VRPTW) | add `tw_early`, `tw_late`, `service` to clients |
+| Heterogeneous fleet | call [`add_vehicle_type()`](https://strategicprojects.github.io/vrpr/reference/add_vehicle_type.md) several times with different capacities/costs |
+| Multiple depots (MDVRP) | several [`add_depot()`](https://strategicprojects.github.io/vrpr/reference/add_depot.md) + `add_vehicle_type(depot = i)` |
+| Prize-collecting | `required = FALSE` + `prize` on clients; [`add_client_group()`](https://strategicprojects.github.io/vrpr/reference/add_client_group.md) for exclusive sets |
+| Pickup & delivery / backhaul | add a `pickup` column to clients |
+| Multi-trip | `add_vehicle_type(reload_depots = i, max_reloads = k)` |
 
-### Read standard instances
+See the [Getting
+started](https://strategicprojects.github.io/vrpr/articles/vrpr.html)
+guide and the
+[Articles](https://strategicprojects.github.io/vrpr/articles/) for
+worked examples of each.
+
+## Reading standard instances
 
 ``` r
 
@@ -80,31 +90,19 @@ m <- read_solomon(system.file("extdata", "sample-solomon.txt", package = "vrpr")
 res <- m |> vrp_solve(stop = max_runtime(5))
 ```
 
-[`read_vrplib()`](https://strategicprojects.github.io/vrpr/reference/read_vrplib.md)
-reads CVRP/VRPTW in VRPLIB/TSPLIB format (EUC_2D);
-[`read_solomon()`](https://strategicprojects.github.io/vrpr/reference/read_solomon.md)
-reads VRPTW in Solomon format. Both return a `vrpr_model`.
+## How it works
 
-### Visualise
-
-``` r
-
-plot(res)   # depots, clients and routes (one colour per route) with {ggplot2}
-```
-
-[`plot()`](https://rdrr.io/r/graphics/plot.default.html) (on a result or
-a model) draws depots (squares), clients (points; unvisited optional
-ones appear hollow) and the coloured routes. Requires
-[ggplot2](https://ggplot2.tidyverse.org).
-
-## Algorithm
-
-Iterated Local Search (ILS) — inherited from PyVRP v0.13.x.
+`vrpr` vendors PyVRP’s C++ core (`src/vendor/pyvrp/`, version pinned in
+`tools/PYVRP_VERSION`) and exposes it through a hand-written cpp11
+binding layer. The iterated local search loop — a faithful port of
+PyVRP’s `IteratedLocalSearch` — lives in R, while all the heavy compute
+(local search, cost evaluation) stays in C++.
 
 ## License
 
-MIT. Derived from PyVRP (© PyVRP authors), whose copyright is preserved
-(see `inst/COPYRIGHTS`).
+MIT. Derived from PyVRP (© PyVRP contributors, Thibaut Vidal, ORTEC),
+whose copyright is preserved; see
+[`inst/COPYRIGHTS`](https://strategicprojects.github.io/vrpr/inst/COPYRIGHTS).
 
 # Package index
 
@@ -181,6 +179,18 @@ Direct access to the problem data, solutions and cost evaluator.
 # Articles
 
 ### All vignettes
+
+- [Reading instances and parity with
+  PyVRP](https://strategicprojects.github.io/vrpr/articles/instances.md):
+
+  Read standard VRPLIB and Solomon instance files, and how vrpr compares
+  to PyVRP.
+
+- [Problem
+  variants](https://strategicprojects.github.io/vrpr/articles/variants.md):
+
+  A tour of every VRP variant vrpr supports, with worked examples and
+  plots.
 
 - [Getting started with
   vrpr](https://strategicprojects.github.io/vrpr/articles/vrpr.md):

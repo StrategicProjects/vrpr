@@ -6,6 +6,11 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Vehicle Routing Problem Solver (PyVRP for R) • vrpr</title>
+<!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png">
+<link rel="icon" type="”image/svg+xml”" href="favicon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" sizes="any" href="favicon.ico">
+<link rel="manifest" href="site.webmanifest">
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -34,6 +39,13 @@
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="articles/vrpr.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/instances.html">Reading instances and parity with PyVRP</a></li>
+    <li><a class="dropdown-item" href="articles/variants.html">Problem variants</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -55,16 +67,42 @@
 <!-- badges: start -->
 
 <blockquote>
-<p>PyVRP for R — a production-grade vehicle routing problem (VRP) solver.</p>
+<p>A production-grade vehicle routing problem (VRP) solver for R.</p>
 </blockquote>
-<p><code>vrpr</code> ports the <a href="https://github.com/PyVRP/PyVRP" class="external-link">PyVRP</a> solver (a high-performance, MIT-licensed C++ core) to an idiomatic <strong>R</strong> package in the <strong>tidyverse</strong> style: a pipe-friendly API, data in tibbles, logging via <a href="https://cli.r-lib.org" class="external-link"><code>{cli}</code></a>, and the C++ core rewired with <a href="https://cpp11.r-lib.org" class="external-link"><code>{cpp11}</code></a> — with <strong>no Python runtime dependency</strong>.</p>
-<p>It fills a real gap in the R ecosystem: there are <code>ompr</code>, <code>ROI</code>, <code>lpSolve</code>, <code>igraph</code> and <code>dodgr</code>, but no modern, strong, friendly solver for production VRP.</p>
+<p><strong>vrpr</strong> brings the state-of-the-art <a href="https://github.com/PyVRP/PyVRP" class="external-link">PyVRP</a> solver to R. It vendors PyVRP’s high-performance C++ core and rewires it with <a href="https://cpp11.r-lib.org" class="external-link">cpp11</a>, wrapped in an idiomatic, <strong>tidyverse-style</strong> API: a pipe-friendly model builder, data in tibbles, and logging via <a href="https://cli.r-lib.org" class="external-link">cli</a> — with <strong>no Python runtime dependency</strong>.</p>
+<p>It fills a real gap in the R ecosystem: there are <code>ompr</code>, <code>ROI</code>, <code>lpSolve</code>, <code>igraph</code> and <code>dodgr</code>, but no modern, strong, friendly solver for production vehicle routing.</p>
+<p align="center">
+<img src="reference/figures/README-example.png" width="80%" alt="A CVRP solution drawn by vrpr"></p>
 <div class="section level2">
-<h2 id="status">Status<a class="anchor" aria-label="anchor" href="#status"></a>
+<h2 id="highlights">Highlights<a class="anchor" aria-label="anchor" href="#highlights"></a>
 </h2>
-<p>🚧 <strong>Early development</strong> — <strong>all PyVRP variants</strong> already solve end-to-end: CVRP, VRPTW (time windows), heterogeneous fleet, MDVRP (multiple depots), prize-collecting (optional clients + groups), simultaneous pickup and delivery / backhaul, and multi-trip. Next: vignettes, CI, CRAN.</p>
-<p><strong>Parity with PyVRP</strong> is verified (see <code>tools/benchmark/</code>): the objective is identical bit for bit and, on the X-n101-k25 instance (optimum 27591), both reach the optimum in 10 s.</p>
+<ul>
+<li>
+<strong>All the classic VRP variants</strong>, from one tidy interface: capacitated VRP, time windows (VRPTW), heterogeneous fleets, multiple depots (MDVRP), prize-collecting with optional clients and mutually exclusive groups, simultaneous pickup &amp; delivery / backhaul, and multi-trip routes.</li>
+<li>
+<strong>Fast</strong> — the search runs entirely in PyVRP’s C++ core (iterated local search with late-acceptance hill-climbing). No Python required.</li>
+<li>
+<strong>Verified parity with PyVRP</strong> — identical objective, and on the X-n101-k25 benchmark (optimum
+<ol start="27591" style="list-style-type: decimal">
+<li>both reach the optimum in 10 s (see <code>tools/benchmark/</code>).</li>
+</ol>
+</li>
+<li>
+<strong>Reads standard instances</strong> (VRPLIB / TSPLIB and Solomon) and <strong>plots</strong> solutions with ggplot2.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"StrategicProjects/vrpr"</span><span class="op">)</span></span></code></pre></div>
+<p>A C++20 toolchain is required to build from source (R &gt;= 4.3).</p>
+</div>
+<div class="section level2">
+<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</h2>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/StrategicProjects/vrpr" class="external-link">vrpr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">clients</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
@@ -79,52 +117,70 @@
 <span>  <span class="fu"><a href="reference/vrp_solve.html">vrp_solve</a></span><span class="op">(</span>stop <span class="op">=</span> <span class="fu"><a href="reference/vrpr_stop.html">max_runtime</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/cost.html">cost</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>      <span class="co"># objective cost</span></span>
-<span><span class="fu"><a href="reference/routes.html">routes</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>    <span class="co"># tibble: route_id, position, client, vehicle_type</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>   <span class="co"># one-row summary</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/routes.html">routes</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>    <span class="co"># tibble: route_id, depot, position, client, vehicle_type, ...</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>   <span class="co"># one-row summary</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>      <span class="co"># the routes, with {ggplot2}</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="variants">Variants<a class="anchor" aria-label="anchor" href="#variants"></a>
 </h2>
-<ul>
-<li>
-<strong>VRPTW:</strong> add <code>tw_early</code>, <code>tw_late</code>, <code>service</code> to clients; <code><a href="reference/routes.html">routes()</a></code> reports <code>start_service</code> and <code>wait</code> per visit.</li>
-<li>
-<strong>Heterogeneous fleet:</strong> call <code><a href="reference/add_vehicle_type.html">add_vehicle_type()</a></code> several times with different capacities, costs (<code>fixed_cost</code>, <code>unit_distance_cost</code>) and shifts.</li>
-<li>
-<strong>MDVRP:</strong> call <code><a href="reference/add_depot.html">add_depot()</a></code> several times and use <code>add_vehicle_type(depot = i)</code> to base each vehicle type at a depot; <code><a href="reference/routes.html">routes()</a></code> reports the <code>depot</code> column.</li>
-<li>
-<strong>Prize-collecting:</strong> mark clients with <code>required = FALSE</code> and <code>prize</code>; the solver decides which to visit. <code><a href="reference/add_client_group.html">add_client_group()</a></code> defines mutually exclusive alternatives. See the skipped ones with <code><a href="reference/unvisited_clients.html">unvisited_clients()</a></code>.</li>
-<li>
-<strong>Pickup &amp; delivery / backhaul:</strong> add a <code>pickup</code> column to clients (the collected load counts toward capacity along the route).</li>
-<li>
-<strong>Multi-trip:</strong> <code>add_vehicle_type(reload_depots = i, max_reloads = k)</code> lets a vehicle return to a depot to reload and make several trips (<code>summary()$num_trips</code>).</li>
-</ul>
-<div class="section level3">
-<h3 id="read-standard-instances">Read standard instances<a class="anchor" aria-label="anchor" href="#read-standard-instances"></a>
-</h3>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Variant</th>
+<th>How</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Time windows (VRPTW)</td>
+<td>add <code>tw_early</code>, <code>tw_late</code>, <code>service</code> to clients</td>
+</tr>
+<tr>
+<td>Heterogeneous fleet</td>
+<td>call <code><a href="reference/add_vehicle_type.html">add_vehicle_type()</a></code> several times with different capacities/costs</td>
+</tr>
+<tr>
+<td>Multiple depots (MDVRP)</td>
+<td>several <code><a href="reference/add_depot.html">add_depot()</a></code> + <code>add_vehicle_type(depot = i)</code>
+</td>
+</tr>
+<tr>
+<td>Prize-collecting</td>
+<td>
+<code>required = FALSE</code> + <code>prize</code> on clients; <code><a href="reference/add_client_group.html">add_client_group()</a></code> for exclusive sets</td>
+</tr>
+<tr>
+<td>Pickup &amp; delivery / backhaul</td>
+<td>add a <code>pickup</code> column to clients</td>
+</tr>
+<tr>
+<td>Multi-trip</td>
+<td><code>add_vehicle_type(reload_depots = i, max_reloads = k)</code></td>
+</tr>
+</tbody>
+</table>
+<p>See the <a href="https://strategicprojects.github.io/vrpr/articles/vrpr.html">Getting started</a> guide and the <a href="https://strategicprojects.github.io/vrpr/articles/">Articles</a> for worked examples of each.</p>
+</div>
+<div class="section level2">
+<h2 id="reading-standard-instances">Reading standard instances<a class="anchor" aria-label="anchor" href="#reading-standard-instances"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_vrplib.html">read_vrplib</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample-n6-k2.vrp"</span>, package <span class="op">=</span> <span class="st">"vrpr"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_solomon.html">read_solomon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample-solomon.txt"</span>, package <span class="op">=</span> <span class="st">"vrpr"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="va">m</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/vrp_solve.html">vrp_solve</a></span><span class="op">(</span>stop <span class="op">=</span> <span class="fu"><a href="reference/vrpr_stop.html">max_runtime</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/read_vrplib.html">read_vrplib()</a></code> reads CVRP/VRPTW in VRPLIB/TSPLIB format (EUC_2D); <code><a href="reference/read_solomon.html">read_solomon()</a></code> reads VRPTW in Solomon format. Both return a <code>vrpr_model</code>.</p>
-</div>
-<div class="section level3">
-<h3 id="visualise">Visualise<a class="anchor" aria-label="anchor" href="#visualise"></a>
-</h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span>   <span class="co"># depots, clients and routes (one colour per route) with {ggplot2}</span></span></code></pre></div>
-<p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> (on a result or a model) draws depots (squares), clients (points; unvisited optional ones appear hollow) and the coloured routes. Requires <a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a>.</p>
-</div>
 </div>
 <div class="section level2">
-<h2 id="algorithm">Algorithm<a class="anchor" aria-label="anchor" href="#algorithm"></a>
+<h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
-<p>Iterated Local Search (ILS) — inherited from PyVRP v0.13.x.</p>
+<p><code>vrpr</code> vendors PyVRP’s C++ core (<code>src/vendor/pyvrp/</code>, version pinned in <code>tools/PYVRP_VERSION</code>) and exposes it through a hand-written cpp11 binding layer. The iterated local search loop — a faithful port of PyVRP’s <code>IteratedLocalSearch</code> — lives in R, while all the heavy compute (local search, cost evaluation) stays in C++.</p>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
-<p>MIT. Derived from PyVRP (© PyVRP authors), whose copyright is preserved (see <code>inst/COPYRIGHTS</code>).</p>
+<p>MIT. Derived from PyVRP (© PyVRP contributors, Thibaut Vidal, ORTEC), whose copyright is preserved; see <a href="inst/COPYRIGHTS"><code>inst/COPYRIGHTS</code></a>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
