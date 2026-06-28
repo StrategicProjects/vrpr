@@ -39,7 +39,7 @@ res
 #> ── vrpr result ─────────────────────────────────────────────────────────────────
 #> • cost 567 - feasible
 #> • 5 routes - 20 clients
-#> • 500 iterations - 0.19s
+#> • 500 iterations - 0.16s
 ```
 
 Inspect the result with
@@ -66,7 +66,7 @@ summary(res)
 #> # A tibble: 1 × 8
 #>    cost is_feasible num_routes num_trips num_clients distance iterations runtime
 #>   <dbl> <lgl>            <int>     <int>       <int>    <dbl>      <int>   <dbl>
-#> 1   567 TRUE                 5         5          20      567        500   0.193
+#> 1   567 TRUE                 5         5          20      567        500   0.160
 ```
 
 If [ggplot2](https://ggplot2.tidyverse.org) is installed,
