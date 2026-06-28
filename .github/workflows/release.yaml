@@ -1,50 +1,64 @@
-# Builds, checks and publishes a GitHub release when a v* tag is pushed.
+# Builds and checks the package, then publishes a GitHub release, when a v* tag
+# is pushed. Split into two jobs so the write-capable token is never exposed to
+# the dependency-install / build steps (which run untrusted third-party code):
+#   * check   - read-only; installs deps, runs R CMD check --as-cran, builds the
+#               tarball and uploads it as an artifact.
+#   * release - contents:write; only downloads that artifact and creates the
+#               release. No third-party code runs with the write token.
 on:
   push:
     tags: ['v*']
-  workflow_dispatch:
 
 name: release.yaml
 
 permissions: read-all
 
 jobs:
-  release:
+  check:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     env:
+      # Read-only here: this job inherits the top-level read-all permissions.
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
     steps:
       - uses: actions/checkout@v4
-
       - uses: r-lib/actions/setup-pandoc@v2
-
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
-
-      - name: Check package (--as-cran)
-        uses: r-lib/actions/check-r-package@v2
+      - uses: r-lib/actions/check-r-package@v2
         with:
           args: 'c("--no-manual", "--as-cran")'
           error-on: '"warning"'
-
       - name: Build source tarball
         run: R CMD build --no-manual .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-tarball
+          path: vrpr_*.tar.gz
+          if-no-files-found: error
 
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pkg-tarball
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
         run: |
           gh release create "$TAG" \
+            --repo "$REPO" \
             --title "vrpr $TAG" \
             --generate-notes \
             vrpr_*.tar.gz
