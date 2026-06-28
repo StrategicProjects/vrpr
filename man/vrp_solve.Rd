@@ -26,7 +26,6 @@ Runs the iterated local search (ILS) solver on a model, using PyVRP's vendored
 C++ core.
 }
 \examples{
-\dontrun{
 clients <- tibble::tibble(
   x = c(10, 25, 40, 15), y = c(5, 30, 12, 22),
   demand = c(10, 15, 8, 12)
@@ -35,9 +34,8 @@ res <- vrp_model() |>
   add_depot(x = 0, y = 0) |>
   add_clients(clients) |>
   add_vehicle_type(num_available = 3, capacity = 50) |>
-  vrp_solve(stop = max_runtime(2))
+  vrp_solve(stop = max_iterations(200), display = FALSE)
 
 cost(res)
 routes(res)
-}
 }

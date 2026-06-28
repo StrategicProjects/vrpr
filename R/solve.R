@@ -13,7 +13,6 @@
 #'   statistics. Use [cost()], [routes()] and [summary()] to inspect it.
 #' @export
 #' @examples
-#' \dontrun{
 #' clients <- tibble::tibble(
 #'   x = c(10, 25, 40, 15), y = c(5, 30, 12, 22),
 #'   demand = c(10, 15, 8, 12)
@@ -22,11 +21,10 @@
 #'   add_depot(x = 0, y = 0) |>
 #'   add_clients(clients) |>
 #'   add_vehicle_type(num_available = 3, capacity = 50) |>
-#'   vrp_solve(stop = max_runtime(2))
+#'   vrp_solve(stop = max_iterations(200), display = FALSE)
 #'
 #' cost(res)
 #' routes(res)
-#' }
 vrp_solve <- function(model, stop, seed = 42L, params = ils_params(), display = TRUE) {
   if (!inherits(stop, "vrpr_stop")) {
     cli::cli_abort("{.arg stop} must be a stopping criterion (see {.help vrpr_stop}).")

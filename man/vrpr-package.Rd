@@ -4,16 +4,17 @@
 \name{vrpr-package}
 \alias{vrpr}
 \alias{vrpr-package}
-\title{vrpr: Vehicle Routing Problem Solver (PyVRP for R)}
+\title{vrpr: Vehicle Routing Problem Solver Built on 'PyVRP'}
 \description{
 \if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
-A high-performance, tidyverse-style interface to vehicle routing problem (VRP) solving. Ports the PyVRP C++ core to R via cpp11, with no Python runtime dependency. Supports capacitated VRP, time windows, multiple depots, heterogeneous fleets and prize-collecting variants, driven by an iterated local search metaheuristic.
+A 'tidyverse'-style interface to high-performance vehicle routing problem (VRP) solving. Vendors the C++ core of the 'PyVRP' solver (\url{https://github.com/PyVRP/PyVRP}) and rewires it through 'cpp11', with no 'Python' runtime dependency. Supports the capacitated VRP, time windows, multiple depots, heterogeneous fleets, prize-collecting and multi-trip variants, driven by an iterated local search metaheuristic.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/StrategicProjects/vrpr}
+  \item \url{https://strategicprojects.github.io/vrpr/}
   \item Report bugs at \url{https://github.com/StrategicProjects/vrpr/issues}
 }
 
