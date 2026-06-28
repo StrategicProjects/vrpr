@@ -1,3 +1,25 @@
 CXX_STD = CXX20
 
-# Ver src/Makevars para notas sobre a futura ligação do núcleo vendorizado.
+PKG_CPPFLAGS = -Ivendor/pyvrp -DNDEBUG
+
+# Espelha src/Makevars: a lista de objetos deve incluir o núcleo e o search/.
+OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) \
+          vendor/pyvrp/ProblemData.o \
+          vendor/pyvrp/CostEvaluator.o \
+          vendor/pyvrp/Solution.o \
+          vendor/pyvrp/Route.o \
+          vendor/pyvrp/Trip.o \
+          vendor/pyvrp/DurationSegment.o \
+          vendor/pyvrp/LoadSegment.o \
+          vendor/pyvrp/DynamicBitset.o \
+          vendor/pyvrp/RandomNumberGenerator.o \
+          vendor/pyvrp/search/LocalSearch.o \
+          vendor/pyvrp/search/SearchSpace.o \
+          vendor/pyvrp/search/Route.o \
+          vendor/pyvrp/search/Solution.o \
+          vendor/pyvrp/search/primitives.o \
+          vendor/pyvrp/search/PerturbationManager.o \
+          vendor/pyvrp/search/SwapTails.o \
+          vendor/pyvrp/search/SwapStar.o \
+          vendor/pyvrp/search/SwapRoutes.o \
+          vendor/pyvrp/search/RelocateWithDepot.o

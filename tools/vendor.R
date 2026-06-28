@@ -73,7 +73,9 @@ vendor_pyvrp <- function(version = NULL,
       sprintf("n_source_files: %d", length(sources)),
       "note: bindings.* (pybind11) e logging.h (spdlog) devem ser substituídos pela camada cpp11."
     ),
-    file.path(dest, "VERSION")
+    # NÃO usar o nome "VERSION": em FS case-insensitive (macOS) ele colidiria
+    # com o header padrão <version> do C++20 quando vendor/pyvrp está no -I.
+    file.path(dest, "pyvrp_version.txt")
   )
 
   ok(sprintf("PyVRP %s vendorizado: %d arquivos de código em src/vendor/pyvrp/",

@@ -1,6 +1,15 @@
 # O núcleo C++ do PyVRP exige C++20.
 CXX_STD = CXX20
 
+# Os fontes em vendor/pyvrp/search/ incluem headers de topo ("Measure.h",
+# "ProblemData.h", ...) por nome curto. Includes relativos ao próprio arquivo
+# têm precedência (os headers homônimos em search/ não são sombreados), então
+# basta tornar o diretório de topo visível como fallback.
+# -DNDEBUG desliga os assert() do núcleo vendorizado (inclui os checks de overflow
+# do Measure.h), espelhando o build de release do PyVRP. A validação numérica na
+# fronteira (measure_bridge.h, limite 2^53) é o guard real no lado R.
+PKG_CPPFLAGS = -Ivendor/pyvrp -DNDEBUG
+
 # Compila a camada de binding (nível superior de src/) mais os fontes do núcleo
 # PyVRP vendorizado que já estão ligados. Acrescentar aqui novos .cpp do vendor
 # conforme as variantes forem sendo expostas (search/, etc.). bindings.cpp
@@ -15,4 +24,14 @@ OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) \
           vendor/pyvrp/DurationSegment.o \
           vendor/pyvrp/LoadSegment.o \
           vendor/pyvrp/DynamicBitset.o \
-          vendor/pyvrp/RandomNumberGenerator.o
+          vendor/pyvrp/RandomNumberGenerator.o \
+          vendor/pyvrp/search/LocalSearch.o \
+          vendor/pyvrp/search/SearchSpace.o \
+          vendor/pyvrp/search/Route.o \
+          vendor/pyvrp/search/Solution.o \
+          vendor/pyvrp/search/primitives.o \
+          vendor/pyvrp/search/PerturbationManager.o \
+          vendor/pyvrp/search/SwapTails.o \
+          vendor/pyvrp/search/SwapStar.o \
+          vendor/pyvrp/search/SwapRoutes.o \
+          vendor/pyvrp/search/RelocateWithDepot.o

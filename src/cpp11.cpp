@@ -5,6 +5,27 @@
 #include "cpp11/declarations.hpp"
 #include <R_ext/Visibility.h>
 
+// local_search.cpp
+SEXP vrpr_local_search_create(SEXP pd, int num_neighbours, int seed, int min_perturbations, int max_perturbations);
+extern "C" SEXP _vrpr_vrpr_local_search_create(SEXP pd, SEXP num_neighbours, SEXP seed, SEXP min_perturbations, SEXP max_perturbations) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_local_search_create(cpp11::as_cpp<cpp11::decay_t<SEXP>>(pd), cpp11::as_cpp<cpp11::decay_t<int>>(num_neighbours), cpp11::as_cpp<cpp11::decay_t<int>>(seed), cpp11::as_cpp<cpp11::decay_t<int>>(min_perturbations), cpp11::as_cpp<cpp11::decay_t<int>>(max_perturbations)));
+  END_CPP11
+}
+// local_search.cpp
+SEXP vrpr_local_search_run(SEXP bundle, SEXP sol, SEXP ce, bool exhaustive, bool shuffle);
+extern "C" SEXP _vrpr_vrpr_local_search_run(SEXP bundle, SEXP sol, SEXP ce, SEXP exhaustive, SEXP shuffle) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_local_search_run(cpp11::as_cpp<cpp11::decay_t<SEXP>>(bundle), cpp11::as_cpp<cpp11::decay_t<SEXP>>(sol), cpp11::as_cpp<cpp11::decay_t<SEXP>>(ce), cpp11::as_cpp<cpp11::decay_t<bool>>(exhaustive), cpp11::as_cpp<cpp11::decay_t<bool>>(shuffle)));
+  END_CPP11
+}
+// local_search.cpp
+list vrpr_local_search_info(SEXP bundle);
+extern "C" SEXP _vrpr_vrpr_local_search_info(SEXP bundle) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_local_search_info(cpp11::as_cpp<cpp11::decay_t<SEXP>>(bundle)));
+  END_CPP11
+}
 // problem_data.cpp
 SEXP vrpr_problem_data_create(doubles depot_x, doubles depot_y, doubles depot_tw_early, doubles depot_tw_late, doubles depot_service, doubles client_x, doubles client_y, doubles client_delivery, doubles client_pickup, doubles client_service, doubles client_tw_early, doubles client_tw_late, doubles client_release, doubles client_prize, logicals client_required, integers veh_num_available, doubles veh_capacity, doubles veh_fixed_cost, doubles veh_tw_early, doubles veh_tw_late, doubles veh_max_distance, doubles veh_unit_distance_cost, doubles veh_unit_duration_cost, integers veh_start_depot, integers veh_end_depot, doubles_matrix<> distance, doubles_matrix<> duration);
 extern "C" SEXP _vrpr_vrpr_problem_data_create(SEXP depot_x, SEXP depot_y, SEXP depot_tw_early, SEXP depot_tw_late, SEXP depot_service, SEXP client_x, SEXP client_y, SEXP client_delivery, SEXP client_pickup, SEXP client_service, SEXP client_tw_early, SEXP client_tw_late, SEXP client_release, SEXP client_prize, SEXP client_required, SEXP veh_num_available, SEXP veh_capacity, SEXP veh_fixed_cost, SEXP veh_tw_early, SEXP veh_tw_late, SEXP veh_max_distance, SEXP veh_unit_distance_cost, SEXP veh_unit_duration_cost, SEXP veh_start_depot, SEXP veh_end_depot, SEXP distance, SEXP duration) {
@@ -96,6 +117,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_vrpr_vrpr_cpp_standard",          (DL_FUNC) &_vrpr_vrpr_cpp_standard,           0},
     {"_vrpr_vrpr_has_cxx20",             (DL_FUNC) &_vrpr_vrpr_has_cxx20,              0},
     {"_vrpr_vrpr_hello",                 (DL_FUNC) &_vrpr_vrpr_hello,                  0},
+    {"_vrpr_vrpr_local_search_create",   (DL_FUNC) &_vrpr_vrpr_local_search_create,    5},
+    {"_vrpr_vrpr_local_search_info",     (DL_FUNC) &_vrpr_vrpr_local_search_info,      1},
+    {"_vrpr_vrpr_local_search_run",      (DL_FUNC) &_vrpr_vrpr_local_search_run,       5},
     {"_vrpr_vrpr_penalised_cost",        (DL_FUNC) &_vrpr_vrpr_penalised_cost,         2},
     {"_vrpr_vrpr_problem_data_create",   (DL_FUNC) &_vrpr_vrpr_problem_data_create,   27},
     {"_vrpr_vrpr_problem_data_summary",  (DL_FUNC) &_vrpr_vrpr_problem_data_summary,   1},

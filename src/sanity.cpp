@@ -7,7 +7,6 @@
 #include <cpp11.hpp>
 
 #include <string>
-#include <version>  // expõe as macros de feature do C++20
 
 // Retorna o padrão C++ efetivamente usado na compilação.
 [[cpp11::register]]

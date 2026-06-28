@@ -23,13 +23,15 @@ Depends:
 Imports:
     cli,
     rlang,
+    stats,
     tibble,
     vctrs
 LinkingTo:
     cpp11
 Suggests:
     reticulate,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3
 SystemRequirements: C++20
 Config/roxygen2/version: 8.0.0
