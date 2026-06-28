@@ -7,4 +7,12 @@ CXX_STD = CXX20
 # (pybind11) e logging.h (spdlog) do vendor NÃO são compilados — são substituídos
 # pela camada cpp11.
 OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) \
-          vendor/pyvrp/ProblemData.o
+          vendor/pyvrp/ProblemData.o \
+          vendor/pyvrp/CostEvaluator.o \
+          vendor/pyvrp/Solution.o \
+          vendor/pyvrp/Route.o \
+          vendor/pyvrp/Trip.o \
+          vendor/pyvrp/DurationSegment.o \
+          vendor/pyvrp/LoadSegment.o \
+          vendor/pyvrp/DynamicBitset.o \
+          vendor/pyvrp/RandomNumberGenerator.o

@@ -19,3 +19,31 @@ vrpr_has_cxx20 <- function() {
 vrpr_hello <- function() {
   .Call(`_vrpr_vrpr_hello`)
 }
+
+vrpr_rng_create <- function(seed) {
+  .Call(`_vrpr_vrpr_rng_create`, seed)
+}
+
+vrpr_cost_evaluator_create <- function(load_penalties, tw_penalty, dist_penalty) {
+  .Call(`_vrpr_vrpr_cost_evaluator_create`, load_penalties, tw_penalty, dist_penalty)
+}
+
+vrpr_solution_from_routes <- function(pd, routes) {
+  .Call(`_vrpr_vrpr_solution_from_routes`, pd, routes)
+}
+
+vrpr_solution_random <- function(pd, rng) {
+  .Call(`_vrpr_vrpr_solution_random`, pd, rng)
+}
+
+vrpr_solution_summary <- function(ptr) {
+  .Call(`_vrpr_vrpr_solution_summary`, ptr)
+}
+
+vrpr_solution_routes <- function(ptr) {
+  .Call(`_vrpr_vrpr_solution_routes`, ptr)
+}
+
+vrpr_penalised_cost <- function(ce, sol) {
+  .Call(`_vrpr_vrpr_penalised_cost`, ce, sol)
+}

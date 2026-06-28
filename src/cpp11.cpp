@@ -40,14 +40,70 @@ extern "C" SEXP _vrpr_vrpr_hello() {
     return cpp11::as_sexp(vrpr_hello());
   END_CPP11
 }
+// solution.cpp
+SEXP vrpr_rng_create(int seed);
+extern "C" SEXP _vrpr_vrpr_rng_create(SEXP seed) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_rng_create(cpp11::as_cpp<cpp11::decay_t<int>>(seed)));
+  END_CPP11
+}
+// solution.cpp
+SEXP vrpr_cost_evaluator_create(doubles load_penalties, double tw_penalty, double dist_penalty);
+extern "C" SEXP _vrpr_vrpr_cost_evaluator_create(SEXP load_penalties, SEXP tw_penalty, SEXP dist_penalty) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_cost_evaluator_create(cpp11::as_cpp<cpp11::decay_t<doubles>>(load_penalties), cpp11::as_cpp<cpp11::decay_t<double>>(tw_penalty), cpp11::as_cpp<cpp11::decay_t<double>>(dist_penalty)));
+  END_CPP11
+}
+// solution.cpp
+SEXP vrpr_solution_from_routes(SEXP pd, list routes);
+extern "C" SEXP _vrpr_vrpr_solution_from_routes(SEXP pd, SEXP routes) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_solution_from_routes(cpp11::as_cpp<cpp11::decay_t<SEXP>>(pd), cpp11::as_cpp<cpp11::decay_t<list>>(routes)));
+  END_CPP11
+}
+// solution.cpp
+SEXP vrpr_solution_random(SEXP pd, SEXP rng);
+extern "C" SEXP _vrpr_vrpr_solution_random(SEXP pd, SEXP rng) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_solution_random(cpp11::as_cpp<cpp11::decay_t<SEXP>>(pd), cpp11::as_cpp<cpp11::decay_t<SEXP>>(rng)));
+  END_CPP11
+}
+// solution.cpp
+list vrpr_solution_summary(SEXP ptr);
+extern "C" SEXP _vrpr_vrpr_solution_summary(SEXP ptr) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_solution_summary(cpp11::as_cpp<cpp11::decay_t<SEXP>>(ptr)));
+  END_CPP11
+}
+// solution.cpp
+list vrpr_solution_routes(SEXP ptr);
+extern "C" SEXP _vrpr_vrpr_solution_routes(SEXP ptr) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_solution_routes(cpp11::as_cpp<cpp11::decay_t<SEXP>>(ptr)));
+  END_CPP11
+}
+// solution.cpp
+double vrpr_penalised_cost(SEXP ce, SEXP sol);
+extern "C" SEXP _vrpr_vrpr_penalised_cost(SEXP ce, SEXP sol) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_penalised_cost(cpp11::as_cpp<cpp11::decay_t<SEXP>>(ce), cpp11::as_cpp<cpp11::decay_t<SEXP>>(sol)));
+  END_CPP11
+}
 
 extern "C" {
 static const R_CallMethodDef CallEntries[] = {
-    {"_vrpr_vrpr_cpp_standard",         (DL_FUNC) &_vrpr_vrpr_cpp_standard,          0},
-    {"_vrpr_vrpr_has_cxx20",            (DL_FUNC) &_vrpr_vrpr_has_cxx20,             0},
-    {"_vrpr_vrpr_hello",                (DL_FUNC) &_vrpr_vrpr_hello,                 0},
-    {"_vrpr_vrpr_problem_data_create",  (DL_FUNC) &_vrpr_vrpr_problem_data_create,  27},
-    {"_vrpr_vrpr_problem_data_summary", (DL_FUNC) &_vrpr_vrpr_problem_data_summary,  1},
+    {"_vrpr_vrpr_cost_evaluator_create", (DL_FUNC) &_vrpr_vrpr_cost_evaluator_create,  3},
+    {"_vrpr_vrpr_cpp_standard",          (DL_FUNC) &_vrpr_vrpr_cpp_standard,           0},
+    {"_vrpr_vrpr_has_cxx20",             (DL_FUNC) &_vrpr_vrpr_has_cxx20,              0},
+    {"_vrpr_vrpr_hello",                 (DL_FUNC) &_vrpr_vrpr_hello,                  0},
+    {"_vrpr_vrpr_penalised_cost",        (DL_FUNC) &_vrpr_vrpr_penalised_cost,         2},
+    {"_vrpr_vrpr_problem_data_create",   (DL_FUNC) &_vrpr_vrpr_problem_data_create,   27},
+    {"_vrpr_vrpr_problem_data_summary",  (DL_FUNC) &_vrpr_vrpr_problem_data_summary,   1},
+    {"_vrpr_vrpr_rng_create",            (DL_FUNC) &_vrpr_vrpr_rng_create,             1},
+    {"_vrpr_vrpr_solution_from_routes",  (DL_FUNC) &_vrpr_vrpr_solution_from_routes,   2},
+    {"_vrpr_vrpr_solution_random",       (DL_FUNC) &_vrpr_vrpr_solution_random,        2},
+    {"_vrpr_vrpr_solution_routes",       (DL_FUNC) &_vrpr_vrpr_solution_routes,        1},
+    {"_vrpr_vrpr_solution_summary",      (DL_FUNC) &_vrpr_vrpr_solution_summary,       1},
     {NULL, NULL, 0}
 };
 }
