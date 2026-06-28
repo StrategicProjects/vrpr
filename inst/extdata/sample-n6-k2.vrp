@@ -1,0 +1,24 @@
+NAME : sample-n6-k2
+COMMENT : instância CVRP mínima para exemplos e testes
+TYPE : CVRP
+DIMENSION : 6
+EDGE_WEIGHT_TYPE : EUC_2D
+CAPACITY : 30
+NODE_COORD_SECTION
+1 0 0
+2 10 0
+3 0 10
+4 -10 0
+5 0 -10
+6 5 5
+DEMAND_SECTION
+1 0
+2 10
+3 10
+4 10
+5 10
+6 10
+DEPOT_SECTION
+1
+-1
+EOF

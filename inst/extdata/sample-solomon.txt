@@ -1,0 +1,14 @@
+SAMPLE
+
+VEHICLE
+NUMBER     CAPACITY
+  3          50
+
+CUSTOMER
+CUST NO.   XCOORD.    YCOORD.    DEMAND    READY TIME   DUE DATE   SERVICE TIME
+
+    0       0          0           0          0          200          0
+    1       10         0          10          0           50          5
+    2       0          10         10          0           50          5
+    3      -10         0          10         60          120          5
+    4       0         -10         10         60          120          5

@@ -31,6 +31,17 @@ de instâncias, gráficos, vignettes, CI, CRAN).
 - **Multi-trip:** `add_vehicle_type(reload_depots = i, max_reloads = k)` deixa um veículo voltar
   ao depósito para reabastecer e fazer várias viagens (`summary()$num_trips`).
 
+### Ler instâncias-padrão
+
+```r
+m <- read_vrplib(system.file("extdata", "sample-n6-k2.vrp", package = "vrpr"))
+m <- read_solomon(system.file("extdata", "sample-solomon.txt", package = "vrpr"))
+res <- m |> vrp_solve(stop = max_runtime(5))
+```
+
+`read_vrplib()` lê CVRP/VRPTW no formato VRPLIB/TSPLIB (EUC_2D); `read_solomon()` lê VRPTW no
+formato de Solomon. Ambos devolvem um `vrpr_model`.
+
 ```r
 library(vrpr)
 

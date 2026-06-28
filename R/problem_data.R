@@ -140,11 +140,13 @@ print.vrpr_problem_data <- function(x, ...) {
   invisible(x)
 }
 
-# Distância Euclidiana arredondada (medidas do PyVRP são inteiras).
+# Distância Euclidiana arredondada (medidas do PyVRP são inteiras). Usa
+# round-half-up (floor(d + 0.5)), a convenção EUC_2D do TSPLIB/PyVRP — não o
+# arredondamento bancário do round() do R.
 euclidean_matrix <- function(x, y) {
   d <- as.matrix(stats::dist(cbind(x, y), method = "euclidean"))
   dimnames(d) <- NULL
-  round(d)
+  floor(d + 0.5)
 }
 
 check_square_matrix <- function(m, n, arg, call = rlang::caller_env()) {
