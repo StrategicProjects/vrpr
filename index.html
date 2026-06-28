@@ -175,7 +175,20 @@
 <div class="section level2">
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
-<p><code>vrpr</code> vendors PyVRP’s C++ core (<code>src/vendor/pyvrp/</code>, version pinned in <code>tools/PYVRP_VERSION</code>) and exposes it through a hand-written cpp11 binding layer. The iterated local search loop — a faithful port of PyVRP’s <code>IteratedLocalSearch</code> — lives in R, while all the heavy compute (local search, cost evaluation) stays in C++.</p>
+<p align="center">
+<img src="reference/figures/architecture.svg" width="92%" alt="vrpr architecture: a tidy R API and the iterated local search loop in R, over a cpp11 binding layer, over the vendored PyVRP C++ core"></p>
+<p><code>vrpr</code> is a thin, idiomatic R skin over PyVRP’s C++ engine:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Tidy R API</strong> — you build a model from tibbles and call <code><a href="reference/vrp_solve.html">vrp_solve()</a></code>.</li>
+<li>
+<strong>R orchestration</strong> — the iterated local search loop, penalty manager and stopping criteria, a faithful port of PyVRP’s <code>IteratedLocalSearch</code>.</li>
+<li>
+<strong>cpp11 binding</strong> — long-lived C++ objects travel as external pointers; data crosses as tibbles and matrices, with integer-measure validation at the boundary.</li>
+<li>
+<strong>Vendored PyVRP C++ core</strong> (<code>src/vendor/pyvrp/</code>, version pinned in <code>tools/PYVRP_VERSION</code>) — the hot compute: problem data, cost evaluation, solutions and the local-search operators.</li>
+</ol>
+<p>The light R loop drives the heavy C++ search, so you get PyVRP-grade performance with a pure-R, Python-free workflow.</p>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
