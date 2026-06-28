@@ -11,7 +11,9 @@ add_vehicle_type(
   fixed_cost = 0,
   tw_early = 0,
   tw_late = Inf,
-  max_duration = Inf
+  max_duration = Inf,
+  unit_distance_cost = 1,
+  unit_duration_cost = 0
 )
 }
 \arguments{
@@ -27,10 +29,18 @@ add_vehicle_type(
 deixa o fim do turno irrestrito.}
 
 \item{max_duration}{Duração máxima da rota. \code{Inf} = irrestrito.}
+
+\item{unit_distance_cost, unit_duration_cost}{Custos variáveis por unidade de
+distância e de duração deste tipo. Diferenciar estes (e \code{capacity},
+\code{fixed_cost}) entre chamadas habilita a \strong{frota heterogênea}.}
 }
 \value{
 O \code{vrpr_model} atualizado.
 }
 \description{
 Adicionar um tipo de veículo ao modelo
+}
+\details{
+Chame \code{add_vehicle_type()} várias vezes para uma frota com múltiplos
+tipos de veículo (capacidades, custos e turnos distintos).
 }

@@ -36,7 +36,8 @@ vrp_model <- function() {
       ),
       vehicle_types = tibble::tibble(
         num_available = integer(), capacity = double(), fixed_cost = double(),
-        tw_early = double(), tw_late = double(), max_duration = double()
+        tw_early = double(), tw_late = double(), max_duration = double(),
+        unit_distance_cost = double(), unit_duration_cost = double()
       )
     ),
     class = "vrpr_model"
@@ -91,10 +92,16 @@ add_clients <- function(model, data) {
 #' @param tw_early,tw_late Janela do turno do veículo (início/fim). `tw_late = Inf`
 #'   deixa o fim do turno irrestrito.
 #' @param max_duration Duração máxima da rota. `Inf` = irrestrito.
+#' @param unit_distance_cost,unit_duration_cost Custos variáveis por unidade de
+#'   distância e de duração deste tipo. Diferenciar estes (e `capacity`,
+#'   `fixed_cost`) entre chamadas habilita a **frota heterogênea**.
+#' @details Chame `add_vehicle_type()` várias vezes para uma frota com múltiplos
+#'   tipos de veículo (capacidades, custos e turnos distintos).
 #' @return O `vrpr_model` atualizado.
 #' @export
 add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0,
-                             tw_early = 0, tw_late = Inf, max_duration = Inf) {
+                             tw_early = 0, tw_late = Inf, max_duration = Inf,
+                             unit_distance_cost = 1, unit_duration_cost = 0) {
   check_model(model)
   model$vehicle_types <- tibble::add_row(
     model$vehicle_types,
@@ -103,7 +110,9 @@ add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0,
     fixed_cost = as.double(fixed_cost),
     tw_early = as.double(tw_early),
     tw_late = as.double(tw_late),
-    max_duration = as.double(max_duration)
+    max_duration = as.double(max_duration),
+    unit_distance_cost = as.double(unit_distance_cost),
+    unit_duration_cost = as.double(unit_duration_cost)
   )
   model
 }
