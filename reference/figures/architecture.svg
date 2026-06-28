@@ -63,11 +63,13 @@
 
   <!-- ===== flow arrows ===== -->
   <defs>
-    <marker id="down" markerWidth="10" markerHeight="10" refX="5" refY="8" orient="auto">
-      <path d="M1,1 L5,8 L9,1" fill="none" stroke="#3fa7d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Right-pointing triangles; orient="auto" rotates them to match each
+         line's direction (down for the flow lines, up for the results line). -->
+    <marker id="down" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#3fa7d6"/>
     </marker>
-    <marker id="up" markerWidth="12" markerHeight="12" refX="6" refY="2" orient="auto">
-      <path d="M1,9 L6,2 L11,9" fill="none" stroke="#59cd90" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <marker id="up" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="9" refY="4.5" orient="auto">
+      <path d="M0,0 L10,4.5 L0,9 Z" fill="#59cd90"/>
     </marker>
   </defs>
 
