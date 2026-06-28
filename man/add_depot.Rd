@@ -4,12 +4,17 @@
 \alias{add_depot}
 \title{Adicionar um depósito ao modelo}
 \usage{
-add_depot(model, x, y)
+add_depot(model, x, y, tw_early = 0, tw_late = Inf, service = 0)
 }
 \arguments{
 \item{model}{Um \code{vrpr_model}.}
 
 \item{x, y}{Coordenadas do depósito.}
+
+\item{tw_early, tw_late}{Janela de tempo do depósito (abertura/fechamento).
+\code{tw_late = Inf} deixa o fechamento irrestrito.}
+
+\item{service}{Tempo de serviço no depósito (p.ex. carga), por viagem.}
 }
 \value{
 O \code{vrpr_model} atualizado.

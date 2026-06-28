@@ -10,7 +10,9 @@ add_clients(model, data)
 \item{model}{Um \code{vrpr_model}.}
 
 \item{data}{Um tibble/data.frame com, no mínimo, colunas \code{x} e \code{y}. Colunas
-opcionais: \code{demand}, \code{tw_early}, \code{tw_late}, \code{service}, \code{prize}, \code{required}.}
+opcionais: \code{demand}, \code{tw_early}, \code{tw_late}, \code{service}, \code{release_time},
+\code{prize}, \code{required}. As janelas de tempo (\code{tw_early}/\code{tw_late}/\code{service})
+habilitam o VRPTW.}
 }
 \value{
 O \code{vrpr_model} atualizado.

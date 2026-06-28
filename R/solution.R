@@ -85,7 +85,8 @@ solution_cost <- function(solution, cost_evaluator = NULL) {
 #' @param x Um [vrp_solution()].
 #' @param ... Não usado.
 #' @return Um tibble com uma linha por visita: `route_id`, `position`, `client`,
-#'   `vehicle_type`.
+#'   `vehicle_type`, `start_service` (início do serviço) e `wait` (espera). As
+#'   duas últimas só são significativas quando há janelas de tempo (VRPTW).
 #' @export
 routes <- function(x, ...) {
   UseMethod("routes")
@@ -93,11 +94,12 @@ routes <- function(x, ...) {
 
 #' @export
 routes.vrpr_solution <- function(x, ...) {
-  detail <- vrpr_solution_routes(x$ptr)
+  detail <- vrpr_solution_routes(x$ptr, x$n_depots)
   if (length(detail) == 0) {
     return(tibble::tibble(
       route_id = integer(), position = integer(),
-      client = integer(), vehicle_type = integer()
+      client = integer(), vehicle_type = integer(),
+      start_service = double(), wait = double()
     ))
   }
   rows <- lapply(seq_along(detail), function(i) {
@@ -108,7 +110,9 @@ routes.vrpr_solution <- function(x, ...) {
       route_id = i,
       position = seq_along(clients),
       client = as.integer(clients),
-      vehicle_type = r$vehicle_type + 1L
+      vehicle_type = r$vehicle_type + 1L,
+      start_service = r$start_service,
+      wait = r$wait
     )
   })
   vctrs::vec_rbind(!!!rows)

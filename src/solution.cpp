@@ -124,12 +124,15 @@ list vrpr_solution_summary(SEXP ptr)
     });
 }
 
-// Detalhe por rota: visitas (índices de localização) e métricas da rota.
+// Detalhe por rota: visitas (índices de localização), métricas e o cronograma
+// (início do serviço e espera) por visita de cliente — útil para VRPTW.
+// num_depots distingue depósitos (índices baixos) de clientes no schedule.
 [[cpp11::register]]
-list vrpr_solution_routes(SEXP ptr)
+list vrpr_solution_routes(SEXP ptr, int num_depots)
 {
     auto *sol = as_solution(ptr);
     using namespace cpp11::literals;
+    auto const n_dep = static_cast<size_t>(num_depots);
 
     writable::list out(static_cast<R_xlen_t>(sol->numRoutes()));
     R_xlen_t idx = 0;
@@ -139,6 +142,19 @@ list vrpr_solution_routes(SEXP ptr)
         writable::integers v(static_cast<R_xlen_t>(visits.size()));
         for (size_t i = 0; i != visits.size(); ++i)
             v[i] = static_cast<int>(visits[i]);
+
+        // Cronograma: entradas de cliente (location >= num_depots), em ordem,
+        // alinham-se 1:1 com visits().
+        writable::doubles start_service(static_cast<R_xlen_t>(visits.size()));
+        writable::doubles wait(static_cast<R_xlen_t>(visits.size()));
+        R_xlen_t k = 0;
+        for (auto const &sv : route.schedule())
+            if (sv.location >= n_dep && k < start_service.size())
+            {
+                start_service[k] = meas(sv.startService);
+                wait[k] = meas(sv.waitDuration);
+                ++k;
+            }
 
         auto const &delivery = route.delivery();
         double const deliv = delivery.empty() ? 0.0 : meas(delivery[0]);
@@ -151,6 +167,8 @@ list vrpr_solution_routes(SEXP ptr)
             "distance"_nm = meas(route.distance()),
             "duration"_nm = meas(route.duration()),
             "delivery"_nm = deliv,
+            "start_service"_nm = start_service,
+            "wait"_nm = wait,
             "is_feasible"_nm = static_cast<bool>(route.isFeasible()),
         });
     }

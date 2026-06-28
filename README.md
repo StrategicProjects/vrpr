@@ -12,8 +12,11 @@ mas nenhum solver moderno, forte e amigável para VRP de produção.
 
 ## Status
 
-🚧 **Desenvolvimento inicial** — o **CVRP já resolve end-to-end** (Fase 1). VRPTW, frota
-heterogênea, múltiplos depósitos e prize-collecting estão no roadmap (Fase 2).
+🚧 **Desenvolvimento inicial** — **CVRP e VRPTW** (janelas de tempo) já resolvem end-to-end.
+Frota heterogênea, múltiplos depósitos e prize-collecting estão no roadmap (Fase 2).
+
+Para VRPTW, basta acrescentar as colunas `tw_early`, `tw_late`, `service` aos clientes; a saída
+de `routes()` traz `start_service` e `wait` por visita.
 
 ```r
 library(vrpr)

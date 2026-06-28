@@ -25,15 +25,18 @@
 vrp_model <- function() {
   structure(
     list(
-      depots = tibble::tibble(x = double(), y = double()),
+      depots = tibble::tibble(
+        x = double(), y = double(),
+        tw_early = double(), tw_late = double(), service = double()
+      ),
       clients = tibble::tibble(
         x = double(), y = double(), demand = double(),
-        tw_early = double(), tw_late = double(),
-        service = double(), prize = double(), required = logical()
+        tw_early = double(), tw_late = double(), service = double(),
+        release_time = double(), prize = double(), required = logical()
       ),
       vehicle_types = tibble::tibble(
-        num_available = integer(), capacity = double(),
-        fixed_cost = double()
+        num_available = integer(), capacity = double(), fixed_cost = double(),
+        tw_early = double(), tw_late = double(), max_duration = double()
       )
     ),
     class = "vrpr_model"
@@ -43,11 +46,19 @@ vrp_model <- function() {
 #' Adicionar um depósito ao modelo
 #' @param model Um `vrpr_model`.
 #' @param x,y Coordenadas do depósito.
+#' @param tw_early,tw_late Janela de tempo do depósito (abertura/fechamento).
+#'   `tw_late = Inf` deixa o fechamento irrestrito.
+#' @param service Tempo de serviço no depósito (p.ex. carga), por viagem.
 #' @return O `vrpr_model` atualizado.
 #' @export
-add_depot <- function(model, x, y) {
+add_depot <- function(model, x, y, tw_early = 0, tw_late = Inf, service = 0) {
   check_model(model)
-  model$depots <- tibble::add_row(model$depots, x = as.double(x), y = as.double(y))
+  model$depots <- tibble::add_row(
+    model$depots,
+    x = as.double(x), y = as.double(y),
+    tw_early = as.double(tw_early), tw_late = as.double(tw_late),
+    service = as.double(service)
+  )
   model
 }
 
@@ -55,7 +66,9 @@ add_depot <- function(model, x, y) {
 #'
 #' @param model Um `vrpr_model`.
 #' @param data Um tibble/data.frame com, no mínimo, colunas `x` e `y`. Colunas
-#'   opcionais: `demand`, `tw_early`, `tw_late`, `service`, `prize`, `required`.
+#'   opcionais: `demand`, `tw_early`, `tw_late`, `service`, `release_time`,
+#'   `prize`, `required`. As janelas de tempo (`tw_early`/`tw_late`/`service`)
+#'   habilitam o VRPTW.
 #' @return O `vrpr_model` atualizado.
 #' @export
 add_clients <- function(model, data) {
@@ -75,15 +88,22 @@ add_clients <- function(model, data) {
 #' @param num_available Quantidade de veículos disponíveis deste tipo.
 #' @param capacity Capacidade do veículo.
 #' @param fixed_cost Custo fixo por veículo usado.
+#' @param tw_early,tw_late Janela do turno do veículo (início/fim). `tw_late = Inf`
+#'   deixa o fim do turno irrestrito.
+#' @param max_duration Duração máxima da rota. `Inf` = irrestrito.
 #' @return O `vrpr_model` atualizado.
 #' @export
-add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0) {
+add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0,
+                             tw_early = 0, tw_late = Inf, max_duration = Inf) {
   check_model(model)
   model$vehicle_types <- tibble::add_row(
     model$vehicle_types,
     num_available = as.integer(num_available),
     capacity = as.double(capacity),
-    fixed_cost = as.double(fixed_cost)
+    fixed_cost = as.double(fixed_cost),
+    tw_early = as.double(tw_early),
+    tw_late = as.double(tw_late),
+    max_duration = as.double(max_duration)
   )
   model
 }
@@ -112,7 +132,7 @@ check_model <- function(model, call = rlang::caller_env()) {
 vctrs_rbind_clients <- function(acc, data) {
   defaults <- list(
     demand = 0, tw_early = 0, tw_late = Inf,
-    service = 0, prize = 0, required = TRUE
+    service = 0, release_time = 0, prize = 0, required = TRUE
   )
   for (col in names(defaults)) {
     if (is.null(data[[col]])) data[[col]] <- defaults[[col]]

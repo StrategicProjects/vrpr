@@ -4,7 +4,15 @@
 \alias{add_vehicle_type}
 \title{Adicionar um tipo de veículo ao modelo}
 \usage{
-add_vehicle_type(model, num_available, capacity, fixed_cost = 0)
+add_vehicle_type(
+  model,
+  num_available,
+  capacity,
+  fixed_cost = 0,
+  tw_early = 0,
+  tw_late = Inf,
+  max_duration = Inf
+)
 }
 \arguments{
 \item{model}{Um \code{vrpr_model}.}
@@ -14,6 +22,11 @@ add_vehicle_type(model, num_available, capacity, fixed_cost = 0)
 \item{capacity}{Capacidade do veículo.}
 
 \item{fixed_cost}{Custo fixo por veículo usado.}
+
+\item{tw_early, tw_late}{Janela do turno do veículo (início/fim). \code{tw_late = Inf}
+deixa o fim do turno irrestrito.}
+
+\item{max_duration}{Duração máxima da rota. \code{Inf} = irrestrito.}
 }
 \value{
 O \code{vrpr_model} atualizado.

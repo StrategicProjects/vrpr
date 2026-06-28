@@ -12,8 +12,8 @@ vrpr_local_search_info <- function(bundle) {
   .Call(`_vrpr_vrpr_local_search_info`, bundle)
 }
 
-vrpr_problem_data_create <- function(depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, distance, duration) {
-  .Call(`_vrpr_vrpr_problem_data_create`, depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, distance, duration)
+vrpr_problem_data_create <- function(depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_duration, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, distance, duration) {
+  .Call(`_vrpr_vrpr_problem_data_create`, depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_duration, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, distance, duration)
 }
 
 vrpr_problem_data_summary <- function(ptr) {
@@ -52,8 +52,8 @@ vrpr_solution_summary <- function(ptr) {
   .Call(`_vrpr_vrpr_solution_summary`, ptr)
 }
 
-vrpr_solution_routes <- function(ptr) {
-  .Call(`_vrpr_vrpr_solution_routes`, ptr)
+vrpr_solution_routes <- function(ptr, num_depots) {
+  .Call(`_vrpr_vrpr_solution_routes`, ptr, num_depots)
 }
 
 vrpr_penalised_cost <- function(ce, sol) {

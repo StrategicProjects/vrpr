@@ -13,7 +13,8 @@ routes(x, ...)
 }
 \value{
 Um tibble com uma linha por visita: \code{route_id}, \code{position}, \code{client},
-\code{vehicle_type}.
+\code{vehicle_type}, \code{start_service} (início do serviço) e \code{wait} (espera). As
+duas últimas só são significativas quando há janelas de tempo (VRPTW).
 }
 \description{
 Rotas de uma solução, em formato longo (tidy)
