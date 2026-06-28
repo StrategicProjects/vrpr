@@ -36,9 +36,12 @@ LinkingTo:
     cpp11
 Suggests:
     ggplot2,
+    knitr,
     reticulate,
+    rmarkdown,
     testthat (>= 3.0.0),
     withr
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 SystemRequirements: C++20
 Config/roxygen2/version: 8.0.0
