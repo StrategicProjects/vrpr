@@ -94,7 +94,7 @@ res <- m |> vrp_solve(stop = max_runtime(5))
 
 ![vrpr architecture: a tidy R API and the iterated local search loop in
 R, over a cpp11 binding layer, over the vendored PyVRP C++
-core](reference/figures/architecture.svg)
+core](reference/figures/architecture.svg?v=2)
 
 `vrpr` is a thin, idiomatic R skin over PyVRP’s C++ engine:
 
