@@ -14,8 +14,10 @@ mas nenhum solver moderno, forte e amigável para VRP de produção.
 
 🚧 **Desenvolvimento inicial** — **todas as variantes do PyVRP** já resolvem end-to-end: CVRP,
 VRPTW (janelas de tempo), frota heterogênea, MDVRP (múltiplos depósitos), prize-collecting
-(opcionais + grupos), coleta-e-entrega simultânea / backhaul e multi-trip. Próximo: polish (leitura
-de instâncias, gráficos, vignettes, CI, CRAN).
+(opcionais + grupos), coleta-e-entrega simultânea / backhaul e multi-trip. Próximo: vignettes, CI, CRAN.
+
+**Paridade com o PyVRP** verificada (ver `tools/benchmark/`): objetivo idêntico bit a bit e, na
+instância X-n101-k25 (ótimo 27591), ambos atingem o ótimo em 10 s.
 
 - **VRPTW:** acrescente `tw_early`, `tw_late`, `service` aos clientes; `routes()` traz
   `start_service` e `wait` por visita.

@@ -37,6 +37,10 @@ symbols.rds
 src/vendor/.cache/
 tools/pyvrp-upstream/
 
+# Instâncias de benchmark baixadas (dados de terceiros; o driver re-baixa)
+tools/benchmark/*.vrp
+tools/benchmark/*.sol
+
 # --- Sistema / editores ---
 .DS_Store
 .vscode/
