@@ -1,0 +1,4 @@
+# License
+
+    YEAR: 2026
+    COPYRIGHT HOLDER: vrpr authors; PyVRP contributors (vendored C++ core)
