@@ -1,12 +1,12 @@
 name: watch-pyvrp-upstream
 
-# Monitora releases estáveis do PyVRP. Quando a última release for mais nova que
-# a versão vendorizada (tools/PYVRP_VERSION), abre/atualiza uma issue de tracking.
-# Não toca no código — só notifica, para revisão humana antes de re-vendorizar.
+# Watches PyVRP stable releases. When the latest release is newer than the
+# vendored version (tools/PYVRP_VERSION), it opens/keeps a tracking issue.
+# It never touches code -- it only notifies, for human review before re-vendoring.
 
 on:
   schedule:
-    - cron: "0 6 * * 1" # toda segunda, 06:00 UTC
+    - cron: "0 6 * * 1" # every Monday, 06:00 UTC
   workflow_dispatch: {}
 
 permissions:
@@ -19,48 +19,48 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Comparar versão vendorizada com a última release do PyVRP
+      - name: Compare the vendored version with the latest PyVRP release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
           pinned="$(tr -d '[:space:]' < tools/PYVRP_VERSION)"
-          # /releases/latest ignora pre-releases (ex.: 0.14.0a0), que é o que queremos.
+          # /releases/latest ignores pre-releases (e.g. 0.14.0a0), which is what we want.
           latest="$(gh api repos/PyVRP/PyVRP/releases/latest --jq '.tag_name')"
 
-          echo "Vendorizado: $pinned | Última estável upstream: $latest"
+          echo "Vendored: $pinned | Latest upstream stable: $latest"
 
           if [ "$pinned" = "$latest" ]; then
-            echo "Em dia. Nada a fazer."
+            echo "Up to date. Nothing to do."
             exit 0
           fi
 
-          title="Atualização do PyVRP disponível: ${latest}"
+          title="PyVRP update available: ${latest}"
           body=$(cat <<EOF
-          O PyVRP publicou uma nova release estável.
+          PyVRP has published a new stable release.
 
-          - Vendorizado em \`vrpr\`: **${pinned}**
-          - Última estável upstream: **${latest}**
-          - Notas: https://github.com/PyVRP/PyVRP/releases/tag/${latest}
+          - Vendored in \`vrpr\`: **${pinned}**
+          - Latest upstream stable: **${latest}**
+          - Notes: https://github.com/PyVRP/PyVRP/releases/tag/${latest}
 
-          ### Checklist de re-vendoring
-          - [ ] Revisar changelog (mudanças no modelo de dados / API / algoritmo)
-          - [ ] Rodar \`tools/vendor.R\` para trazer \`src/vendor/pyvrp/\` na tag ${latest}
-          - [ ] Reconciliar \`bindings.cpp\` (cpp11) com mudanças no \`bindings.cpp\` upstream
-          - [ ] Atualizar \`tools/PYVRP_VERSION\` para ${latest}
-          - [ ] Rodar testes de paridade (seed fixo) e \`R CMD check\`
+          ### Re-vendoring checklist
+          - [ ] Review the changelog (data model / API / algorithm changes)
+          - [ ] Run \`tools/vendor.R\` to bring \`src/vendor/pyvrp/\` to tag ${latest}
+          - [ ] Reconcile the cpp11 bindings with any upstream \`bindings.cpp\` changes
+          - [ ] Update \`tools/PYVRP_VERSION\` to ${latest}
+          - [ ] Run the parity tests (fixed seed) and \`R CMD check\`
 
-          _Aberto automaticamente por \`.github/workflows/watch-upstream.yml\`._
+          _Opened automatically by \`.github/workflows/watch-upstream.yml\`._
           EOF
           )
 
-          # Atualiza a issue de tracking existente (mesmo título) ou cria uma nova.
-          existing="$(gh issue list --state open --search "in:title PyVRP disponível" --json number,title \
+          # Update the existing tracking issue (same title) or open a new one.
+          existing="$(gh issue list --state open --search "in:title PyVRP update available" --json number,title \
             --jq ".[] | select(.title==\"${title}\") | .number" | head -n1)"
 
           if [ -n "${existing:-}" ]; then
-            echo "Issue #${existing} já existe para ${latest}. Nada a fazer."
+            echo "Issue #${existing} already exists for ${latest}. Nothing to do."
           else
             gh issue create --title "$title" --body "$body" --label "upstream" || \
               gh issue create --title "$title" --body "$body"
