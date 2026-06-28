@@ -22,10 +22,14 @@ clients <- tibble::tibble(
   x = c(10, 25, 40), y = c(5, 30, 12),
   demand = c(10, 15, 8)
 )
-if (FALSE) { # \dontrun{
 m <- vrp_model() |>
   add_depot(x = 0, y = 0) |>
   add_clients(clients) |>
   add_vehicle_type(num_available = 5, capacity = 100)
-} # }
+m
+#> 
+#> ── VRP model ───────────────────────────────────────────────────────────────────
+#> • 1 depot
+#> • 3 clients
+#> • 1 vehicle type
 ```

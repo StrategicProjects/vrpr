@@ -1,16 +1,19 @@
-# vrpr: Vehicle Routing Problem Solver (PyVRP for R)
+# vrpr: Vehicle Routing Problem Solver Built on 'PyVRP'
 
-A high-performance, tidyverse-style interface to vehicle routing problem
-(VRP) solving. Ports the PyVRP C++ core to R via cpp11, with no Python
-runtime dependency. Supports capacitated VRP, time windows, multiple
-depots, heterogeneous fleets and prize-collecting variants, driven by an
-iterated local search metaheuristic.
+A 'tidyverse'-style interface to high-performance vehicle routing
+problem (VRP) solving. Vendors the C++ core of the 'PyVRP' solver
+(<https://github.com/PyVRP/PyVRP>) and rewires it through 'cpp11', with
+no 'Python' runtime dependency. Supports the capacitated VRP, time
+windows, multiple depots, heterogeneous fleets, prize-collecting and
+multi-trip variants, driven by an iterated local search metaheuristic.
 
 ## See also
 
 Useful links:
 
 - <https://github.com/StrategicProjects/vrpr>
+
+- <https://strategicprojects.github.io/vrpr/>
 
 - Report bugs at <https://github.com/StrategicProjects/vrpr/issues>
 
