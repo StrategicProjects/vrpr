@@ -28,10 +28,10 @@ plot.vrpr_result <- function(x, show_clients = TRUE, ...) {
 
   cost_lbl <- if (is.finite(x$cost)) round(x$cost) else NA
   subtitle <- sprintf(
-    "%d route(s) · %d client(s) · cost %s%s",
+    "%d route(s) - %d client(s) - cost %s%s",
     x$solution$summary$num_routes, nrow(clients),
-    if (is.na(cost_lbl)) "—" else cost_lbl,
-    if (x$is_feasible) "" else " · infeasible"
+    if (is.na(cost_lbl)) "-" else cost_lbl,
+    if (x$is_feasible) "" else " - infeasible"
   )
 
   p <- ggplot2::ggplot()
@@ -86,7 +86,7 @@ plot.vrpr_model <- function(x, ...) {
     ggplot2::coord_equal() +
     ggplot2::labs(
       title = "VRP model",
-      subtitle = sprintf("%d depot(s) · %d client(s)",
+      subtitle = sprintf("%d depot(s) - %d client(s)",
                          nrow(depots), nrow(clients)),
       x = NULL, y = NULL
     ) +

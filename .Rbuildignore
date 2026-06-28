@@ -11,6 +11,14 @@
 ^LICENSE\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^README\.md$
 ^\.vscode$
 ^\.idea$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^cran-comments\.md$
+^CRAN-SUBMISSION$
+\.o$
+\.so$
+\.dll$
+\.dylib$

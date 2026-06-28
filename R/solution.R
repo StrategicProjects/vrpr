@@ -126,10 +126,10 @@ print.vrpr_solution <- function(x, ...) {
   cli::cli_h1("VRP solution")
   feas <- if (s$is_feasible) cli::col_green("feasible") else cli::col_red("infeasible")
   cli::cli_bullets(c(
-    "*" = "{s$num_routes} route{?s} · {s$num_clients} client{?s} visited",
-    "*" = "distance {s$distance} · duration {s$duration}",
+    "*" = "{s$num_routes} route{?s} - {s$num_clients} client{?s} visited",
+    "*" = "distance {s$distance} - duration {s$duration}",
     "*" = "status: {feas}{if (s$num_missing_clients > 0) \\
-           paste0(' · ', s$num_missing_clients, ' client(s) missing') else ''}"
+           paste0(' - ', s$num_missing_clients, ' client(s) missing') else ''}"
   ))
   invisible(x)
 }

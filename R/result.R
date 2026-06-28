@@ -80,9 +80,9 @@ print.vrpr_result <- function(x, ...) {
   cli::cli_h1("vrpr result")
   feas <- if (x$is_feasible) cli::col_green("feasible") else cli::col_red("infeasible")
   cli::cli_bullets(c(
-    "*" = "cost {if (is.finite(x$cost)) round(x$cost) else '—'} · {feas}",
-    "*" = "{s$num_routes} route{?s} · {s$num_clients} client{?s}",
-    "*" = "{x$iterations} iteration{?s} · {round(x$runtime, 2)}s"
+    "*" = "cost {if (is.finite(x$cost)) round(x$cost) else '-'} - {feas}",
+    "*" = "{s$num_routes} route{?s} - {s$num_clients} client{?s}",
+    "*" = "{x$iterations} iteration{?s} - {round(x$runtime, 2)}s"
   ))
   invisible(x)
 }

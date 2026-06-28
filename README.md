@@ -1,5 +1,14 @@
 # vrpr <img src="man/figures/logo.svg" align="right" height="139" alt="vrpr logo" />
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml)
+[![pkgdown](https://github.com/StrategicProjects/vrpr/actions/workflows/pkgdown.yaml/badge.svg)](https://strategicprojects.github.io/vrpr/)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C.svg?logo=cplusplus)](https://en.wikipedia.org/wiki/C%2B%2B20)
+[![Powered by PyVRP](https://img.shields.io/badge/powered%20by-PyVRP-16323d.svg)](https://github.com/PyVRP/PyVRP)
+<!-- badges: end -->
+
 > PyVRP for R — a production-grade vehicle routing problem (VRP) solver.
 
 `vrpr` ports the [PyVRP](https://github.com/PyVRP/PyVRP) solver (a high-performance, MIT-licensed

@@ -1,6 +1,6 @@
 Package: vrpr
 Title: Vehicle Routing Problem Solver (PyVRP for R)
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c(
     person("Andre", "Leite", email = "leite@castlab.org", role = c("aut", "cre")),
     person("Marcos", "Wasilew", email = "marcos.wasilew@gmail.com", role = "aut"),
@@ -20,7 +20,8 @@ Description: A high-performance, tidyverse-style interface to vehicle routing
     depots, heterogeneous fleets and prize-collecting variants, driven by an
     iterated local search metaheuristic.
 License: MIT + file LICENSE
-URL: https://github.com/StrategicProjects/vrpr
+URL: https://github.com/StrategicProjects/vrpr,
+    https://strategicprojects.github.io/vrpr/
 BugReports: https://github.com/StrategicProjects/vrpr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -43,5 +44,5 @@ Suggests:
     withr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-SystemRequirements: C++20
+SystemRequirements: C++20, GNU make
 Config/roxygen2/version: 8.0.0

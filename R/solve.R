@@ -42,7 +42,7 @@ vrp_solve <- function(model, stop, seed = 42L, params = ils_params(), display = 
   s <- problem_data$summary
   if (display) {
     cli::cli_alert_info(
-      "Solving · {s$num_clients} client{?s} · {s$num_depots} depot{?s} · \\
+      "Solving - {s$num_clients} client{?s} - {s$num_depots} depot{?s} - \\
        {s$num_vehicle_types} vehicle type{?s}"
     )
   }
@@ -54,9 +54,9 @@ vrp_solve <- function(model, stop, seed = 42L, params = ils_params(), display = 
   if (display) {
     feas <- if (result$is_feasible) "feasible" else cli::col_red("no feasible solution")
     cli::cli_alert_success(
-      "Done in {round(result$runtime, 2)}s · cost \\
-       {if (is.finite(result$cost)) round(result$cost) else '—'} · \\
-       {result$solution$summary$num_routes} route{?s} · {feas}"
+      "Done in {round(result$runtime, 2)}s - cost \\
+       {if (is.finite(result$cost)) round(result$cost) else '-'} - \\
+       {result$solution$summary$num_routes} route{?s} - {feas}"
     )
   }
   result

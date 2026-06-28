@@ -96,8 +96,8 @@ run_ils <- function(problem_data, stop, seed = 42L,
   if (display) {
     cli::cli_progress_bar(
       format = paste0(
-        "{cli::pb_spin} ILS · iteration {iters} · ",
-        "best {if (is.finite(best_true)) round(best_true) else '—'} · ",
+        "{cli::pb_spin} ILS - iteration {iters} - ",
+        "best {if (is.finite(best_true)) round(best_true) else '-'} - ",
         "{cli::pb_elapsed}"
       ),
       clear = FALSE

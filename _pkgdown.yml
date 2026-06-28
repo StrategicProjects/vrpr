@@ -1,0 +1,48 @@
+url: https://strategicprojects.github.io/vrpr/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#16323d"
+
+reference:
+- title: Modelling
+  desc: Build a VRP model by piping together depots, clients and vehicle types.
+  contents:
+  - vrp_model
+  - add_depot
+  - add_clients
+  - add_vehicle_type
+  - add_client_group
+
+- title: Solving
+  desc: Run the iterated local search solver and control when it stops.
+  contents:
+  - vrp_solve
+  - ils_params
+  - vrpr_stop
+
+- title: Results
+  desc: Inspect and visualise a solution.
+  contents:
+  - cost
+  - routes
+  - summary.vrpr_result
+  - unvisited_clients
+  - plot.vrpr_result
+  - plot.vrpr_model
+
+- title: Reading instances
+  desc: Read standard VRPLIB and Solomon instance files.
+  contents:
+  - read_vrplib
+  - read_solomon
+
+- title: Lower-level building blocks
+  desc: Direct access to the problem data, solutions and cost evaluator.
+  contents:
+  - vrp_problem_data
+  - vrp_solution
+  - vrp_random_solution
+  - vrp_cost_evaluator
+  - solution_cost

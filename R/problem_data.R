@@ -136,10 +136,10 @@ print.vrpr_problem_data <- function(x, ...) {
   s <- x$summary
   cli::cli_h1("ProblemData")
   cli::cli_bullets(c(
-    "*" = "{s$num_clients} client{?s} · {s$num_depots} depot{?s} \\
+    "*" = "{s$num_clients} client{?s} - {s$num_depots} depot{?s} \\
            ({s$num_locations} locations)",
-    "*" = "{s$num_vehicle_types} vehicle type{?s} · {s$num_vehicles} vehicle{?s}",
-    "*" = "{s$num_load_dimensions} load dimension{?s} · \\
+    "*" = "{s$num_vehicle_types} vehicle type{?s} - {s$num_vehicles} vehicle{?s}",
+    "*" = "{s$num_load_dimensions} load dimension{?s} - \\
            {s$num_profiles} profile{?s}",
     "*" = "time windows: {if (s$has_time_windows) 'yes' else 'no'}"
   ))

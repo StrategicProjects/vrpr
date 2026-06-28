@@ -1,0 +1,26 @@
+citHeader("To cite vrpr in publications, please cite both the package and the underlying PyVRP solver:")
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "{vrpr}: Vehicle Routing Problem Solver (PyVRP for R)",
+  author   = c(person("Andre", "Leite"),
+               person("Marcos", "Wasilew"),
+               person("Hugo", "Vasconcelos"),
+               person("Carlos", "Amorin"),
+               person("Diogo", "Bezerra")),
+  year     = "2026",
+  note     = "R package version 0.1.0",
+  url      = "https://github.com/StrategicProjects/vrpr"
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "{PyVRP}: a high-performance {VRP} solver package",
+  author   = c(person("Niels A.", "Wouda"),
+               person("Leon", "Lan"),
+               person("Wouter", "Kool")),
+  journal  = "INFORMS Journal on Computing",
+  year     = "2024",
+  doi      = "10.1287/ijoc.2023.0055",
+  note     = "vrpr vendors and rewires the PyVRP C++ core"
+)
