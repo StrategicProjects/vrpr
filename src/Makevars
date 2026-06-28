@@ -1,7 +1,10 @@
 # O núcleo C++ do PyVRP exige C++20.
 CXX_STD = CXX20
 
-# Quando o núcleo vendorizado for ligado, adicionar aqui os includes do vendor:
-#   PKG_CPPFLAGS = -I../src/vendor/pyvrp
-# e listar os objetos do vendor em OBJECTS. Por enquanto compilamos apenas a
-# camada de binding cpp11 (sanity.cpp + cpp11.cpp gerado).
+# Compila a camada de binding (nível superior de src/) mais os fontes do núcleo
+# PyVRP vendorizado que já estão ligados. Acrescentar aqui novos .cpp do vendor
+# conforme as variantes forem sendo expostas (search/, etc.). bindings.cpp
+# (pybind11) e logging.h (spdlog) do vendor NÃO são compilados — são substituídos
+# pela camada cpp11.
+OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) \
+          vendor/pyvrp/ProblemData.o

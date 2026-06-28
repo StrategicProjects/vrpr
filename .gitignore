@@ -14,7 +14,11 @@ memory/
 *.Rproj
 .Renviron
 
-# Pacote R compilado / build
+# Pacote R compilado / build (em qualquer profundidade, inclui src/vendor/)
+src/**/*.o
+src/**/*.so
+src/**/*.dll
+src/**/*.dylib
 src/*.o
 src/*.so
 src/*.dll

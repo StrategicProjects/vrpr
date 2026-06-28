@@ -5,6 +5,20 @@
 #include "cpp11/declarations.hpp"
 #include <R_ext/Visibility.h>
 
+// problem_data.cpp
+SEXP vrpr_problem_data_create(doubles depot_x, doubles depot_y, doubles depot_tw_early, doubles depot_tw_late, doubles depot_service, doubles client_x, doubles client_y, doubles client_delivery, doubles client_pickup, doubles client_service, doubles client_tw_early, doubles client_tw_late, doubles client_release, doubles client_prize, logicals client_required, integers veh_num_available, doubles veh_capacity, doubles veh_fixed_cost, doubles veh_tw_early, doubles veh_tw_late, doubles veh_max_distance, doubles veh_unit_distance_cost, doubles veh_unit_duration_cost, integers veh_start_depot, integers veh_end_depot, doubles_matrix<> distance, doubles_matrix<> duration);
+extern "C" SEXP _vrpr_vrpr_problem_data_create(SEXP depot_x, SEXP depot_y, SEXP depot_tw_early, SEXP depot_tw_late, SEXP depot_service, SEXP client_x, SEXP client_y, SEXP client_delivery, SEXP client_pickup, SEXP client_service, SEXP client_tw_early, SEXP client_tw_late, SEXP client_release, SEXP client_prize, SEXP client_required, SEXP veh_num_available, SEXP veh_capacity, SEXP veh_fixed_cost, SEXP veh_tw_early, SEXP veh_tw_late, SEXP veh_max_distance, SEXP veh_unit_distance_cost, SEXP veh_unit_duration_cost, SEXP veh_start_depot, SEXP veh_end_depot, SEXP distance, SEXP duration) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_problem_data_create(cpp11::as_cpp<cpp11::decay_t<doubles>>(depot_x), cpp11::as_cpp<cpp11::decay_t<doubles>>(depot_y), cpp11::as_cpp<cpp11::decay_t<doubles>>(depot_tw_early), cpp11::as_cpp<cpp11::decay_t<doubles>>(depot_tw_late), cpp11::as_cpp<cpp11::decay_t<doubles>>(depot_service), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_x), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_y), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_delivery), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_pickup), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_service), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_tw_early), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_tw_late), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_release), cpp11::as_cpp<cpp11::decay_t<doubles>>(client_prize), cpp11::as_cpp<cpp11::decay_t<logicals>>(client_required), cpp11::as_cpp<cpp11::decay_t<integers>>(veh_num_available), cpp11::as_cpp<cpp11::decay_t<doubles>>(veh_capacity), cpp11::as_cpp<cpp11::decay_t<doubles>>(veh_fixed_cost), cpp11::as_cpp<cpp11::decay_t<doubles>>(veh_tw_early), cpp11::as_cpp<cpp11::decay_t<doubles>>(veh_tw_late), cpp11::as_cpp<cpp11::decay_t<doubles>>(veh_max_distance), cpp11::as_cpp<cpp11::decay_t<doubles>>(veh_unit_distance_cost), cpp11::as_cpp<cpp11::decay_t<doubles>>(veh_unit_duration_cost), cpp11::as_cpp<cpp11::decay_t<integers>>(veh_start_depot), cpp11::as_cpp<cpp11::decay_t<integers>>(veh_end_depot), cpp11::as_cpp<cpp11::decay_t<doubles_matrix<>>>(distance), cpp11::as_cpp<cpp11::decay_t<doubles_matrix<>>>(duration)));
+  END_CPP11
+}
+// problem_data.cpp
+list vrpr_problem_data_summary(SEXP ptr);
+extern "C" SEXP _vrpr_vrpr_problem_data_summary(SEXP ptr) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(vrpr_problem_data_summary(cpp11::as_cpp<cpp11::decay_t<SEXP>>(ptr)));
+  END_CPP11
+}
 // sanity.cpp
 int vrpr_cpp_standard();
 extern "C" SEXP _vrpr_vrpr_cpp_standard() {
@@ -29,9 +43,11 @@ extern "C" SEXP _vrpr_vrpr_hello() {
 
 extern "C" {
 static const R_CallMethodDef CallEntries[] = {
-    {"_vrpr_vrpr_cpp_standard", (DL_FUNC) &_vrpr_vrpr_cpp_standard, 0},
-    {"_vrpr_vrpr_has_cxx20",    (DL_FUNC) &_vrpr_vrpr_has_cxx20,    0},
-    {"_vrpr_vrpr_hello",        (DL_FUNC) &_vrpr_vrpr_hello,        0},
+    {"_vrpr_vrpr_cpp_standard",         (DL_FUNC) &_vrpr_vrpr_cpp_standard,          0},
+    {"_vrpr_vrpr_has_cxx20",            (DL_FUNC) &_vrpr_vrpr_has_cxx20,             0},
+    {"_vrpr_vrpr_hello",                (DL_FUNC) &_vrpr_vrpr_hello,                 0},
+    {"_vrpr_vrpr_problem_data_create",  (DL_FUNC) &_vrpr_vrpr_problem_data_create,  27},
+    {"_vrpr_vrpr_problem_data_summary", (DL_FUNC) &_vrpr_vrpr_problem_data_summary,  1},
     {NULL, NULL, 0}
 };
 }
