@@ -7,13 +7,13 @@ small_result <- function() {
     vrp_solve(stop = max_iterations(100), seed = 1, display = FALSE)
 }
 
-test_that("plot.vrpr_result devolve um ggplot", {
+test_that("plot.vrpr_result returns a ggplot", {
   skip_if_not_installed("ggplot2")
   p <- plot(small_result())
   expect_s3_class(p, "ggplot")
 })
 
-test_that("plot.vrpr_model devolve um ggplot", {
+test_that("plot.vrpr_model returns a ggplot", {
   skip_if_not_installed("ggplot2")
   m <- vrp_model() |>
     add_depot(0, 0) |>
@@ -22,7 +22,7 @@ test_that("plot.vrpr_model devolve um ggplot", {
   expect_s3_class(plot(m), "ggplot")
 })
 
-test_that("route_paths fecha cada rota no depósito", {
+test_that("route_paths closes each route at the depot", {
   res <- small_result()
   locs <- res$problem_data$locations
   depots <- locs[locs$kind == "depot", ]
@@ -30,11 +30,11 @@ test_that("route_paths fecha cada rota no depósito", {
   rt <- routes(res)
 
   paths <- route_paths(rt, depots, clients)
-  # Cada rota: 1 depósito + k clientes + 1 depósito = k + 2 pontos.
+  # Each route: 1 depot + k clients + 1 depot = k + 2 points.
   por_rota <- tapply(rt$client, rt$route_id, length)
   esperado <- sum(por_rota + 2L)
   expect_equal(nrow(paths), esperado)
-  # O primeiro e o último ponto de cada rota coincidem (depósito).
+  # The first and last point of each route coincide (depot).
   for (rid in unique(paths$route_id)) {
     pr <- paths[paths$route_id == rid, ]
     expect_equal(pr[1, c("x", "y")], pr[nrow(pr), c("x", "y")])

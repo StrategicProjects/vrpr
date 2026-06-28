@@ -1,4 +1,4 @@
-test_that("múltiplos add_vehicle_type criam uma frota heterogênea", {
+test_that("multiple add_vehicle_type calls create a heterogeneous fleet", {
   m <- vrp_model() |>
     add_depot(0, 0) |>
     add_clients(tibble::tibble(x = c(10, 20), y = 0, demand = 10)) |>
@@ -20,7 +20,7 @@ het_demand_model <- function(seed = 2, n = 16) {
   cl
 }
 
-test_that("o solver prefere o tipo de menor custo por distância", {
+test_that("the solver prefers the type with the lowest distance cost", {
   cl <- het_demand_model()
   m <- vrp_model() |>
     add_depot(0, 0) |>
@@ -32,23 +32,23 @@ test_that("o solver prefere o tipo de menor custo por distância", {
   rt <- routes(res)
   expect_true(res$is_feasible)
   expect_setequal(rt$client, seq_len(nrow(cl)))
-  # Tipo caro (2) não deve ser usado quando o barato (1) basta.
+  # the expensive type (2) should not be used when the cheap one (1) suffices.
   expect_false(2L %in% rt$vehicle_type)
 })
 
-test_that("a capacidade força o tipo de veículo adequado", {
+test_that("capacity forces the suitable vehicle type", {
   cl <- tibble::tibble(
     x = c(10, -10, 20, -20), y = c(10, -10, 20, -20), demand = 45
   )
   m <- vrp_model() |>
     add_depot(0, 0) |>
     add_clients(cl) |>
-    add_vehicle_type(num_available = 1, capacity = 30) |> # pequeno: não cabe 45
-    add_vehicle_type(num_available = 4, capacity = 50)    # grande
+    add_vehicle_type(num_available = 1, capacity = 30) |> # small: cannot fit 45
+    add_vehicle_type(num_available = 4, capacity = 50)    # large
 
   res <- vrp_solve(m, stop = max_iterations(300), seed = 1, display = FALSE)
   rt <- routes(res)
   expect_true(res$is_feasible)
-  # Só o tipo 2 (capacidade 50) consegue servir clientes de demanda 45.
+  # Only type 2 (capacity 50) can serve clients with demand 45.
   expect_setequal(unique(rt$vehicle_type), 2L)
 })

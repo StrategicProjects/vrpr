@@ -2,28 +2,27 @@
 % Please edit documentation in R/problem_data.R
 \name{vrp_problem_data}
 \alias{vrp_problem_data}
-\title{Montar os dados do problema (ProblemData) a partir de um modelo}
+\title{Assemble the problem data (ProblemData) from a model}
 \usage{
 vrp_problem_data(model, distance = NULL, duration = NULL)
 }
 \arguments{
-\item{model}{Um \code{\link[=vrp_model]{vrp_model()}} com ao menos um depósito e um tipo de veículo.}
+\item{model}{A \code{\link[=vrp_model]{vrp_model()}} with at least one depot and one vehicle type.}
 
-\item{distance, duration}{Matrizes (\code{numeric}, \verb{n x n}, locais na ordem
-depósitos-depois-clientes) de distância e duração. Se \code{NULL}, são
-calculadas como a distância Euclidiana arredondada entre as coordenadas;
-\code{duration} por padrão iguala \code{distance}.}
+\item{distance, duration}{Matrices (\code{numeric}, \verb{n x n}, locations in
+depots-then-clients order) of distance and duration. If \code{NULL}, they are
+computed as the rounded Euclidean distance between coordinates; \code{duration}
+defaults to \code{distance}.}
 }
 \value{
-Um objeto \code{vrpr_problem_data} (envelope de um external pointer C++).
+A \code{vrpr_problem_data} object (a wrapper around a C++ external pointer).
 }
 \description{
-Constrói a estrutura C++ \code{ProblemData} do PyVRP a partir de um \code{\link[=vrp_model]{vrp_model()}}.
-As localizações seguem a convenção do PyVRP: depósitos primeiro (índices
-baixos), depois os clientes.
+Builds PyVRP's C++ \code{ProblemData} structure from a \code{\link[=vrp_model]{vrp_model()}}. Locations
+follow PyVRP's convention: depots first (low indices), then clients.
 }
 \details{
-Medidas inteiras (distância, duração, custo, carga) trafegam como \code{numeric}
-de R com semântica inteira; valores não inteiros são rejeitados na fronteira
-C++. Use \code{Inf} para restrições "irrestritas" (p.ex. \code{tw_late}).
+Integer measures (distance, duration, cost, load) travel as R \code{numeric} with
+integer semantics; non-integer values are rejected at the C++ boundary. Use
+\code{Inf} for "unconstrained" limits (e.g. \code{tw_late}).
 }

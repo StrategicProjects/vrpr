@@ -1,9 +1,9 @@
-# Blocos de construção da busca local (search/) do PyVRP.
+# Building blocks of PyVRP's local search (search/).
 #
-# Estes são helpers internos: a face pública será `vrp_solve()`, que orquestra o
-# laço ILS sobre eles (próximo passo do roadmap). Mantidos sem @export por ora.
+# These are internal helpers; the public face is `vrp_solve()`, which orchestrates
+# the ILS loop over them. Kept unexported for now.
 
-# Cria o motor de busca local persistente (dados + RNG + perturbação + operadores).
+# Creates the persistent local-search engine (data + RNG + perturbation + operators).
 new_local_search <- function(problem_data,
                              num_neighbours = 20L,
                              seed = 42L,
@@ -30,9 +30,9 @@ new_local_search <- function(problem_data,
   )
 }
 
-# Roda a busca local sobre uma solução, devolvendo outra (idealmente melhor).
-# exhaustive = TRUE  -> descida pura (sem perturbação), p.ex. solução inicial.
-# exhaustive = FALSE -> uma iteração ILS (perturba + busca).
+# Runs local search on a solution, returning another (ideally better) one.
+# exhaustive = TRUE  -> pure descent (no perturbation), e.g. the initial solution.
+# exhaustive = FALSE -> one ILS iteration (perturb + search).
 run_local_search <- function(ls, solution, cost_evaluator,
                              exhaustive = FALSE, shuffle = !exhaustive) {
   stopifnot(inherits(ls, "vrpr_local_search"))

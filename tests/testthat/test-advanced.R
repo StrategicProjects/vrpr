@@ -1,8 +1,8 @@
-# Variantes avançadas: coleta-e-entrega simultânea / backhaul e multi-trip.
+# Advanced variants: simultaneous pickup and delivery / backhaul and multi-trip.
 
-test_that("a coleta (pickup) entra no modelo de carga", {
-  # Entrega 20 + coleta 40 por cliente; capacidade 50. Os dois juntos numa rota
-  # estouram a capacidade (a coleta acumula), então a solução é inviável.
+test_that("pickup is accounted for in the load model", {
+  # Delivery 20 + pickup 40 per client; capacity 50. Both together in one route
+  # exceed capacity (pickup accumulates), so the solution is infeasible.
   cl <- tibble::tibble(x = c(20, 40), y = 0, demand = 20, pickup = 40)
   pd <- vrp_model() |>
     add_depot(0, 0) |>
@@ -10,14 +10,14 @@ test_that("a coleta (pickup) entra no modelo de carga", {
     add_vehicle_type(num_available = 2, capacity = 50) |>
     vrp_problem_data()
 
-  juntos <- vrp_solution(pd, list(c(1, 2)))
-  expect_true(juntos$summary$has_excess_load) # a coleta estoura a capacidade
+  together <- vrp_solution(pd, list(c(1, 2)))
+  expect_true(together$summary$has_excess_load) # pickup exceeds capacity
 
-  separados <- vrp_solution(pd, list(1, 2))
-  expect_false(separados$summary$has_excess_load)
+  separate <- vrp_solution(pd, list(1, 2))
+  expect_false(separate$summary$has_excess_load)
 })
 
-test_that("o solver respeita coleta-e-entrega simultânea", {
+test_that("the solver respects simultaneous pickup and delivery", {
   cl <- tibble::tibble(x = c(20, 40), y = 0, demand = 20, pickup = 40)
   res <- vrp_model() |>
     add_depot(0, 0) |>
@@ -36,15 +36,15 @@ mt_model <- function(...) {
     add_vehicle_type(num_available = 1, capacity = 50, ...)
 }
 
-test_that("sem reload, um veículo não atende demanda acima da capacidade", {
-  # 4 x 30 = 120 de demanda, 1 veículo de capacidade 50, 1 viagem.
+test_that("without reload, one vehicle cannot serve demand above capacity", {
+  # 4 x 30 = 120 demand, 1 vehicle of capacity 50, 1 trip.
   res <- vrp_solve(mt_model(), stop = max_iterations(300), seed = 1, display = FALSE)
   expect_false(res$is_feasible)
   expect_true(res$solution$summary$has_excess_load)
   expect_equal(res$solution$summary$num_trips, 1L)
 })
 
-test_that("com reload, um veículo faz múltiplas viagens (multi-trip)", {
+test_that("with reload, one vehicle makes multiple trips (multi-trip)", {
   res <- vrp_solve(
     mt_model(reload_depots = 1, max_reloads = 10),
     stop = max_iterations(500), seed = 1, display = FALSE
@@ -54,7 +54,7 @@ test_that("com reload, um veículo faz múltiplas viagens (multi-trip)", {
   expect_gt(res$solution$summary$num_trips, 1L)
 })
 
-test_that("reload_depot fora do intervalo é rejeitado", {
+test_that("an out-of-range reload_depot is rejected", {
   m <- vrp_model() |>
     add_depot(0, 0) |>
     add_clients(tibble::tibble(x = 10, y = 0, demand = 5)) |>

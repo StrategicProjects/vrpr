@@ -1,70 +1,72 @@
-# Benchmark de paridade — vrpr vs PyVRP
+# Parity benchmark — vrpr vs PyVRP
 
-Valida que o `vrpr` (port R do PyVRP via cpp11) é fiel à referência Python/C++,
-em duas dimensões: **corretude do objetivo** e **qualidade da solução**.
+Validates that `vrpr` (the R port of PyVRP via cpp11) is faithful to the
+Python/C++ reference, along two axes: **objective correctness** and **solution
+quality**.
 
-## Como reproduzir
+## How to reproduce
 
 ```sh
-# 1. PyVRP num venv (a parte de referência)
+# 1. PyVRP in a venv (the reference side)
 python3 -m venv /tmp/vrpr_bench && /tmp/vrpr_bench/bin/pip install pyvrp
 
-# 2. instalar o vrpr (build de RELEASE — ver a ressalva abaixo)
+# 2. install vrpr (a RELEASE build — see the caveat below)
 R CMD INSTALL .
 
-# 3. rodar o driver (baixa a instância do conjunto X se ausente)
+# 3. run the driver (downloads the X-set instance if absent)
 VRPR_PYVRP_PYTHON=/tmp/vrpr_bench/bin/python \
   Rscript tools/benchmark/parity.R X-n101-k25 10 1
 ```
 
-> ⚠️ **Sempre meça o build de RELEASE** (`R CMD INSTALL`), não o de debug do
-> `devtools::load_all()`. O build de debug compila sem `-O2` e com os `assert()`
-> do núcleo ativos (sem `-DNDEBUG`), ficando ~20× mais lento — o que distorce
-> totalmente qualquer comparação de throughput.
+> ⚠️ **Always measure the RELEASE build** (`R CMD INSTALL`), not the debug build of
+> `devtools::load_all()`. The debug build compiles without `-O2` and with the
+> core's `assert()`s active (no `-DNDEBUG`), making it ~20x slower — which
+> completely distorts any throughput comparison.
 
-## Parte A — paridade do objetivo (exata, determinística)
+## Part A — objective parity (exact, deterministic)
 
-Mesma instância e **mesma solução** (mesmas rotas) avaliadas nos dois lados.
-Como `vrpr` e PyVRP compartilham o mesmo núcleo C++ (`CostEvaluator`,
-`Solution`), o custo **tem** de coincidir bit a bit.
+The same instance and the **same solution** (same routes), evaluated on both
+sides. Since `vrpr` and PyVRP share the same C++ core (`CostEvaluator`,
+`Solution`), the cost **must** match bit for bit.
 
-Instância `sample-n6-k2`, rotas `[[1,2],[3,4,5]]`:
+Instance `sample-n6-k2`, routes `[[1,2],[3,4,5]]`:
 
-| | viável | distância | custo |
+| | feasible | distance | cost |
 |---|---|---|---|
 | PyVRP | true | 81 | 81 |
 | vrpr  | true | 81 | 81 |
 
-✅ Idêntico. Valida o modelo de dados, o cálculo de distância (EUC_2D
-round-half-up) e a função objetivo.
+✅ Identical. Validates the data model, the distance computation (EUC_2D
+round-half-up) and the objective function.
 
-## Parte B — paridade de qualidade
+## Part B — quality parity
 
-Instância `X-n101-k25` (100 clientes, ótimo conhecido **27591**), 10 s por solver,
-build de release:
+Instance `X-n101-k25` (100 clients, known optimum **27591**), 10 s per solver,
+release build:
 
-| Solver | custo | gap ao ótimo | iterações (10s) |
+| Solver | cost | gap to optimum | iterations (10s) |
 |---|---|---|---|
-| PyVRP | 27591 | 0,00 % | ~18.000 |
-| vrpr  | 27591 | 0,00 % | ~24.000 |
+| PyVRP | 27591 | 0.00 % | ~18,000 |
+| vrpr  | 27591 | 0.00 % | ~24,000 |
 
-✅ Ambos atingem o **ótimo** em 10 s. O throughput do `vrpr` é da mesma ordem do
-PyVRP (aqui até um pouco maior) — o laço ILS em R não é gargalo no build de release.
-Em vários seeds o `vrpr` fica em 0,00–0,1 % do ótimo.
+✅ Both reach the **optimum** in 10 s. `vrpr`'s throughput is the same order of
+magnitude as PyVRP's (here even slightly higher) — the R ILS loop is not a
+bottleneck in the release build. Across seeds, `vrpr` stays within 0.00–0.1 % of
+the optimum.
 
-## Por que há paridade
+## Why there is parity
 
-O `vrpr` vendoriza o núcleo C++ do PyVRP e religa-o com cpp11; o laço ILS em R é
-um **port fiel** do `IteratedLocalSearch.py`: Late Acceptance Hill-Climbing
-(Burke & Bykov, 2017) + reinício após estagnação + busca exaustiva ao achar um
-novo melhor, com os mesmos parâmetros default (`history_length = 300`). O trabalho
-pesado (busca local, avaliação de custo) roda no mesmo C++; a orquestração em R
-acrescenta um overhead por iteração que, no build de release, é pequeno frente ao
-custo da busca local.
+`vrpr` vendors PyVRP's C++ core and rewires it with cpp11; the R ILS loop is a
+**faithful port** of `IteratedLocalSearch.py`: Late Acceptance Hill-Climbing
+(Burke & Bykov, 2017) + restart after stagnation + an exhaustive search on each
+new best, with the same default parameters (`history_length = 300`). The heavy
+work (local search, cost evaluation) runs in the same C++; the R orchestration
+adds a per-iteration overhead that, in the release build, is small relative to
+the cost of local search.
 
-## Notas
+## Notes
 
-- O número de veículos é fixado folgado (30 > k=25); como o CVRP minimiza só
-  distância (sem custo fixo de veículo), veículos ociosos não alteram o ótimo.
-- A matriz de distância é Euclidiana com round-half-up (`floor(d + 0.5)`) nos dois
-  lados, a convenção EUC_2D do TSPLIB — necessária para reproduzir o BKS 27591.
+- The number of vehicles is fixed generously (30 > k=25); since the CVRP minimises
+  distance only (no fixed vehicle cost), idle vehicles do not change the optimum.
+- The distance matrix is Euclidean with round-half-up (`floor(d + 0.5)`) on both
+  sides, the TSPLIB EUC_2D convention — required to reproduce the BKS 27591.

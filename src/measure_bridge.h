@@ -1,17 +1,17 @@
 #ifndef VRPR_MEASURE_BRIDGE_H
 #define VRPR_MEASURE_BRIDGE_H
 
-// Fronteira numérica R <-> PyVRP.
+// Numeric boundary R <-> PyVRP.
 //
-// As medidas do PyVRP (Cost/Distance/Duration/Load) são int64_t; Coordinate é
-// double. R não tem inteiro de 64 bits nativo, então as medidas trafegam como
-// `double` (numeric) com semântica inteira, validada aqui:
+// PyVRP measures (Cost/Distance/Duration/Load) are int64_t; Coordinate is
+// double. R has no native 64-bit integer, so measures travel as `double`
+// (numeric) with integer semantics, validated here:
 //
-//   * finito + inteiro + |x| <= 2^53  -> int64_t exato
-//   * Inf/NA (sentinela "irrestrito")  -> numeric_limits<int64_t>::max()
+//   * finite + integer + |x| <= 2^53  -> exact int64_t
+//   * Inf/NA ("unconstrained" sentinel) -> numeric_limits<int64_t>::max()
 //
-// 2^53 (~9.0e15) é o maior inteiro exatamente representável em double; é
-// não-restritivo para magnitudes reais de VRP. Decisão registrada em plano.md.
+// 2^53 (~9.0e15) is the largest integer exactly representable as a double; it is
+// non-binding for realistic VRP magnitudes.
 
 #include <cpp11.hpp>
 
@@ -21,31 +21,31 @@
 
 namespace vrpr
 {
-// Maior inteiro exatamente representável como double (2^53).
+// Largest integer exactly representable as a double (2^53).
 inline constexpr double kMaxExactInt = 9007199254740992.0;
 
-// Converte um double de R em int64, exigindo semântica inteira.
+// Converts an R double to int64, requiring integer semantics.
 inline std::int64_t as_i64(double x, char const *what)
 {
     if (!std::isfinite(x))
         cpp11::stop(
-            "%s deve ser finito; use o valor 'irrestrito' (Inf) só onde permitido.",
+            "%s must be finite; use the 'unconstrained' value (Inf) only where allowed.",
             what);
 
     if (x != std::floor(x))
-        cpp11::stop("%s deve ser inteiro (o PyVRP usa medidas inteiras); "
-                    "recebido %g. Reescale os dados se necessário.",
+        cpp11::stop("%s must be an integer (PyVRP uses integer measures); "
+                    "got %g. Rescale the data if necessary.",
                     what, x);
 
     if (std::abs(x) > kMaxExactInt)
-        cpp11::stop("%s excede 2^53 e não é exatamente representável em double.",
+        cpp11::stop("%s exceeds 2^53 and is not exactly representable as a double.",
                     what);
 
     return static_cast<std::int64_t>(x);
 }
 
-// Como as_i64, mas mapeia não-finito (Inf/NA) para o sentinela int64 max,
-// que o PyVRP interpreta como "irrestrito".
+// Like as_i64, but maps non-finite (Inf/NA) to the int64 max sentinel, which
+// PyVRP interprets as "unconstrained".
 inline std::int64_t as_i64_or_max(double x, char const *what)
 {
     if (!std::isfinite(x))

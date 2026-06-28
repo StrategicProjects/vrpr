@@ -2,22 +2,22 @@
 % Please edit documentation in R/model.R
 \name{add_clients}
 \alias{add_clients}
-\title{Adicionar clientes ao modelo}
+\title{Add clients to the model}
 \usage{
 add_clients(model, data)
 }
 \arguments{
-\item{model}{Um \code{vrpr_model}.}
+\item{model}{A \code{vrpr_model}.}
 
-\item{data}{Um tibble/data.frame com, no mínimo, colunas \code{x} e \code{y}. Colunas
-opcionais: \code{demand} (entrega), \code{pickup} (coleta), \code{tw_early}, \code{tw_late},
-\code{service}, \code{release_time}, \code{prize}, \code{required}. As janelas de tempo
-(\code{tw_early}/\code{tw_late}/\code{service}) habilitam o VRPTW; \code{pickup} habilita
-coleta-e-entrega simultânea / backhaul.}
+\item{data}{A tibble/data.frame with at least the columns \code{x} and \code{y}.
+Optional columns: \code{demand} (delivery), \code{pickup}, \code{tw_early}, \code{tw_late},
+\code{service}, \code{release_time}, \code{prize}, \code{required}. The time-window columns
+(\code{tw_early}/\code{tw_late}/\code{service}) enable the VRPTW; \code{pickup} enables
+simultaneous pickup and delivery / backhaul.}
 }
 \value{
-O \code{vrpr_model} atualizado.
+The updated \code{vrpr_model}.
 }
 \description{
-Adicionar clientes ao modelo
+Add clients to the model
 }

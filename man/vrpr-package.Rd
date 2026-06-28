@@ -6,6 +6,8 @@
 \alias{vrpr-package}
 \title{vrpr: Vehicle Routing Problem Solver (PyVRP for R)}
 \description{
+\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
+
 A high-performance, tidyverse-style interface to vehicle routing problem (VRP) solving. Ports the PyVRP C++ core to R via cpp11, with no Python runtime dependency. Supports capacitated VRP, time windows, multiple depots, heterogeneous fleets and prize-collecting variants, driven by an iterated local search metaheuristic.
 }
 \seealso{
@@ -17,16 +19,22 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: First Last \email{leite@de.ufpe.br} (TODO: preencher nome do(a) mantenedor(a))
+\strong{Maintainer}: Andre Leite \email{leite@castlab.org}
 
 Authors:
 \itemize{
-  \item First Last \email{leite@de.ufpe.br} (TODO: preencher nome do(a) mantenedor(a))
+  \item Andre Leite \email{leite@castlab.org}
+  \item Marcos Wasilew \email{marcos.wasilew@gmail.com}
+  \item Hugo Vasconcelos \email{hugo.vasconcelos@ufpe.br}
+  \item Carlos Amorin \email{carlos.agaf@ufpe.br}
+  \item Diogo Bezerra \email{diogo.bezerra@ufpe.br}
 }
 
 Other contributors:
 \itemize{
-  \item  PyVRP contributors (Autores do nucleo C++ PyVRP vendorizado (MIT)) [contributor, copyright holder]
+  \item Niels Wouda (author of the vendored PyVRP C++ core) [contributor, copyright holder]
+  \item Thibaut Vidal (HGS-CVRP, parts of the vendored C++ core) [copyright holder]
+  \item ORTEC (HGS-DIMACS, parts of the vendored C++ core) [copyright holder]
 }
 
 }

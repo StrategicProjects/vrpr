@@ -1,0 +1,21 @@
+The vrpr package is released under the MIT license (see the LICENSE and
+LICENSE.md files).
+
+-------------------------------------------------------------------------------
+R code, the cpp11 binding layer (src/*.cpp and src/*.h outside src/vendor/),
+documentation, and the package logo:
+
+  Copyright (c) 2026 vrpr authors (Andre Leite and contributors).
+
+-------------------------------------------------------------------------------
+Vendored C++ core under src/vendor/pyvrp/, taken verbatim from the PyVRP project
+(https://github.com/PyVRP/PyVRP). The exact upstream version is recorded in
+src/vendor/pyvrp/pyvrp_version.txt (PyVRP v0.13.4). It is distributed under the
+MIT license, with the following copyright holders:
+
+  Copyright (c) 2020, Thibaut Vidal (HGS-CVRP)
+  Copyright (c) 2022, ORTEC (HGS-DIMACS)
+  Copyright (c) since 2022, PyVRP contributors
+
+The PyVRP pybind11 bindings and spdlog-based logging are NOT included; they are
+replaced by the cpp11 binding layer in src/.

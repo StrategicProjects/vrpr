@@ -2,18 +2,18 @@
 % Please edit documentation in R/solution.R
 \name{vrp_random_solution}
 \alias{vrp_random_solution}
-\title{Gerar uma solução aleatória}
+\title{Generate a random solution}
 \usage{
 vrp_random_solution(problem_data, seed = 42L)
 }
 \arguments{
-\item{problem_data}{Um \code{\link[=vrp_problem_data]{vrp_problem_data()}}.}
+\item{problem_data}{A \code{\link[=vrp_problem_data]{vrp_problem_data()}}.}
 
-\item{seed}{Semente inteira.}
+\item{seed}{Integer seed.}
 }
 \value{
-Um objeto \code{vrpr_solution}.
+A \code{vrpr_solution} object.
 }
 \description{
-Gerar uma solução aleatória
+Generate a random solution
 }

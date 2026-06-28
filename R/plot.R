@@ -1,21 +1,21 @@
-# Visualização das rotas com {ggplot2} (substitui o plotting matplotlib do PyVRP).
+# Route visualisation with {ggplot2} (replaces PyVRP's matplotlib plotting).
 
-#' Plotar a solução de um resultado VRP
+#' Plot the solution of a VRP result
 #'
-#' Desenha depósitos, clientes e as rotas (uma cor por rota) sobre as coordenadas
-#' da instância. Clientes opcionais não visitados (prize-collecting) aparecem como
-#' círculos vazados.
+#' Draws depots, clients and the routes (one colour per route) over the
+#' instance coordinates. Unvisited optional clients (prize-collecting) appear as
+#' hollow circles.
 #'
-#' @param x Um [vrp_solve()] resultado.
-#' @param show_clients Rotular os clientes não visitados? (sempre desenhados).
-#' @param ... Não usado.
-#' @return Um objeto `ggplot`.
+#' @param x A [vrp_solve()] result.
+#' @param show_clients Reserved; clients are always drawn.
+#' @param ... Unused.
+#' @return A `ggplot` object.
 #' @export
 plot.vrpr_result <- function(x, show_clients = TRUE, ...) {
-  rlang::check_installed("ggplot2", "para plotar soluções vrpr.")
+  rlang::check_installed("ggplot2", "to plot vrpr solutions.")
   locs <- x$problem_data$locations
   if (is.null(locs)) {
-    cli::cli_abort("Sem coordenadas para plotar (problem_data sem {.field locations}).")
+    cli::cli_abort("No coordinates to plot (problem_data has no {.field locations}).")
   }
 
   depots <- locs[locs$kind == "depot", , drop = FALSE]
@@ -26,12 +26,12 @@ plot.vrpr_result <- function(x, show_clients = TRUE, ...) {
   visited <- unique(rt$client)
   clients$visited <- clients$index %in% visited
 
-  custo <- if (is.finite(x$cost)) round(x$cost) else NA
-  subtitulo <- sprintf(
-    "%d rota(s) · %d cliente(s) · custo %s%s",
+  cost_lbl <- if (is.finite(x$cost)) round(x$cost) else NA
+  subtitle <- sprintf(
+    "%d route(s) · %d client(s) · cost %s%s",
     x$solution$summary$num_routes, nrow(clients),
-    if (is.na(custo)) "—" else custo,
-    if (x$is_feasible) "" else " · inviável"
+    if (is.na(cost_lbl)) "—" else cost_lbl,
+    if (x$is_feasible) "" else " · infeasible"
   )
 
   p <- ggplot2::ggplot()
@@ -55,23 +55,23 @@ plot.vrpr_result <- function(x, show_clients = TRUE, ...) {
     ) +
     ggplot2::scale_shape_manual(
       values = c(`TRUE` = 19, `FALSE` = 1),
-      labels = c(`TRUE` = "visitado", `FALSE` = "não visitado"),
+      labels = c(`TRUE` = "visited", `FALSE` = "not visited"),
       name = NULL, drop = FALSE
     ) +
     ggplot2::coord_equal() +
-    ggplot2::labs(title = "Solução VRP", subtitle = subtitulo,
-                  x = NULL, y = NULL, colour = "rota") +
+    ggplot2::labs(title = "VRP solution", subtitle = subtitle,
+                  x = NULL, y = NULL, colour = "route") +
     ggplot2::theme_minimal()
 }
 
-#' Plotar um modelo VRP (apenas depósitos e clientes)
+#' Plot a VRP model (depots and clients only)
 #'
-#' @param x Um [vrp_model()].
-#' @param ... Não usado.
-#' @return Um objeto `ggplot`.
+#' @param x A [vrp_model()].
+#' @param ... Unused.
+#' @return A `ggplot` object.
 #' @export
 plot.vrpr_model <- function(x, ...) {
-  rlang::check_installed("ggplot2", "para plotar modelos vrpr.")
+  rlang::check_installed("ggplot2", "to plot vrpr models.")
   depots <- x$depots
   clients <- x$clients
   ggplot2::ggplot() +
@@ -85,15 +85,15 @@ plot.vrpr_model <- function(x, ...) {
     ) +
     ggplot2::coord_equal() +
     ggplot2::labs(
-      title = "Modelo VRP",
-      subtitle = sprintf("%d depósito(s) · %d cliente(s)",
+      title = "VRP model",
+      subtitle = sprintf("%d depot(s) · %d client(s)",
                          nrow(depots), nrow(clients)),
       x = NULL, y = NULL
     ) +
     ggplot2::theme_minimal()
 }
 
-# Monta o caminho de cada rota: depósito -> clientes (na ordem) -> depósito.
+# Builds each route's path: depot -> clients (in order) -> depot.
 route_paths <- function(rt, depots, clients) {
   if (nrow(rt) == 0) {
     return(tibble::tibble(x = double(), y = double(),
@@ -103,7 +103,7 @@ route_paths <- function(rt, depots, clients) {
     r <- r[order(r$position), , drop = FALSE]
     d <- depots[match(r$depot[1], depots$index), c("x", "y")]
     cs <- clients[match(r$client, clients$index), c("x", "y")]
-    xy <- rbind(d, cs, d) # fecha o ciclo no depósito
+    xy <- rbind(d, cs, d) # closes the loop at the depot
     tibble::tibble(
       x = xy$x, y = xy$y,
       route_id = r$route_id[1], ord = seq_len(nrow(xy))

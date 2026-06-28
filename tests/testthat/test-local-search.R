@@ -1,6 +1,6 @@
 cluster_cvrp <- function(n = 12, seed = 1) {
   withr::with_seed(seed, {
-    clientes <- tibble::tibble(
+    clients <- tibble::tibble(
       x = round(stats::runif(n, -50, 50)),
       y = round(stats::runif(n, -50, 50)),
       demand = 10
@@ -8,33 +8,33 @@ cluster_cvrp <- function(n = 12, seed = 1) {
   })
   vrp_model() |>
     add_depot(0, 0) |>
-    add_clients(clientes) |>
+    add_clients(clients) |>
     add_vehicle_type(num_available = 4, capacity = 40) |>
     vrp_problem_data()
 }
 
-test_that("o motor registra operadores de nó e de rota", {
+test_that("the engine registers node and route operators", {
   ls <- new_local_search(cluster_cvrp(), seed = 42)
   expect_gt(ls$info$num_node_operators, 0L)
-  # ao menos um operador deve estar ativo
+  # at least one operator should be active
   expect_gte(ls$info$num_node_operators + ls$info$num_route_operators, 1L)
 })
 
-test_that("a busca local não piora a solução (descida pura)", {
+test_that("local search does not worsen the solution (pure descent)", {
   pd <- cluster_cvrp()
   ce <- vrp_cost_evaluator(1000, 1000, 1000)
   ls <- new_local_search(pd, seed = 42)
 
-  inicial <- vrp_random_solution(pd, seed = 42)
-  melhor <- run_local_search(ls, inicial, ce, exhaustive = TRUE)
+  initial <- vrp_random_solution(pd, seed = 42)
+  best <- run_local_search(ls, initial, ce, exhaustive = TRUE)
 
-  c0 <- as.numeric(solution_cost(inicial, ce))
-  c1 <- as.numeric(solution_cost(melhor, ce))
+  c0 <- as.numeric(solution_cost(initial, ce))
+  c1 <- as.numeric(solution_cost(best, ce))
   expect_lte(c1, c0)
-  expect_true(melhor$summary$is_feasible)
+  expect_true(best$summary$is_feasible)
 })
 
-test_that("a busca local é reprodutível por seed", {
+test_that("local search is reproducible by seed", {
   pd <- cluster_cvrp()
   ce <- vrp_cost_evaluator(1000, 1000, 1000)
 

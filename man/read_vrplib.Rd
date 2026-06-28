@@ -2,23 +2,23 @@
 % Please edit documentation in R/read.R
 \name{read_vrplib}
 \alias{read_vrplib}
-\title{Ler uma instância no formato VRPLIB / TSPLIB}
+\title{Read an instance in VRPLIB / TSPLIB format}
 \usage{
 read_vrplib(path, num_vehicles = NULL)
 }
 \arguments{
-\item{path}{Caminho do arquivo \code{.vrp}.}
+\item{path}{Path to the \code{.vrp} file.}
 
-\item{num_vehicles}{Número de veículos disponíveis. Se \code{NULL}, usa o campo
-\code{VEHICLES}/\code{TRUCKS}, o sufixo \verb{-k<n>} do nome, ou — como último recurso — o
-número de clientes (sempre viável).}
+\item{num_vehicles}{Number of available vehicles. If \code{NULL}, uses the
+\code{VEHICLES}/\code{TRUCKS} field, the \verb{-k<n>} suffix in the name, or -- as a last
+resort -- the number of clients (always feasible).}
 }
 \value{
-Um \code{\link[=vrp_model]{vrp_model()}} pronto para \code{\link[=vrp_solve]{vrp_solve()}}.
+A \code{\link[=vrp_model]{vrp_model()}} ready for \code{\link[=vrp_solve]{vrp_solve()}}.
 }
 \description{
-Lê instâncias CVRP (e VRPTW) no formato VRPLIB/CVRPLIB (TSPLIB estendido),
-como as do conjunto X de Uchoa et al. Suporta coordenadas Euclidianas
-(\code{EDGE_WEIGHT_TYPE : EUC_2D}); seções de janela de tempo e serviço são lidas
-quando presentes.
+Reads CVRP (and VRPTW) instances in VRPLIB/CVRPLIB format (extended TSPLIB),
+such as the X set by Uchoa et al. Supports Euclidean coordinates
+(\code{EDGE_WEIGHT_TYPE : EUC_2D}); time-window and service-time sections are read
+when present.
 }

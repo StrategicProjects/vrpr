@@ -1,16 +1,17 @@
 #!/usr/bin/env Rscript
-# tools/vendor.R — vendoriza o núcleo C++ do PyVRP em src/vendor/pyvrp/.
+# tools/vendor.R -- vendors PyVRP's C++ core into src/vendor/pyvrp/.
 #
-# Baixa o tarball da tag fixada em tools/PYVRP_VERSION, extrai e copia a árvore
-# `pyvrp/cpp/` verbatim para src/vendor/pyvrp/, registrando a versão. NÃO compila
-# nem altera o build: a ligação cpp11 (substituir bindings.cpp do pybind11 e o
-# log spdlog) é um passo manual posterior, faithful ao upstream.
+# Downloads the tarball of the tag pinned in tools/PYVRP_VERSION, extracts it and
+# copies the `pyvrp/cpp/` tree verbatim into src/vendor/pyvrp/, recording the
+# version. It does NOT compile or change the build: the cpp11 wiring (replacing
+# pybind11's bindings.cpp and the spdlog logging) is a later manual step, kept
+# faithful to upstream.
 #
-# Uso (a partir da raiz do pacote):
-#   Rscript tools/vendor.R                # usa tools/PYVRP_VERSION
-#   Rscript tools/vendor.R v0.13.4        # versão explícita (não persiste o pino)
+# Usage (from the package root):
+#   Rscript tools/vendor.R                # uses tools/PYVRP_VERSION
+#   Rscript tools/vendor.R v0.13.4        # explicit version (does not persist the pin)
 #
-# Requer apenas base R (utils). Usa {cli} para logs se disponível.
+# Requires only base R (utils). Uses {cli} for logging if available.
 
 vendor_pyvrp <- function(version = NULL,
                          pkg_root = ".",
@@ -23,12 +24,12 @@ vendor_pyvrp <- function(version = NULL,
   version_file <- file.path(pkg_root, "tools", "PYVRP_VERSION")
   if (is.null(version)) {
     if (!file.exists(version_file)) {
-      stop("tools/PYVRP_VERSION não encontrado; passe a versão explicitamente.")
+      stop("tools/PYVRP_VERSION not found; pass the version explicitly.")
     }
     version <- trimws(readLines(version_file, warn = FALSE)[[1]])
   }
 
-  step(sprintf("Vendorizando PyVRP %s", version))
+  step(sprintf("Vendoring PyVRP %s", version))
 
   dest <- file.path(pkg_root, "src", "vendor", "pyvrp")
   url <- sprintf("https://github.com/%s/archive/refs/tags/%s.tar.gz", repo, version)
@@ -37,32 +38,32 @@ vendor_pyvrp <- function(version = NULL,
   exdir <- tempfile("pyvrp-src-")
   on.exit(unlink(c(tmp, exdir), recursive = TRUE, force = TRUE), add = TRUE)
 
-  inform(sprintf("Baixando %s", url))
+  inform(sprintf("Downloading %s", url))
   utils::download.file(url, tmp, mode = "wb", quiet = TRUE)
 
-  inform("Extraindo o tarball")
+  inform("Extracting the tarball")
   dir.create(exdir, recursive = TRUE, showWarnings = FALSE)
   utils::untar(tmp, exdir = exdir)
 
-  # Localiza a árvore .../pyvrp/cpp dentro do tarball extraído.
+  # Locate the .../pyvrp/cpp tree inside the extracted tarball.
   cpp_dirs <- list.dirs(exdir, recursive = TRUE, full.names = TRUE)
   cpp_dir <- cpp_dirs[grepl("/pyvrp/cpp$", cpp_dirs)]
   if (length(cpp_dir) != 1) {
-    stop("Não foi possível localizar 'pyvrp/cpp' no tarball (encontrados: ",
+    stop("Could not locate 'pyvrp/cpp' in the tarball (found: ",
          length(cpp_dir), ").")
   }
 
-  inform(sprintf("Copiando o núcleo C++ para %s", dest))
+  inform(sprintf("Copying the C++ core to %s", dest))
   unlink(dest, recursive = TRUE, force = TRUE)
   dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
-  # Copia o diretório cpp inteiro e o renomeia para o destino estável.
+  # Copy the whole cpp directory and rename it to the stable destination.
   file.copy(cpp_dir, dirname(dest), recursive = TRUE)
   file.rename(file.path(dirname(dest), "cpp"), dest)
 
-  # Inventário do que foi vendorizado.
+  # Inventory of what was vendored.
   files <- list.files(dest, recursive = TRUE)
   sources <- grep("\\.(h|hpp|cpp)$", files, value = TRUE)
-  # bindings.* usam pybind11 e logging.h usa spdlog: serão substituídos no port.
+  # bindings.* use pybind11 and logging.h uses spdlog: replaced in the port.
   to_replace <- grep("bindings\\.|logging\\.h$", sources, value = TRUE)
 
   writeLines(
@@ -71,17 +72,17 @@ vendor_pyvrp <- function(version = NULL,
       sprintf("tag: %s", version),
       sprintf("vendored_from: %s/pyvrp/cpp", repo),
       sprintf("n_source_files: %d", length(sources)),
-      "note: bindings.* (pybind11) e logging.h (spdlog) devem ser substituídos pela camada cpp11."
+      "note: bindings.* (pybind11) and logging.h (spdlog) are replaced by the cpp11 layer."
     ),
-    # NÃO usar o nome "VERSION": em FS case-insensitive (macOS) ele colidiria
-    # com o header padrão <version> do C++20 quando vendor/pyvrp está no -I.
+    # Do NOT use the name "VERSION": on a case-insensitive FS (macOS) it would
+    # clash with the C++20 standard header <version> when vendor/pyvrp is on -I.
     file.path(dest, "pyvrp_version.txt")
   )
 
-  ok(sprintf("PyVRP %s vendorizado: %d arquivos de código em src/vendor/pyvrp/",
+  ok(sprintf("Vendored PyVRP %s: %d source files under src/vendor/pyvrp/",
              version, length(sources)))
   if (length(to_replace) > 0) {
-    msg <- sprintf("A reconciliar manualmente na ligação cpp11: %s",
+    msg <- sprintf("To reconcile manually in the cpp11 wiring: %s",
                    paste(to_replace, collapse = ", "))
     if (have_cli) cli::cli_alert_warning(msg) else message(msg)
   }
@@ -90,7 +91,7 @@ vendor_pyvrp <- function(version = NULL,
                  n_sources = length(sources), to_replace = to_replace))
 }
 
-# Execução direta via Rscript.
+# Direct execution via Rscript.
 if (sys.nframe() == 0L) {
   args <- commandArgs(trailingOnly = TRUE)
   version <- if (length(args) >= 1) args[[1]] else NULL

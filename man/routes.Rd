@@ -2,21 +2,21 @@
 % Please edit documentation in R/solution.R
 \name{routes}
 \alias{routes}
-\title{Rotas de uma solução, em formato longo (tidy)}
+\title{Routes of a solution, in long (tidy) format}
 \usage{
 routes(x, ...)
 }
 \arguments{
-\item{x}{Um \code{\link[=vrp_solution]{vrp_solution()}}.}
+\item{x}{A \code{\link[=vrp_solution]{vrp_solution()}}.}
 
-\item{...}{Não usado.}
+\item{...}{Unused.}
 }
 \value{
-Um tibble com uma linha por visita: \code{route_id}, \code{depot} (depósito de
-partida, 1-based), \code{position}, \code{client}, \code{vehicle_type}, \code{start_service}
-(início do serviço) e \code{wait} (espera). As duas últimas só são significativas
-quando há janelas de tempo (VRPTW); \code{depot} varia no MDVRP.
+A tibble with one row per visit: \code{route_id}, \code{depot} (start depot,
+1-based), \code{position}, \code{client}, \code{vehicle_type}, \code{start_service} (start of
+service) and \code{wait} (waiting time). The last two are only meaningful with
+time windows (VRPTW); \code{depot} varies in the MDVRP.
 }
 \description{
-Rotas de uma solução, em formato longo (tidy)
+Routes of a solution, in long (tidy) format
 }

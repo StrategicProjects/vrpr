@@ -2,39 +2,38 @@
 % Please edit documentation in R/solve.R
 \name{vrp_solve}
 \alias{vrp_solve}
-\title{Resolver um modelo VRP}
+\title{Solve a VRP model}
 \usage{
 vrp_solve(model, stop, seed = 42L, params = ils_params(), display = TRUE)
 }
 \arguments{
-\item{model}{Um \code{\link[=vrp_model]{vrp_model()}} ou um \code{\link[=vrp_problem_data]{vrp_problem_data()}} já montado.}
+\item{model}{A \code{\link[=vrp_model]{vrp_model()}} or an already-assembled \code{\link[=vrp_problem_data]{vrp_problem_data()}}.}
 
-\item{stop}{Um critério de parada (ver \link{vrpr_stop}), p.ex. \code{max_runtime(10)}.}
+\item{stop}{A stopping criterion (see \link{vrpr_stop}), e.g. \code{max_runtime(10)}.}
 
-\item{seed}{Semente inteira para reprodutibilidade.}
+\item{seed}{Integer seed for reproducibility.}
 
-\item{params}{Parâmetros do solver (ver \code{\link[=ils_params]{ils_params()}}).}
+\item{params}{Solver parameters (see \code{\link[=ils_params]{ils_params()}}).}
 
-\item{display}{Mostrar progresso via \code{{cli}}?}
+\item{display}{Show progress via \code{{cli}}?}
 }
 \value{
-Um objeto \code{vrpr_result} com a melhor solução, custo, rotas e
-estatísticas da execução. Use \code{\link[=cost]{cost()}}, \code{\link[=routes]{routes()}} e \code{\link[=summary]{summary()}} para
-inspecioná-lo.
+A \code{vrpr_result} object with the best solution, cost, routes and run
+statistics. Use \code{\link[=cost]{cost()}}, \code{\link[=routes]{routes()}} and \code{\link[=summary]{summary()}} to inspect it.
 }
 \description{
-Executa o solver de \emph{iterated local search} (ILS) sobre um modelo, usando o
-núcleo C++ vendorizado do PyVRP.
+Runs the iterated local search (ILS) solver on a model, using PyVRP's vendored
+C++ core.
 }
 \examples{
 \dontrun{
-clientes <- tibble::tibble(
+clients <- tibble::tibble(
   x = c(10, 25, 40, 15), y = c(5, 30, 12, 22),
   demand = c(10, 15, 8, 12)
 )
 res <- vrp_model() |>
   add_depot(x = 0, y = 0) |>
-  add_clients(clientes) |>
+  add_clients(clients) |>
   add_vehicle_type(num_available = 3, capacity = 50) |>
   vrp_solve(stop = max_runtime(2))
 

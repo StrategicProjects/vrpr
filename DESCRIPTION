@@ -2,11 +2,17 @@ Package: vrpr
 Title: Vehicle Routing Problem Solver (PyVRP for R)
 Version: 0.0.0.9000
 Authors@R: c(
-    person("First", "Last", email = "leite@de.ufpe.br",
-           role = c("aut", "cre"),
-           comment = "TODO: preencher nome do(a) mantenedor(a)"),
-    person(family = "PyVRP contributors", role = c("ctb", "cph"),
-           comment = "Autores do nucleo C++ PyVRP vendorizado (MIT)")
+    person("Andre", "Leite", email = "leite@castlab.org", role = c("aut", "cre")),
+    person("Marcos", "Wasilew", email = "marcos.wasilew@gmail.com", role = "aut"),
+    person("Hugo", "Vasconcelos", email = "hugo.vasconcelos@ufpe.br", role = "aut"),
+    person("Carlos", "Amorin", email = "carlos.agaf@ufpe.br", role = "aut"),
+    person("Diogo", "Bezerra", email = "diogo.bezerra@ufpe.br", role = "aut"),
+    person("Niels", "Wouda", role = c("ctb", "cph"),
+           comment = "author of the vendored PyVRP C++ core"),
+    person("Thibaut", "Vidal", role = "cph",
+           comment = "HGS-CVRP, parts of the vendored C++ core"),
+    person("ORTEC", role = "cph",
+           comment = "HGS-DIMACS, parts of the vendored C++ core")
   )
 Description: A high-performance, tidyverse-style interface to vehicle routing
     problem (VRP) solving. Ports the PyVRP C++ core to R via cpp11, with no

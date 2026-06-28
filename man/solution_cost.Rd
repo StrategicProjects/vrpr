@@ -2,20 +2,20 @@
 % Please edit documentation in R/solution.R
 \name{solution_cost}
 \alias{solution_cost}
-\title{Custo de uma solução}
+\title{Cost of a solution}
 \usage{
 solution_cost(solution, cost_evaluator = NULL)
 }
 \arguments{
-\item{solution}{Um \code{\link[=vrp_solution]{vrp_solution()}}.}
+\item{solution}{A \code{\link[=vrp_solution]{vrp_solution()}}.}
 
-\item{cost_evaluator}{Um \code{\link[=vrp_cost_evaluator]{vrp_cost_evaluator()}}. Se \code{NULL}, usa um avaliador
-com penalidades unitárias.}
+\item{cost_evaluator}{A \code{\link[=vrp_cost_evaluator]{vrp_cost_evaluator()}}. If \code{NULL}, uses an evaluator
+with unit penalties.}
 }
 \value{
-O custo penalizado (escalar \code{numeric}). Para soluções viáveis é o
-custo objetivo; o atributo \code{feasible} indica a viabilidade.
+The penalised cost (a \code{numeric} scalar). For feasible solutions this
+is the objective cost; the \code{feasible} attribute reports feasibility.
 }
 \description{
-Custo de uma solução
+Cost of a solution
 }

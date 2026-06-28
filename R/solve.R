@@ -1,27 +1,26 @@
-#' Resolver um modelo VRP
+#' Solve a VRP model
 #'
-#' Executa o solver de *iterated local search* (ILS) sobre um modelo, usando o
-#' núcleo C++ vendorizado do PyVRP.
+#' Runs the iterated local search (ILS) solver on a model, using PyVRP's vendored
+#' C++ core.
 #'
-#' @param model Um [vrp_model()] ou um [vrp_problem_data()] já montado.
-#' @param stop Um critério de parada (ver [vrpr_stop]), p.ex. `max_runtime(10)`.
-#' @param seed Semente inteira para reprodutibilidade.
-#' @param params Parâmetros do solver (ver [ils_params()]).
-#' @param display Mostrar progresso via `{cli}`?
+#' @param model A [vrp_model()] or an already-assembled [vrp_problem_data()].
+#' @param stop A stopping criterion (see [vrpr_stop]), e.g. `max_runtime(10)`.
+#' @param seed Integer seed for reproducibility.
+#' @param params Solver parameters (see [ils_params()]).
+#' @param display Show progress via `{cli}`?
 #'
-#' @return Um objeto `vrpr_result` com a melhor solução, custo, rotas e
-#'   estatísticas da execução. Use [cost()], [routes()] e [summary()] para
-#'   inspecioná-lo.
+#' @return A `vrpr_result` object with the best solution, cost, routes and run
+#'   statistics. Use [cost()], [routes()] and [summary()] to inspect it.
 #' @export
 #' @examples
 #' \dontrun{
-#' clientes <- tibble::tibble(
+#' clients <- tibble::tibble(
 #'   x = c(10, 25, 40, 15), y = c(5, 30, 12, 22),
 #'   demand = c(10, 15, 8, 12)
 #' )
 #' res <- vrp_model() |>
 #'   add_depot(x = 0, y = 0) |>
-#'   add_clients(clientes) |>
+#'   add_clients(clients) |>
 #'   add_vehicle_type(num_available = 3, capacity = 50) |>
 #'   vrp_solve(stop = max_runtime(2))
 #'
@@ -30,7 +29,7 @@
 #' }
 vrp_solve <- function(model, stop, seed = 42L, params = ils_params(), display = TRUE) {
   if (!inherits(stop, "vrpr_stop")) {
-    cli::cli_abort("{.arg stop} deve ser um critério de parada (ver {.help vrpr_stop}).")
+    cli::cli_abort("{.arg stop} must be a stopping criterion (see {.help vrpr_stop}).")
   }
 
   problem_data <- if (inherits(model, "vrpr_problem_data")) {
@@ -43,8 +42,8 @@ vrp_solve <- function(model, stop, seed = 42L, params = ils_params(), display = 
   s <- problem_data$summary
   if (display) {
     cli::cli_alert_info(
-      "Resolvendo · {s$num_clients} cliente{?s} · {s$num_depots} depósito{?s} · \\
-       {s$num_vehicle_types} tipo{?s} de veículo"
+      "Solving · {s$num_clients} client{?s} · {s$num_depots} depot{?s} · \\
+       {s$num_vehicle_types} vehicle type{?s}"
     )
   }
 
@@ -53,11 +52,11 @@ vrp_solve <- function(model, stop, seed = 42L, params = ils_params(), display = 
   result <- new_result(ils, problem_data)
 
   if (display) {
-    feas <- if (result$is_feasible) "viável" else cli::col_red("nenhuma solução viável")
+    feas <- if (result$is_feasible) "feasible" else cli::col_red("no feasible solution")
     cli::cli_alert_success(
-      "Concluído em {round(result$runtime, 2)}s · custo \\
+      "Done in {round(result$runtime, 2)}s · cost \\
        {if (is.finite(result$cost)) round(result$cost) else '—'} · \\
-       {result$solution$summary$num_routes} rota{?s} · {feas}"
+       {result$solution$summary$num_routes} route{?s} · {feas}"
     )
   }
   result

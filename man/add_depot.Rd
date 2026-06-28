@@ -2,23 +2,23 @@
 % Please edit documentation in R/model.R
 \name{add_depot}
 \alias{add_depot}
-\title{Adicionar um depósito ao modelo}
+\title{Add a depot to the model}
 \usage{
 add_depot(model, x, y, tw_early = 0, tw_late = Inf, service = 0)
 }
 \arguments{
-\item{model}{Um \code{vrpr_model}.}
+\item{model}{A \code{vrpr_model}.}
 
-\item{x, y}{Coordenadas do depósito.}
+\item{x, y}{Depot coordinates.}
 
-\item{tw_early, tw_late}{Janela de tempo do depósito (abertura/fechamento).
-\code{tw_late = Inf} deixa o fechamento irrestrito.}
+\item{tw_early, tw_late}{Depot time window (opening/closing). \code{tw_late = Inf}
+leaves the closing time unconstrained.}
 
-\item{service}{Tempo de serviço no depósito (p.ex. carga), por viagem.}
+\item{service}{Service time at the depot (e.g. loading), per trip.}
 }
 \value{
-O \code{vrpr_model} atualizado.
+The updated \code{vrpr_model}.
 }
 \description{
-Adicionar um depósito ao modelo
+Add a depot to the model
 }

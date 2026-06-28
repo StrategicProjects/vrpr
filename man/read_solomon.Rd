@@ -2,20 +2,20 @@
 % Please edit documentation in R/read.R
 \name{read_solomon}
 \alias{read_solomon}
-\title{Ler uma instância VRPTW no formato Solomon}
+\title{Read a VRPTW instance in Solomon format}
 \usage{
 read_solomon(path, num_vehicles = NULL)
 }
 \arguments{
-\item{path}{Caminho do arquivo.}
+\item{path}{Path to the file.}
 
-\item{num_vehicles}{Número de veículos; se \code{NULL}, usa o valor do arquivo.}
+\item{num_vehicles}{Number of vehicles; if \code{NULL}, uses the value from the file.}
 }
 \value{
-Um \code{\link[=vrp_model]{vrp_model()}} pronto para \code{\link[=vrp_solve]{vrp_solve()}}.
+A \code{\link[=vrp_model]{vrp_model()}} ready for \code{\link[=vrp_solve]{vrp_solve()}}.
 }
 \description{
-Lê instâncias VRPTW no formato de Solomon (e Gehring-Homberger), com a seção
-\code{VEHICLE} (número e capacidade) e a tabela \code{CUSTOMER} (coordenadas, demanda,
-janela de tempo e tempo de serviço). O cliente 0 é o depósito.
+Reads VRPTW instances in Solomon (and Gehring-Homberger) format, with the
+\code{VEHICLE} section (number and capacity) and the \code{CUSTOMER} table (coordinates,
+demand, time window and service time). Customer 0 is the depot.
 }

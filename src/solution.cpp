@@ -1,9 +1,9 @@
-// Binding cpp11 de CostEvaluator, Solution, Route e RandomNumberGenerator.
+// cpp11 binding of CostEvaluator, Solution, Route and RandomNumberGenerator.
 //
-// Objetos de vida longa (ProblemData/Solution/CostEvaluator/RNG) trafegam como
-// external pointers. As visitas de uma rota são índices de localização do PyVRP
-// (depósitos primeiro); a conversão para "número do cliente" (1..C) é feita no
-// lado R. Medidas int64 voltam como double (< 2^53 em instâncias reais).
+// Long-lived objects (ProblemData/Solution/CostEvaluator/RNG) travel as external
+// pointers. A route's visits are PyVRP location indices (depots first); the
+// conversion to "client number" (1..C) is done on the R side. int64 measures
+// come back as doubles (< 2^53 in real instances).
 
 #include "measure_bridge.h"
 #include "vendor/pyvrp/CostEvaluator.h"
@@ -38,7 +38,7 @@ RandomNumberGenerator *as_rng(SEXP p)
     return external_pointer<RandomNumberGenerator>(p).get();
 }
 
-// Converte uma medida (Measure) do PyVRP em double para devolver ao R.
+// Converts a PyVRP measure (Measure) to a double to return to R.
 template <typename M> double meas(M const &m)
 {
     return static_cast<double>(m);
@@ -62,7 +62,7 @@ SEXP vrpr_cost_evaluator_create(doubles load_penalties,
     return external_pointer<CostEvaluator>(ce);
 }
 
-// Constrói uma Solution a partir de rotas dadas como índices de localização.
+// Builds a Solution from routes given as location indices.
 [[cpp11::register]]
 SEXP vrpr_solution_from_routes(SEXP pd, list routes)
 {
@@ -125,9 +125,9 @@ list vrpr_solution_summary(SEXP ptr)
     });
 }
 
-// Detalhe por rota: visitas (índices de localização), métricas e o cronograma
-// (início do serviço e espera) por visita de cliente — útil para VRPTW.
-// num_depots distingue depósitos (índices baixos) de clientes no schedule.
+// Per-route detail: visits (location indices), metrics and the schedule (start
+// of service and waiting time) per client visit -- useful for VRPTW. num_depots
+// distinguishes depots (low indices) from clients in the schedule.
 [[cpp11::register]]
 list vrpr_solution_routes(SEXP ptr, int num_depots)
 {
@@ -144,8 +144,8 @@ list vrpr_solution_routes(SEXP ptr, int num_depots)
         for (size_t i = 0; i != visits.size(); ++i)
             v[i] = static_cast<int>(visits[i]);
 
-        // Cronograma: entradas de cliente (location >= num_depots), em ordem,
-        // alinham-se 1:1 com visits().
+        // Schedule: client entries (location >= num_depots), in order,
+        // line up 1:1 with visits().
         writable::doubles start_service(static_cast<R_xlen_t>(visits.size()));
         writable::doubles wait(static_cast<R_xlen_t>(visits.size()));
         R_xlen_t k = 0;
@@ -176,7 +176,7 @@ list vrpr_solution_routes(SEXP ptr, int num_depots)
     return out;
 }
 
-// Custo penalizado (suavizado): finito mesmo para soluções inviáveis.
+// Penalised (smoothed) cost: finite even for infeasible solutions.
 [[cpp11::register]]
 double vrpr_penalised_cost(SEXP ce, SEXP sol)
 {

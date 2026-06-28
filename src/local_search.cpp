@@ -1,12 +1,13 @@
-// Binding cpp11 do motor de busca local (search/) do PyVRP.
+// cpp11 binding of PyVRP's local-search engine (search/).
 //
-// Empacota num único objeto persistente (LSBundle, exposto como external pointer)
-// tudo que a busca local precisa: uma cópia dos dados, o RNG, o PerturbationManager,
-// o conjunto de operadores (de nó e de rota) e o LocalSearch em si. Assim o futuro
-// laço ILS reutiliza o mesmo motor entre iterações.
+// Bundles into a single persistent object (LSBundle, exposed as an external
+// pointer) everything local search needs: a copy of the data, the RNG, the
+// PerturbationManager, the set of (node and route) operators and the LocalSearch
+// itself. This way the ILS loop reuses the same engine across iterations.
 //
-// LocalSearch::operator()(sol, ce, exhaustive=false) é UMA iteração ILS (perturba +
-// busca local até o ótimo local). Com exhaustive=true não perturba (descida pura).
+// LocalSearch::operator()(sol, ce, exhaustive=false) is ONE ILS iteration
+// (perturb + local search to a local optimum). With exhaustive=true it does not
+// perturb (pure descent).
 
 #include "measure_bridge.h"
 #include "vendor/pyvrp/CostEvaluator.h"
@@ -55,9 +56,9 @@ CostEvaluator *as_cost_evaluator(SEXP p)
     return external_pointer<CostEvaluator>(p).get();
 }
 
-// Vizinhança granular: para cada cliente, os k clientes mais próximos por
-// distância (perfil 0). Depósitos não têm vizinhos. Espelha o papel do
-// compute_neighbours do PyVRP (versão simples, por proximidade).
+// Granular neighbourhood: for each client, the k nearest clients by distance
+// (profile 0). Depots have no neighbours. Mirrors the role of PyVRP's
+// compute_neighbours (a simple, proximity-based version).
 SearchSpace::Neighbours compute_neighbours(ProblemData const &data, size_t k)
 {
     auto const num_loc = data.numLocations();
@@ -80,13 +81,13 @@ SearchSpace::Neighbours compute_neighbours(ProblemData const &data, size_t k)
         row.reserve(kk);
         for (size_t t = 0; t != kk; ++t)
             row.push_back(cand[t].second);
-        std::sort(row.begin(), row.end());  // ordem estável dos vizinhos
+        std::sort(row.begin(), row.end());  // stable neighbour order
         nb[i] = std::move(row);
     }
     return nb;
 }
 
-// Tudo que a busca local precisa, com tempos de vida amarrados juntos.
+// Everything local search needs, with lifetimes tied together.
 struct LSBundle
 {
     std::shared_ptr<ProblemData> data;
@@ -106,7 +107,7 @@ struct LSBundle
           pm(PerturbationParams(min_pert, max_pert)),
           ls(*data, compute_neighbours(*data, num_neighbours), pm)
     {
-        // Operadores de nó: família Exchange<N,M> (relocate/swap) + SwapTails (2-opt*).
+        // Node operators: the Exchange<N,M> family (relocate/swap) + SwapTails (2-opt*).
         add_node<pyvrp::search::Exchange<1, 0>>();
         add_node<pyvrp::search::Exchange<2, 0>>();
         add_node<pyvrp::search::Exchange<3, 0>>();
@@ -117,9 +118,9 @@ struct LSBundle
         add_node<pyvrp::search::Exchange<3, 2>>();
         add_node<pyvrp::search::Exchange<3, 3>>();
         add_node<pyvrp::search::SwapTails>();
-        add_node<pyvrp::search::RelocateWithDepot>();  // só ativo c/ reload depots
+        add_node<pyvrp::search::RelocateWithDepot>();  // only active with reload depots
 
-        // Operadores de rota.
+        // Route operators.
         add_route<pyvrp::search::SwapStar>();
         add_route<pyvrp::search::SwapRoutes>();
     }
@@ -162,9 +163,9 @@ SEXP vrpr_local_search_create(SEXP pd,
     return external_pointer<LSBundle>(bundle);
 }
 
-// Roda a busca local sobre `sol`, devolvendo uma nova solução (idealmente melhor).
-// exhaustive=false aplica uma perturbação antes (uma iteração ILS); true é descida
-// pura. shuffle=true randomiza a ordem dos movimentos/perturbações antes de rodar.
+// Runs local search on `sol`, returning a new (ideally better) solution.
+// exhaustive=false applies a perturbation first (one ILS iteration); true is pure
+// descent. shuffle=true randomises the order of moves/perturbations before running.
 [[cpp11::register]]
 SEXP vrpr_local_search_run(SEXP bundle, SEXP sol, SEXP ce, bool exhaustive, bool shuffle)
 {
@@ -177,7 +178,7 @@ SEXP vrpr_local_search_run(SEXP bundle, SEXP sol, SEXP ce, bool exhaustive, bool
     return external_pointer<Solution>(out);
 }
 
-// Número de operadores ativos (para inspeção/diagnóstico).
+// Number of active operators (for inspection/diagnostics).
 [[cpp11::register]]
 list vrpr_local_search_info(SEXP bundle)
 {

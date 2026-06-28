@@ -2,19 +2,19 @@
 % Please edit documentation in R/result.R
 \name{summary.vrpr_result}
 \alias{summary.vrpr_result}
-\title{Resumo de um resultado, em uma linha (tibble)}
+\title{One-row summary of a result (tibble)}
 \usage{
 \method{summary}{vrpr_result}(object, ...)
 }
 \arguments{
-\item{object}{Um \code{\link[=vrp_solve]{vrp_solve()}} resultado.}
+\item{object}{A \code{\link[=vrp_solve]{vrp_solve()}} result.}
 
-\item{...}{Não usado.}
+\item{...}{Unused.}
 }
 \value{
-Um tibble de uma linha com custo, viabilidade, nº de rotas, iterações
-e tempo.
+A one-row tibble with cost, feasibility, number of routes, iterations
+and runtime.
 }
 \description{
-Resumo de um resultado, em uma linha (tibble)
+One-row summary of a result (tibble)
 }

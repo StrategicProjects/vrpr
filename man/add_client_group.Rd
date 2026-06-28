@@ -2,26 +2,26 @@
 % Please edit documentation in R/model.R
 \name{add_client_group}
 \alias{add_client_group}
-\title{Adicionar um grupo de clientes mutuamente exclusivos}
+\title{Add a mutually exclusive group of clients}
 \usage{
 add_client_group(model, clients, required = FALSE)
 }
 \arguments{
-\item{model}{Um \code{vrpr_model}.}
+\item{model}{A \code{vrpr_model}.}
 
-\item{clients}{Vetor de números de cliente (1-based, na ordem de
-\code{\link[=add_clients]{add_clients()}}) que formam o grupo.}
+\item{clients}{Vector of client numbers (1-based, in the order of
+\code{\link[=add_clients]{add_clients()}}) that form the group.}
 
-\item{required}{Se \code{TRUE}, exatamente um cliente do grupo deve ser visitado;
-se \code{FALSE} (padrão), no máximo um.}
+\item{required}{If \code{TRUE}, exactly one client in the group must be visited;
+if \code{FALSE} (default), at most one.}
 }
 \value{
-O \code{vrpr_model} atualizado.
+The updated \code{vrpr_model}.
 }
 \description{
-Define um grupo do qual no máximo um cliente é visitado (ou exatamente um, se
-\code{required = TRUE}). Útil para \emph{prize-collecting} com alternativas excludentes
-(p.ex. atender um de vários pontos equivalentes). Os clientes do grupo passam
-automaticamente a opcionais (\code{required = FALSE} individual); use \code{prize} para
-incentivar a visita.
+Defines a group from which at most one client is visited (or exactly one if
+\code{required = TRUE}). Useful for prize-collecting with exclusive alternatives
+(e.g. serving one of several equivalent points). Clients in the group
+automatically become optional (individual \code{required = FALSE}); use \code{prize} to
+encourage a visit.
 }

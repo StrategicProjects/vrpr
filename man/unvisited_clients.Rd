@@ -2,19 +2,19 @@
 % Please edit documentation in R/result.R
 \name{unvisited_clients}
 \alias{unvisited_clients}
-\title{Clientes opcionais não visitados}
+\title{Unvisited optional clients}
 \usage{
 unvisited_clients(x, ...)
 }
 \arguments{
-\item{x}{Um \code{\link[=vrp_solve]{vrp_solve()}} resultado.}
+\item{x}{A \code{\link[=vrp_solve]{vrp_solve()}} result.}
 
-\item{...}{Não usado.}
+\item{...}{Unused.}
 }
 \value{
-Vetor inteiro com os números dos clientes (1-based) não visitados.
+An integer vector of the (1-based) client numbers not visited.
 }
 \description{
-Em problemas \emph{prize-collecting}, clientes com \code{required = FALSE} podem ficar
-de fora se o prêmio não compensar o custo de roteirização.
+In prize-collecting problems, clients with \code{required = FALSE} may be left out
+if the prize does not offset the routing cost.
 }

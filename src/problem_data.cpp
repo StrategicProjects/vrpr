@@ -1,9 +1,9 @@
-// Binding cpp11 do ProblemData do PyVRP.
+// cpp11 binding of PyVRP's ProblemData.
 //
-// Constrói um pyvrp::ProblemData a partir de vetores/matrizes de R (medidas como
-// double, ver measure_bridge.h) e o devolve como external pointer com finalizer.
-// Cobre o caso CVRP/VRPTW de uma dimensão de carga; variantes multidimensionais
-// virão depois (ver plano.md).
+// Builds a pyvrp::ProblemData from R vectors/matrices (measures as doubles, see
+// measure_bridge.h) and returns it as an external pointer with a finalizer.
+// Covers the single-load-dimension CVRP/VRPTW case; multi-dimensional variants
+// will come later.
 
 #include "measure_bridge.h"
 #include "vendor/pyvrp/ProblemData.h"
@@ -21,13 +21,13 @@ using pyvrp::ProblemData;
 
 namespace
 {
-// Constrói uma Matrix<T> do PyVRP (row-major) a partir de uma matriz de R.
+// Builds a PyVRP Matrix<T> (row-major) from an R matrix.
 template <typename T>
 pyvrp::Matrix<T> to_matrix(doubles_matrix<> const &m, char const *what)
 {
     auto const n = static_cast<std::size_t>(m.nrow());
     if (static_cast<std::size_t>(m.ncol()) != n)
-        cpp11::stop("%s deve ser quadrada.", what);
+        cpp11::stop("%s must be square.", what);
 
     std::vector<T> data;
     data.reserve(n * n);
@@ -39,8 +39,8 @@ pyvrp::Matrix<T> to_matrix(doubles_matrix<> const &m, char const *what)
 }
 }  // namespace
 
-// Cria um ProblemData. Localizações são ordenadas com os depósitos primeiro
-// (índices baixos), depois os clientes, conforme a convenção do PyVRP.
+// Creates a ProblemData. Locations are ordered with depots first (low indices),
+// then clients, following PyVRP's convention.
 [[cpp11::register]]
 SEXP vrpr_problem_data_create(doubles depot_x,
                               doubles depot_y,
@@ -81,30 +81,30 @@ SEXP vrpr_problem_data_create(doubles depot_x,
     for (R_xlen_t i = 0; i < depot_x.size(); ++i)
         depots.emplace_back(depot_x[i],
                             depot_y[i],
-                            vrpr::as_i64(depot_tw_early[i], "tw_early do depósito"),
-                            vrpr::as_i64_or_max(depot_tw_late[i], "tw_late do depósito"),
-                            vrpr::as_i64(depot_service[i], "service do depósito"));
+                            vrpr::as_i64(depot_tw_early[i], "tw_early (depot)"),
+                            vrpr::as_i64_or_max(depot_tw_late[i], "tw_late (depot)"),
+                            vrpr::as_i64(depot_service[i], "service (depot)"));
 
     std::vector<ProblemData::Client> clients;
     clients.reserve(client_x.size());
     for (R_xlen_t i = 0; i < client_x.size(); ++i)
     {
         std::vector<pyvrp::Load> const delivery{
-            vrpr::as_i64(client_delivery[i], "demand do cliente")};
+            vrpr::as_i64(client_delivery[i], "demand (client)")};
         std::vector<pyvrp::Load> const pickup{
-            vrpr::as_i64(client_pickup[i], "pickup do cliente")};
+            vrpr::as_i64(client_pickup[i], "pickup (client)")};
 
         clients.emplace_back(client_x[i],
                              client_y[i],
                              delivery,
                              pickup,
-                             vrpr::as_i64(client_service[i], "service do cliente"),
-                             vrpr::as_i64(client_tw_early[i], "tw_early do cliente"),
-                             vrpr::as_i64_or_max(client_tw_late[i], "tw_late do cliente"),
-                             vrpr::as_i64(client_release[i], "release_time do cliente"),
-                             vrpr::as_i64(client_prize[i], "prize do cliente"),
+                             vrpr::as_i64(client_service[i], "service (client)"),
+                             vrpr::as_i64(client_tw_early[i], "tw_early (client)"),
+                             vrpr::as_i64_or_max(client_tw_late[i], "tw_late (client)"),
+                             vrpr::as_i64(client_release[i], "release_time (client)"),
+                             vrpr::as_i64(client_prize[i], "prize (client)"),
                              client_required[i] == TRUE,
-                             // -1 = sem grupo; senão índice 0-based do grupo.
+                             // -1 = no group; otherwise the 0-based group index.
                              client_group[i] < 0
                                  ? std::optional<size_t>(std::nullopt)
                                  : std::optional<size_t>(
@@ -112,9 +112,8 @@ SEXP vrpr_problem_data_create(doubles depot_x,
                              "");
     }
 
-    // Grupos de clientes (mutuamente exclusivos): membros são índices de
-    // localização; cada grupo pode ser obrigatório (visitar exatamente um) ou
-    // não (visitar no máximo um).
+    // Client groups (mutually exclusive): members are location indices; each group
+    // may be required (visit exactly one) or not (visit at most one).
     std::vector<ProblemData::ClientGroup> groups;
     groups.reserve(group_members.size());
     for (R_xlen_t g = 0; g < group_members.size(); ++g)
@@ -132,9 +131,9 @@ SEXP vrpr_problem_data_create(doubles depot_x,
     for (R_xlen_t i = 0; i < veh_num_available.size(); ++i)
     {
         std::vector<pyvrp::Load> const capacity{
-            vrpr::as_i64(veh_capacity[i], "capacity do veículo")};
+            vrpr::as_i64(veh_capacity[i], "capacity (vehicle)")};
 
-        // Depósitos de reload (multi-trip): índices de localização 0-based.
+        // Reload depots (multi-trip): 0-based location indices.
         integers reload_idx(veh_reload_depots[i]);
         std::vector<std::size_t> reload_depots;
         reload_depots.reserve(reload_idx.size());
@@ -151,13 +150,13 @@ SEXP vrpr_problem_data_create(doubles depot_x,
             capacity,
             static_cast<std::size_t>(veh_start_depot[i]),
             static_cast<std::size_t>(veh_end_depot[i]),
-            vrpr::as_i64(veh_fixed_cost[i], "fixed_cost do veículo"),
-            vrpr::as_i64(veh_tw_early[i], "tw_early do veículo"),
-            vrpr::as_i64_or_max(veh_tw_late[i], "tw_late do veículo"),
-            vrpr::as_i64_or_max(veh_max_duration[i], "max_duration do veículo"),
-            vrpr::as_i64_or_max(veh_max_distance[i], "max_distance do veículo"),
-            vrpr::as_i64(veh_unit_distance_cost[i], "unit_distance_cost do veículo"),
-            vrpr::as_i64(veh_unit_duration_cost[i], "unit_duration_cost do veículo"),
+            vrpr::as_i64(veh_fixed_cost[i], "fixed_cost (vehicle)"),
+            vrpr::as_i64(veh_tw_early[i], "tw_early (vehicle)"),
+            vrpr::as_i64_or_max(veh_tw_late[i], "tw_late (vehicle)"),
+            vrpr::as_i64_or_max(veh_max_duration[i], "max_duration (vehicle)"),
+            vrpr::as_i64_or_max(veh_max_distance[i], "max_distance (vehicle)"),
+            vrpr::as_i64(veh_unit_distance_cost[i], "unit_distance_cost (vehicle)"),
+            vrpr::as_i64(veh_unit_duration_cost[i], "unit_duration_cost (vehicle)"),
             0,                           // profile
             std::nullopt,                // start_late
             std::vector<pyvrp::Load>{},  // initial_load
@@ -166,13 +165,13 @@ SEXP vrpr_problem_data_create(doubles depot_x,
     }
 
     std::vector<pyvrp::Matrix<pyvrp::Distance>> dist_mats;
-    dist_mats.push_back(to_matrix<pyvrp::Distance>(distance, "matriz de distância"));
+    dist_mats.push_back(to_matrix<pyvrp::Distance>(distance, "distance matrix"));
 
     std::vector<pyvrp::Matrix<pyvrp::Duration>> dur_mats;
-    dur_mats.push_back(to_matrix<pyvrp::Duration>(duration, "matriz de duração"));
+    dur_mats.push_back(to_matrix<pyvrp::Duration>(duration, "duration matrix"));
 
-    // O construtor chama validate() e lança std::exception em dados inconsistentes;
-    // o cpp11 traduz isso para um erro de R automaticamente.
+    // The constructor calls validate() and throws std::exception on inconsistent
+    // data; cpp11 translates that into an R error automatically.
     auto *data = new ProblemData(std::move(clients),
                                  std::move(depots),
                                  std::move(vehicle_types),
@@ -183,7 +182,7 @@ SEXP vrpr_problem_data_create(doubles depot_x,
     return external_pointer<ProblemData>(data);
 }
 
-// Resumo do ProblemData, para inspeção/round-trip no lado R.
+// ProblemData summary, for inspection/round-trip on the R side.
 [[cpp11::register]]
 list vrpr_problem_data_summary(SEXP ptr)
 {

@@ -2,19 +2,19 @@
 % Please edit documentation in R/result.R
 \name{cost}
 \alias{cost}
-\title{Custo de um resultado ou solução}
+\title{Cost of a result or solution}
 \usage{
 cost(x, ...)
 }
 \arguments{
-\item{x}{Um \code{\link[=vrp_solve]{vrp_solve()}} resultado ou uma \code{\link[=vrp_solution]{vrp_solution()}}.}
+\item{x}{A \code{\link[=vrp_solve]{vrp_solve()}} result or a \code{\link[=vrp_solution]{vrp_solution()}}.}
 
-\item{...}{Não usado.}
+\item{...}{Unused.}
 }
 \value{
-O custo objetivo (escalar \code{numeric}); \code{Inf} se nenhuma solução viável
-foi encontrada.
+The objective cost (a \code{numeric} scalar); \code{Inf} if no feasible solution
+was found.
 }
 \description{
-Custo de um resultado ou solução
+Cost of a result or solution
 }

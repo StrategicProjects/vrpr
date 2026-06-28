@@ -2,22 +2,22 @@
 % Please edit documentation in R/plot.R
 \name{plot.vrpr_result}
 \alias{plot.vrpr_result}
-\title{Plotar a solução de um resultado VRP}
+\title{Plot the solution of a VRP result}
 \usage{
 \method{plot}{vrpr_result}(x, show_clients = TRUE, ...)
 }
 \arguments{
-\item{x}{Um \code{\link[=vrp_solve]{vrp_solve()}} resultado.}
+\item{x}{A \code{\link[=vrp_solve]{vrp_solve()}} result.}
 
-\item{show_clients}{Rotular os clientes não visitados? (sempre desenhados).}
+\item{show_clients}{Reserved; clients are always drawn.}
 
-\item{...}{Não usado.}
+\item{...}{Unused.}
 }
 \value{
-Um objeto \code{ggplot}.
+A \code{ggplot} object.
 }
 \description{
-Desenha depósitos, clientes e as rotas (uma cor por rota) sobre as coordenadas
-da instância. Clientes opcionais não visitados (prize-collecting) aparecem como
-círculos vazados.
+Draws depots, clients and the routes (one colour per route) over the
+instance coordinates. Unvisited optional clients (prize-collecting) appear as
+hollow circles.
 }

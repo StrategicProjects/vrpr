@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{add_vehicle_type}
 \alias{add_vehicle_type}
-\title{Adicionar um tipo de veículo ao modelo}
+\title{Add a vehicle type to the model}
 \usage{
 add_vehicle_type(
   model,
@@ -22,43 +22,43 @@ add_vehicle_type(
 )
 }
 \arguments{
-\item{model}{Um \code{vrpr_model}.}
+\item{model}{A \code{vrpr_model}.}
 
-\item{num_available}{Quantidade de veículos disponíveis deste tipo.}
+\item{num_available}{Number of vehicles available of this type.}
 
-\item{capacity}{Capacidade do veículo.}
+\item{capacity}{Vehicle capacity.}
 
-\item{fixed_cost}{Custo fixo por veículo usado.}
+\item{fixed_cost}{Fixed cost per vehicle used.}
 
-\item{tw_early, tw_late}{Janela do turno do veículo (início/fim). \code{tw_late = Inf}
-deixa o fim do turno irrestrito.}
+\item{tw_early, tw_late}{Vehicle shift time window (start/end). \code{tw_late = Inf}
+leaves the end of the shift unconstrained.}
 
-\item{max_duration}{Duração máxima da rota. \code{Inf} = irrestrito.}
+\item{max_duration}{Maximum route duration. \code{Inf} = unconstrained.}
 
-\item{unit_distance_cost, unit_duration_cost}{Custos variáveis por unidade de
-distância e de duração deste tipo. Diferenciar estes (e \code{capacity},
-\code{fixed_cost}) entre chamadas habilita a \strong{frota heterogênea}.}
+\item{unit_distance_cost, unit_duration_cost}{Variable cost per unit of
+distance and of duration for this type. Varying these (and \code{capacity},
+\code{fixed_cost}) across calls enables a \strong{heterogeneous fleet}.}
 
-\item{depot}{Índice (1-based) do depósito de onde os veículos deste tipo saem
-e ao qual retornam. Atalho para definir \code{start_depot} e \code{end_depot} juntos.}
+\item{depot}{Index (1-based) of the depot vehicles of this type start from and
+return to. Shortcut to set \code{start_depot} and \code{end_depot} together.}
 
-\item{start_depot, end_depot}{Índices (1-based) dos depósitos de partida e de
-retorno, na ordem de \code{\link[=add_depot]{add_depot()}}. Diferenciá-los entre tipos habilita o
-\strong{MDVRP} (múltiplos depósitos).}
+\item{start_depot, end_depot}{Indices (1-based) of the start and end depots, in
+the order of \code{\link[=add_depot]{add_depot()}}. Varying them across types enables the
+\strong{MDVRP} (multiple depots).}
 
-\item{reload_depots}{Índices (1-based) de depósitos onde os veículos deste
-tipo podem reabastecer/esvaziar no meio da rota, habilitando \strong{multi-trip}.
-Vazio (padrão) = sem reload.}
+\item{reload_depots}{Indices (1-based) of depots where vehicles of this type
+may reload/empty mid-route, enabling \strong{multi-trip} routes. Empty (default)
+= no reloading.}
 
-\item{max_reloads}{Número máximo de reloads por rota. \code{Inf} = irrestrito.}
+\item{max_reloads}{Maximum number of reloads per route. \code{Inf} = unconstrained.}
 }
 \value{
-O \code{vrpr_model} atualizado.
+The updated \code{vrpr_model}.
 }
 \description{
-Adicionar um tipo de veículo ao modelo
+Add a vehicle type to the model
 }
 \details{
-Chame \code{add_vehicle_type()} várias vezes para uma frota com múltiplos
-tipos de veículo (capacidades, custos, turnos ou depósitos distintos).
+Call \code{add_vehicle_type()} several times for a fleet with multiple
+vehicle types (different capacities, costs, shifts or depots).
 }

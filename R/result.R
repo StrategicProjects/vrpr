@@ -1,4 +1,4 @@
-# Resultado de vrp_solve(): a melhor solução + metadados da execução.
+# Result of vrp_solve(): the best solution + run metadata.
 
 new_result <- function(ils, problem_data) {
   structure(
@@ -14,12 +14,12 @@ new_result <- function(ils, problem_data) {
   )
 }
 
-#' Custo de um resultado ou solução
+#' Cost of a result or solution
 #'
-#' @param x Um [vrp_solve()] resultado ou uma [vrp_solution()].
-#' @param ... Não usado.
-#' @return O custo objetivo (escalar `numeric`); `Inf` se nenhuma solução viável
-#'   foi encontrada.
+#' @param x A [vrp_solve()] result or a [vrp_solution()].
+#' @param ... Unused.
+#' @return The objective cost (a `numeric` scalar); `Inf` if no feasible solution
+#'   was found.
 #' @export
 cost <- function(x, ...) {
   UseMethod("cost")
@@ -34,14 +34,14 @@ cost.vrpr_solution <- function(x, ...) solution_objective(x)
 #' @export
 routes.vrpr_result <- function(x, ...) routes(x$solution, ...)
 
-#' Clientes opcionais não visitados
+#' Unvisited optional clients
 #'
-#' Em problemas *prize-collecting*, clientes com `required = FALSE` podem ficar
-#' de fora se o prêmio não compensar o custo de roteirização.
+#' In prize-collecting problems, clients with `required = FALSE` may be left out
+#' if the prize does not offset the routing cost.
 #'
-#' @param x Um [vrp_solve()] resultado.
-#' @param ... Não usado.
-#' @return Vetor inteiro com os números dos clientes (1-based) não visitados.
+#' @param x A [vrp_solve()] result.
+#' @param ... Unused.
+#' @return An integer vector of the (1-based) client numbers not visited.
 #' @export
 unvisited_clients <- function(x, ...) {
   UseMethod("unvisited_clients")
@@ -53,12 +53,12 @@ unvisited_clients.vrpr_result <- function(x, ...) {
   setdiff(seq_len(total), routes(x$solution)$client)
 }
 
-#' Resumo de um resultado, em uma linha (tibble)
+#' One-row summary of a result (tibble)
 #'
-#' @param object Um [vrp_solve()] resultado.
-#' @param ... Não usado.
-#' @return Um tibble de uma linha com custo, viabilidade, nº de rotas, iterações
-#'   e tempo.
+#' @param object A [vrp_solve()] result.
+#' @param ... Unused.
+#' @return A one-row tibble with cost, feasibility, number of routes, iterations
+#'   and runtime.
 #' @export
 summary.vrpr_result <- function(object, ...) {
   s <- object$solution$summary
@@ -77,12 +77,12 @@ summary.vrpr_result <- function(object, ...) {
 #' @export
 print.vrpr_result <- function(x, ...) {
   s <- x$solution$summary
-  cli::cli_h1("resultado vrpr")
-  feas <- if (x$is_feasible) cli::col_green("viável") else cli::col_red("inviável")
+  cli::cli_h1("vrpr result")
+  feas <- if (x$is_feasible) cli::col_green("feasible") else cli::col_red("infeasible")
   cli::cli_bullets(c(
-    "*" = "custo {if (is.finite(x$cost)) round(x$cost) else '—'} · {feas}",
-    "*" = "{s$num_routes} rota{?s} · {s$num_clients} cliente{?s}",
-    "*" = "{x$iterations} iteraç{?ão/ões} · {round(x$runtime, 2)}s"
+    "*" = "cost {if (is.finite(x$cost)) round(x$cost) else '—'} · {feas}",
+    "*" = "{s$num_routes} route{?s} · {s$num_clients} client{?s}",
+    "*" = "{x$iterations} iteration{?s} · {round(x$runtime, 2)}s"
   ))
   invisible(x)
 }

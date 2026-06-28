@@ -2,7 +2,7 @@
 % Please edit documentation in R/ils.R
 \name{ils_params}
 \alias{ils_params}
-\title{Parâmetros do solver ILS}
+\title{ILS solver parameters}
 \usage{
 ils_params(
   num_neighbours = 20L,
@@ -10,19 +10,30 @@ ils_params(
   max_perturbations = 25L,
   init_load = 20,
   init_tw = 6,
-  init_dist = 6
+  init_dist = 6,
+  history_length = 300L,
+  num_iters_no_improvement = 150000L,
+  exhaustive_on_best = TRUE
 )
 }
 \arguments{
-\item{num_neighbours}{Tamanho da vizinhança granular (k vizinhos por cliente).}
+\item{num_neighbours}{Granular neighbourhood size (k neighbours per client).}
 
-\item{min_perturbations, max_perturbations}{Faixa de perturbações por iteração.}
+\item{min_perturbations, max_perturbations}{Range of perturbations per iteration.}
 
-\item{init_load, init_tw, init_dist}{Penalidades iniciais.}
+\item{init_load, init_tw, init_dist}{Initial penalties.}
+
+\item{history_length}{Length of the late-acceptance history (> 0). Default
+300, as in PyVRP.}
+
+\item{num_iters_no_improvement}{Iterations without improvement before
+restarting from the best.}
+
+\item{exhaustive_on_best}{Refine each new best with an exhaustive search?}
 }
 \value{
-Uma lista de parâmetros.
+A list of parameters.
 }
 \description{
-Parâmetros do solver ILS
+ILS solver parameters
 }

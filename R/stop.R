@@ -1,17 +1,17 @@
-#' Critérios de parada do solver
+#' Solver stopping criteria
 #'
-#' Controlam quando o laço de *iterated local search* deve terminar. Cada função
-#' devolve um objeto chamável (closure) que o solver invoca a cada iteração,
-#' recebendo o custo da melhor solução corrente e retornando `TRUE` para parar.
+#' Control when the iterated local search loop should terminate. Each function
+#' returns a callable object (closure) that the solver invokes every iteration,
+#' receiving the cost of the current best solution and returning `TRUE` to stop.
 #'
-#' São o equivalente R do módulo `pyvrp.stop` do PyVRP.
+#' These are the R equivalent of PyVRP's `pyvrp.stop` module.
 #'
-#' @param seconds Tempo máximo de execução, em segundos.
-#' @param max_iters Número máximo de iterações.
-#' @param n Número de iterações consecutivas sem melhora antes de parar.
+#' @param seconds Maximum run time, in seconds.
+#' @param max_iters Maximum number of iterations.
+#' @param n Number of consecutive iterations without improvement before stopping.
 #'
-#' @return Um objeto de classe `vrpr_stop`: uma função
-#'   `function(best_cost, feasible)` que retorna `TRUE`/`FALSE`.
+#' @return An object of class `vrpr_stop`: a function
+#'   `function(best_cost, feasible)` returning `TRUE`/`FALSE`.
 #' @name vrpr_stop
 NULL
 
@@ -23,9 +23,9 @@ new_stop <- function(fn, kind) {
 #' @export
 max_runtime <- function(seconds) {
   if (!rlang::is_scalar_double(seconds) && !rlang::is_scalar_integerish(seconds)) {
-    cli::cli_abort("{.arg seconds} deve ser um número escalar.")
+    cli::cli_abort("{.arg seconds} must be a scalar number.")
   }
-  if (seconds <= 0) cli::cli_abort("{.arg seconds} deve ser positivo.")
+  if (seconds <= 0) cli::cli_abort("{.arg seconds} must be positive.")
 
   start <- NULL
   new_stop(function(best_cost = NULL, feasible = NULL) {
@@ -39,7 +39,7 @@ max_runtime <- function(seconds) {
 #' @export
 max_iterations <- function(max_iters) {
   if (!rlang::is_scalar_integerish(max_iters) || max_iters <= 0) {
-    cli::cli_abort("{.arg max_iters} deve ser um inteiro positivo.")
+    cli::cli_abort("{.arg max_iters} must be a positive integer.")
   }
   seen <- 0L
   new_stop(function(best_cost = NULL, feasible = NULL) {
@@ -52,7 +52,7 @@ max_iterations <- function(max_iters) {
 #' @export
 no_improvement <- function(n) {
   if (!rlang::is_scalar_integerish(n) || n <= 0) {
-    cli::cli_abort("{.arg n} deve ser um inteiro positivo.")
+    cli::cli_abort("{.arg n} must be a positive integer.")
   }
   best <- Inf
   since <- 0L
@@ -79,6 +79,6 @@ first_feasible <- function() {
 #' @export
 print.vrpr_stop <- function(x, ...) {
   kind <- sub("^vrpr_stop_", "", setdiff(class(x), c("vrpr_stop", "function"))[1])
-  cli::cli_text("{.cls vrpr_stop} critério de parada: {.field {kind}}")
+  cli::cli_text("{.cls vrpr_stop} stopping criterion: {.field {kind}}")
   invisible(x)
 }

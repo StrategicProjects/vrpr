@@ -6,7 +6,7 @@
 \alias{max_iterations}
 \alias{no_improvement}
 \alias{first_feasible}
-\title{Critérios de parada do solver}
+\title{Solver stopping criteria}
 \usage{
 max_runtime(seconds)
 
@@ -17,21 +17,21 @@ no_improvement(n)
 first_feasible()
 }
 \arguments{
-\item{seconds}{Tempo máximo de execução, em segundos.}
+\item{seconds}{Maximum run time, in seconds.}
 
-\item{max_iters}{Número máximo de iterações.}
+\item{max_iters}{Maximum number of iterations.}
 
-\item{n}{Número de iterações consecutivas sem melhora antes de parar.}
+\item{n}{Number of consecutive iterations without improvement before stopping.}
 }
 \value{
-Um objeto de classe \code{vrpr_stop}: uma função
-\verb{function(best_cost, feasible)} que retorna \code{TRUE}/\code{FALSE}.
+An object of class \code{vrpr_stop}: a function
+\verb{function(best_cost, feasible)} returning \code{TRUE}/\code{FALSE}.
 }
 \description{
-Controlam quando o laço de \emph{iterated local search} deve terminar. Cada função
-devolve um objeto chamável (closure) que o solver invoca a cada iteração,
-recebendo o custo da melhor solução corrente e retornando \code{TRUE} para parar.
+Control when the iterated local search loop should terminate. Each function
+returns a callable object (closure) that the solver invokes every iteration,
+receiving the cost of the current best solution and returning \code{TRUE} to stop.
 }
 \details{
-São o equivalente R do módulo \code{pyvrp.stop} do PyVRP.
+These are the R equivalent of PyVRP's \code{pyvrp.stop} module.
 }

@@ -1,21 +1,23 @@
-# Laço Iterated Local Search (port fiel de IteratedLocalSearch.py do PyVRP).
+# Iterated Local Search loop (faithful port of PyVRP's IteratedLocalSearch.py).
 #
-# Usa Late Acceptance Hill-Climbing (Burke & Bykov, 2017): aceita o candidato se
-# ele melhora o custo de `history_length` iterações atrás OU o custo corrente.
-# Após `num_iters_no_improvement` iterações sem melhora, reinicia do melhor.
-# Ao encontrar um novo melhor, faz uma busca exaustiva (sem perturbação) para
-# refiná-lo. As penalidades são ajustadas adaptativamente entre iterações.
+# Uses Late Acceptance Hill-Climbing (Burke & Bykov, 2017): accepts the candidate
+# if it improves on the cost from `history_length` iterations ago OR the current
+# cost. After `num_iters_no_improvement` iterations without improvement, it
+# restarts from the best. When a new best is found, it runs an exhaustive search
+# (no perturbation) to refine it. Penalties are adjusted adaptively between
+# iterations.
 
-#' Parâmetros do solver ILS
+#' ILS solver parameters
 #'
-#' @param num_neighbours Tamanho da vizinhança granular (k vizinhos por cliente).
-#' @param min_perturbations,max_perturbations Faixa de perturbações por iteração.
-#' @param init_load,init_tw,init_dist Penalidades iniciais.
-#' @param history_length Comprimento do histórico do *late acceptance* (> 0).
-#'   Default 300, como no PyVRP.
-#' @param num_iters_no_improvement Iterações sem melhora antes de reiniciar do melhor.
-#' @param exhaustive_on_best Refinar cada novo melhor com uma busca exaustiva?
-#' @return Uma lista de parâmetros.
+#' @param num_neighbours Granular neighbourhood size (k neighbours per client).
+#' @param min_perturbations,max_perturbations Range of perturbations per iteration.
+#' @param init_load,init_tw,init_dist Initial penalties.
+#' @param history_length Length of the late-acceptance history (> 0). Default
+#'   300, as in PyVRP.
+#' @param num_iters_no_improvement Iterations without improvement before
+#'   restarting from the best.
+#' @param exhaustive_on_best Refine each new best with an exhaustive search?
+#' @return A list of parameters.
 #' @export
 ils_params <- function(num_neighbours = 20L,
                        min_perturbations = 1L,
@@ -37,15 +39,15 @@ ils_params <- function(num_neighbours = 20L,
   )
 }
 
-# Objetivo (custo sem penalidades de inviabilidade): custos de rota + prêmios não
-# coletados. Para instâncias sem clientes opcionais, uncollected_prizes = 0.
+# Objective (cost without infeasibility penalties): route costs + uncollected
+# prizes. For instances without optional clients, uncollected_prizes = 0.
 solution_objective <- function(sol) {
   s <- sol$summary
   s$distance_cost + s$duration_cost + s$fixed_vehicle_cost + s$uncollected_prizes
 }
 
-# Custo "verdadeiro" no estilo do CostEvaluator::cost do PyVRP: o objetivo se
-# viável, senão infinito (de modo que soluções inviáveis nunca viram o melhor).
+# "True" cost in the style of PyVRP's CostEvaluator::cost: the objective if
+# feasible, otherwise infinite (so infeasible solutions never become the best).
 feasible_cost <- function(sol) {
   if (isTRUE(sol$summary$is_feasible)) solution_objective(sol) else Inf
 }
@@ -69,7 +71,7 @@ run_ils <- function(problem_data, stop, seed = 42L,
                            exhaustive = TRUE)
   best <- curr <- init
 
-  # Ring buffer de soluções para o late acceptance.
+  # Ring buffer of solutions for the late acceptance.
   hlen <- max(1L, params$history_length)
   buf <- vector("list", hlen)
   ridx <- 0L
@@ -84,7 +86,7 @@ run_ils <- function(problem_data, stop, seed = 42L,
     ridx <<- 0L
   }
 
-  # Custo penalizado de uma solução sob o avaliador corrente.
+  # Penalised cost of a solution under the current evaluator.
   pen <- function(sol) as.numeric(solution_cost(sol, ce))
 
   iters <- 0L
@@ -94,8 +96,8 @@ run_ils <- function(problem_data, stop, seed = 42L,
   if (display) {
     cli::cli_progress_bar(
       format = paste0(
-        "{cli::pb_spin} ILS · iteração {iters} · ",
-        "melhor {if (is.finite(best_true)) round(best_true) else '—'} · ",
+        "{cli::pb_spin} ILS · iteration {iters} · ",
+        "best {if (is.finite(best_true)) round(best_true) else '—'} · ",
         "{cli::pb_elapsed}"
       ),
       clear = FALSE
@@ -136,7 +138,7 @@ run_ils <- function(problem_data, stop, seed = 42L,
     late <- ring_peek()
     late_cost <- if (is.null(late)) pen(init) else pen(late)
 
-    # LAHC (Burke & Bykov, 2017), com os dois reforços da seção 4.2.
+    # LAHC (Burke & Bykov, 2017), with both enhancements from section 4.2.
     if (cand_cost < late_cost || cand_cost < curr_cost) {
       curr <- cand
       curr_cost <- cand_cost

@@ -2,32 +2,27 @@
 % Please edit documentation in R/model.R
 \name{vrp_model}
 \alias{vrp_model}
-\title{Construir um modelo de roteirização (VRP)}
+\title{Build a vehicle routing (VRP) model}
 \usage{
 vrp_model()
 }
 \value{
-Um objeto \code{vrpr_model}.
+A \code{vrpr_model} object.
 }
 \description{
-\code{vrp_model()} cria um modelo vazio ao qual se adicionam depósitos, clientes e
-tipos de veículo via pipe (\verb{|>}). É o equivalente tidy da classe \code{Model} do
-PyVRP — a fronteira de dados usa tibbles, não objetos um a um.
-}
-\details{
-\strong{Fase 1 — em construção.} A estrutura da API e a validação já existem; a
-montagem do \code{ProblemData} em C++ (via cpp11) é ligada a seguir, conforme o
-roadmap em \code{plano.md}.
+\code{vrp_model()} creates an empty model to which depots, clients and vehicle
+types are added via the pipe (\verb{|>}). It is the tidy equivalent of PyVRP's
+\code{Model} class -- the data boundary uses tibbles, not one object at a time.
 }
 \examples{
-clientes <- tibble::tibble(
+clients <- tibble::tibble(
   x = c(10, 25, 40), y = c(5, 30, 12),
   demand = c(10, 15, 8)
 )
 \dontrun{
 m <- vrp_model() |>
   add_depot(x = 0, y = 0) |>
-  add_clients(clientes) |>
+  add_clients(clients) |>
   add_vehicle_type(num_available = 5, capacity = 100)
 }
 }

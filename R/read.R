@@ -1,18 +1,18 @@
-# Leitores de instâncias VRP em formatos-padrão (sem dependência de Python).
+# Readers for VRP instances in standard formats (no Python dependency).
 
-#' Ler uma instância no formato VRPLIB / TSPLIB
+#' Read an instance in VRPLIB / TSPLIB format
 #'
-#' Lê instâncias CVRP (e VRPTW) no formato VRPLIB/CVRPLIB (TSPLIB estendido),
-#' como as do conjunto X de Uchoa et al. Suporta coordenadas Euclidianas
-#' (`EDGE_WEIGHT_TYPE : EUC_2D`); seções de janela de tempo e serviço são lidas
-#' quando presentes.
+#' Reads CVRP (and VRPTW) instances in VRPLIB/CVRPLIB format (extended TSPLIB),
+#' such as the X set by Uchoa et al. Supports Euclidean coordinates
+#' (`EDGE_WEIGHT_TYPE : EUC_2D`); time-window and service-time sections are read
+#' when present.
 #'
-#' @param path Caminho do arquivo `.vrp`.
-#' @param num_vehicles Número de veículos disponíveis. Se `NULL`, usa o campo
-#'   `VEHICLES`/`TRUCKS`, o sufixo `-k<n>` do nome, ou — como último recurso — o
-#'   número de clientes (sempre viável).
+#' @param path Path to the `.vrp` file.
+#' @param num_vehicles Number of available vehicles. If `NULL`, uses the
+#'   `VEHICLES`/`TRUCKS` field, the `-k<n>` suffix in the name, or -- as a last
+#'   resort -- the number of clients (always feasible).
 #'
-#' @return Um [vrp_model()] pronto para [vrp_solve()].
+#' @return A [vrp_model()] ready for [vrp_solve()].
 #' @export
 read_vrplib <- function(path, num_vehicles = NULL) {
   parsed <- parse_vrplib(readLines(path, warn = FALSE))
@@ -22,26 +22,26 @@ read_vrplib <- function(path, num_vehicles = NULL) {
   ewt <- toupper(spec[["EDGE_WEIGHT_TYPE"]] %||% "EUC_2D")
   if (ewt != "EUC_2D") {
     cli::cli_abort(c(
-      "Só {.val EUC_2D} é suportado por ora; o arquivo usa {.val {ewt}}.",
-      "i" = "Instâncias com matriz explícita ainda não são lidas."
+      "Only {.val EUC_2D} is supported for now; the file uses {.val {ewt}}.",
+      "i" = "Instances with an explicit matrix are not read yet."
     ))
   }
   if (is.null(sec[["NODE_COORD_SECTION"]])) {
-    cli::cli_abort("Arquivo sem {.field NODE_COORD_SECTION}.")
+    cli::cli_abort("File without a {.field NODE_COORD_SECTION}.")
   }
 
   coords <- section_matrix(sec[["NODE_COORD_SECTION"]]) # id x y
   demand <- section_lookup(sec[["DEMAND_SECTION"]])     # id -> demand
   depot_ids <- depot_section_ids(sec[["DEPOT_SECTION"]])
-  if (length(depot_ids) == 0) depot_ids <- coords[1, 1] # convenção: nó 1
+  if (length(depot_ids) == 0) depot_ids <- coords[1, 1] # convention: node 1
 
-  tw <- section_matrix(sec[["TIME_WINDOW_SECTION"]])    # id early late (ou NULL)
+  tw <- section_matrix(sec[["TIME_WINDOW_SECTION"]])    # id early late (or NULL)
   svc <- section_lookup(sec[["SERVICE_TIME_SECTION"]])  # id -> service
 
   ids <- coords[, 1]
   is_depot <- ids %in% depot_ids
   capacity <- as.numeric(spec[["CAPACITY"]] %||% NA)
-  if (is.na(capacity)) cli::cli_abort("Arquivo sem {.field CAPACITY}.")
+  if (is.na(capacity)) cli::cli_abort("File without a {.field CAPACITY}.")
 
   tw_for <- function(id) {
     if (is.null(tw)) return(c(0, Inf))
@@ -72,22 +72,22 @@ read_vrplib <- function(path, num_vehicles = NULL) {
   model <- add_vehicle_type(model, num_available = n_av, capacity = capacity)
 
   cli::cli_alert_success(
-    "Lido {.val {spec[['NAME']] %||% basename(path)}}: {nrow(clients)} cliente{?s}, \\
-     {length(depot_ids)} depósito{?s}, capacidade {capacity}, {n_av} veículo{?s}."
+    "Read {.val {spec[['NAME']] %||% basename(path)}}: {nrow(clients)} client{?s}, \\
+     {length(depot_ids)} depot{?s}, capacity {capacity}, {n_av} vehicle{?s}."
   )
   model
 }
 
-#' Ler uma instância VRPTW no formato Solomon
+#' Read a VRPTW instance in Solomon format
 #'
-#' Lê instâncias VRPTW no formato de Solomon (e Gehring-Homberger), com a seção
-#' `VEHICLE` (número e capacidade) e a tabela `CUSTOMER` (coordenadas, demanda,
-#' janela de tempo e tempo de serviço). O cliente 0 é o depósito.
+#' Reads VRPTW instances in Solomon (and Gehring-Homberger) format, with the
+#' `VEHICLE` section (number and capacity) and the `CUSTOMER` table (coordinates,
+#' demand, time window and service time). Customer 0 is the depot.
 #'
-#' @param path Caminho do arquivo.
-#' @param num_vehicles Número de veículos; se `NULL`, usa o valor do arquivo.
+#' @param path Path to the file.
+#' @param num_vehicles Number of vehicles; if `NULL`, uses the value from the file.
 #'
-#' @return Um [vrp_model()] pronto para [vrp_solve()].
+#' @return A [vrp_model()] ready for [vrp_solve()].
 #' @export
 read_solomon <- function(path, num_vehicles = NULL) {
   lines <- readLines(path, warn = FALSE)
@@ -97,15 +97,15 @@ read_solomon <- function(path, num_vehicles = NULL) {
   numeric_rows <- function(k) Filter(function(t) length(t) == k && !anyNA(t), toks)
 
   veh <- numeric_rows(2)
-  if (length(veh) == 0) cli::cli_abort("Não encontrei a linha NUMBER/CAPACITY (Solomon).")
+  if (length(veh) == 0) cli::cli_abort("Could not find the NUMBER/CAPACITY line (Solomon).")
   n_av <- num_vehicles %||% veh[[1]][1]
   capacity <- veh[[1]][2]
 
   cust <- numeric_rows(7)
-  if (length(cust) == 0) cli::cli_abort("Não encontrei linhas de cliente (7 colunas).")
+  if (length(cust) == 0) cli::cli_abort("Could not find client rows (7 columns).")
   m <- do.call(rbind, cust) # cust_no x y demand ready due service
 
-  # Linha do depósito = cliente 0 (ou a primeira linha).
+  # Depot row = customer 0 (or the first row).
   depot_row <- which(m[, 1] == 0)
   if (length(depot_row) == 0) depot_row <- 1L
   depot_row <- depot_row[1]
@@ -128,17 +128,17 @@ read_solomon <- function(path, num_vehicles = NULL) {
     add_vehicle_type(num_available = n_av, capacity = capacity)
 
   cli::cli_alert_success(
-    "Lido {.val {name}}: {nrow(clients)} cliente{?s}, capacidade {capacity}, \\
-     {n_av} veículo{?s} (VRPTW)."
+    "Read {.val {name}}: {nrow(clients)} client{?s}, capacity {capacity}, \\
+     {n_av} vehicle{?s} (VRPTW)."
   )
   model
 }
 
-# ---- auxiliares de parsing ------------------------------------------------
+# ---- parsing helpers ------------------------------------------------------
 
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || (length(a) == 1 && is.na(a))) b else a
 
-# Separa um arquivo VRPLIB em especificação (KEY : VALUE) e seções (dados).
+# Splits a VRPLIB file into specification (KEY : VALUE) and sections (data).
 parse_vrplib <- function(lines) {
   spec <- list()
   sections <- list()
@@ -160,21 +160,21 @@ parse_vrplib <- function(lines) {
   list(spec = spec, sections = sections)
 }
 
-# Converte linhas de dados numéricos numa matriz.
+# Converts numeric data lines into a matrix.
 section_matrix <- function(data_lines) {
   if (is.null(data_lines) || length(data_lines) == 0) return(NULL)
   rows <- lapply(data_lines, function(l) as.numeric(strsplit(trimws(l), "\\s+")[[1]]))
   do.call(rbind, rows)
 }
 
-# Mapa id (chr) -> valor (2ª coluna).
+# Map id (chr) -> value (2nd column).
 section_lookup <- function(data_lines) {
   m <- section_matrix(data_lines)
   if (is.null(m)) return(list())
   stats::setNames(as.list(m[, 2]), as.character(m[, 1]))
 }
 
-# Ids de depósito (até o -1 terminador).
+# Depot ids (up to the -1 terminator).
 depot_section_ids <- function(data_lines) {
   m <- section_matrix(data_lines)
   if (is.null(m)) return(integer(0))
@@ -182,7 +182,7 @@ depot_section_ids <- function(data_lines) {
   ids[ids > 0]
 }
 
-# Número de veículos: campo VEHICLES/TRUCKS, sufixo -k<n> do nome, ou nº de clientes.
+# Number of vehicles: VEHICLES/TRUCKS field, -k<n> suffix of the name, or n clients.
 guess_num_vehicles <- function(spec, n_clients) {
   for (key in c("VEHICLES", "TRUCKS")) {
     if (!is.null(spec[[key]])) return(as.integer(spec[[key]]))

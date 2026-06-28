@@ -1,20 +1,19 @@
-// Binding de sanidade da Fase 1: prova que o toolchain C++20 + cpp11 funciona,
-// antes de ligar o núcleo C++ vendorizado do PyVRP (src/vendor/pyvrp/).
+// Sanity binding: proves the C++20 + cpp11 toolchain works, alongside the
+// vendored PyVRP C++ core (src/vendor/pyvrp/).
 //
-// Usa um recurso de C++20 (std::span / designated initializers via constexpr)
-// só para garantir que CXX_STD = CXX20 está em efeito.
+// Uses a C++20 feature header only to make sure CXX_STD = CXX20 is in effect.
 
 #include <cpp11.hpp>
 
 #include <string>
 
-// Retorna o padrão C++ efetivamente usado na compilação.
+// Returns the C++ standard actually used at compile time.
 [[cpp11::register]]
 int vrpr_cpp_standard() {
-  return static_cast<int>(__cplusplus / 100L % 100L);  // p.ex. 20 para C++20
+  return static_cast<int>(__cplusplus / 100L % 100L);  // e.g. 20 for C++20
 }
 
-// Confirma a presença de um header de feature do C++20.
+// Confirms the presence of a C++20 feature.
 [[cpp11::register]]
 bool vrpr_has_cxx20() {
 #if defined(__cpp_lib_span) || __cplusplus >= 202002L
@@ -24,8 +23,8 @@ bool vrpr_has_cxx20() {
 #endif
 }
 
-// Saudação trivial, útil como smoke test do binding cpp11.
+// Trivial greeting, handy as a smoke test of the cpp11 binding.
 [[cpp11::register]]
 std::string vrpr_hello() {
-  return std::string("vrpr: núcleo C++ pronto para receber o PyVRP");
+  return std::string("vrpr: C++ core ready, backed by PyVRP");
 }

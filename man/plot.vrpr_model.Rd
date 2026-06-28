@@ -2,18 +2,18 @@
 % Please edit documentation in R/plot.R
 \name{plot.vrpr_model}
 \alias{plot.vrpr_model}
-\title{Plotar um modelo VRP (apenas depósitos e clientes)}
+\title{Plot a VRP model (depots and clients only)}
 \usage{
 \method{plot}{vrpr_model}(x, ...)
 }
 \arguments{
-\item{x}{Um \code{\link[=vrp_model]{vrp_model()}}.}
+\item{x}{A \code{\link[=vrp_model]{vrp_model()}}.}
 
-\item{...}{Não usado.}
+\item{...}{Unused.}
 }
 \value{
-Um objeto \code{ggplot}.
+A \code{ggplot} object.
 }
 \description{
-Plotar um modelo VRP (apenas depósitos e clientes)
+Plot a VRP model (depots and clients only)
 }

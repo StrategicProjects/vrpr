@@ -1,9 +1,9 @@
-# Gerenciador de penalidades adaptativo (port do PenaltyManager do PyVRP).
+# Adaptive penalty manager (port of PyVRP's PenaltyManager).
 #
-# Mantém pesos de penalidade para carga, time warp e distância, e os ajusta com
-# base na fração recente de soluções viáveis em cada dimensão: penalidade sobe
-# quando há viabilidade de menos (restrição fraca) e desce quando há de mais
-# (restrição forte demais). Objeto mutável baseado em environment.
+# Keeps penalty weights for load, time warp and distance, and adjusts them based
+# on the recent fraction of feasible solutions in each dimension: a penalty rises
+# when there is too little feasibility (constraint too weak) and falls when there
+# is too much (constraint too strong). A mutable, environment-based object.
 
 new_penalty_manager <- function(num_load_dims = 1L,
                                 init_load = 20,
@@ -32,7 +32,7 @@ new_penalty_manager <- function(num_load_dims = 1L,
   self
 }
 
-# Ajusta um peso a partir da fração de viabilidade recente.
+# Adjusts a weight from the recent feasibility fraction.
 adjust_penalty <- function(value, feasible_buffer, p) {
   frac <- mean(feasible_buffer)
   if (frac < p$target - 0.05) {
@@ -43,8 +43,8 @@ adjust_penalty <- function(value, feasible_buffer, p) {
   max(p$min, min(p$max, value))
 }
 
-# Registra a viabilidade de uma solução (por dimensão) e atualiza os pesos a cada
-# `n` registros.
+# Registers a solution's feasibility (per dimension) and updates the weights
+# every `n` registrations.
 pm_register <- function(pm, load_feasible, tw_feasible, dist_feasible) {
   pm$buf_load <- c(pm$buf_load, load_feasible)
   pm$buf_tw <- c(pm$buf_tw, tw_feasible)
@@ -61,7 +61,7 @@ pm_register <- function(pm, load_feasible, tw_feasible, dist_feasible) {
   invisible(pm)
 }
 
-# Avaliador de custo com os pesos correntes.
+# Cost evaluator with the current weights.
 pm_cost_evaluator <- function(pm) {
   vrp_cost_evaluator(
     load_penalties = rep(pm$load, pm$num_load_dims),

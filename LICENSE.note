@@ -1,14 +1,15 @@
-vrpr — atribuição de licença
-============================
+vrpr — license attribution
+==========================
 
-O pacote `vrpr` é distribuído sob a licença MIT.
+The `vrpr` package is distributed under the MIT license.
 
-Ele vendoriza (em `src/vendor/pyvrp/`) o núcleo C++ do projeto PyVRP
-(https://github.com/PyVRP/PyVRP), também sob a licença MIT, © PyVRP contributors.
-A versão exata vendorizada está registrada em `tools/PYVRP_VERSION` e em
+It vendors (under `src/vendor/pyvrp/`) the C++ core of the PyVRP project
+(https://github.com/PyVRP/PyVRP), also under the MIT license, © PyVRP contributors.
+The exact vendored version is recorded in `tools/PYVRP_VERSION` and in
 `src/vendor/pyvrp/pyvrp_version.txt`.
 
-A camada de binding R↔C++ (`src/*.cpp` fora de `vendor/`), o código R em `R/` e a
-documentação são © vrpr authors, sob a mesma licença MIT.
+The R <-> C++ binding layer (`src/*.cpp` outside `vendor/`), the R code in `R/`, and
+the documentation are © vrpr authors, under the same MIT license.
 
-O texto completo da licença MIT está em LICENSE.md.
+See `inst/COPYRIGHTS` for the detailed copyright breakdown and LICENSE.md for the
+full MIT license text.

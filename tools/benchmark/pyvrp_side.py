@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-"""Lado PyVRP do benchmark de paridade. Resolve uma instância VRPLIB CVRP e
-imprime JSON com o melhor custo. A matriz de distância usa round-half-up
-(floor(d+0.5)), idêntica ao euclidean_matrix() do vrpr, para comparação justa.
+"""PyVRP side of the parity benchmark. Solves a VRPLIB CVRP instance and prints
+JSON with the best cost. The distance matrix uses round-half-up (floor(d+0.5)),
+identical to vrpr's euclidean_matrix(), for a fair comparison.
 
-Uso: python pyvrp_side.py <arquivo.vrp> <num_vehicles> <segundos> [seed]
+Usage: python pyvrp_side.py <file.vrp> <num_vehicles> <seconds> [seed]
 """
 import sys, json, numpy as np, vrplib
 from pyvrp import ProblemData, Client, Depot, VehicleType, Solution, CostEvaluator, solve
@@ -16,7 +16,7 @@ inst = vrplib.read_instance(path)
 coords = np.asarray(inst["node_coord"], float)
 demand = np.asarray(inst["demand"], int)
 cap = int(inst["capacity"])
-depot = int(np.asarray(inst["depot"]).ravel()[0])  # 0-based índice do depósito
+depot = int(np.asarray(inst["depot"]).ravel()[0])  # 0-based depot index
 
 n = len(coords)
 D = np.zeros((n, n), int)

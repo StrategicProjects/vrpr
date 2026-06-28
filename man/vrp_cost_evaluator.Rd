@@ -2,24 +2,24 @@
 % Please edit documentation in R/solution.R
 \name{vrp_cost_evaluator}
 \alias{vrp_cost_evaluator}
-\title{Avaliador de custo (CostEvaluator)}
+\title{Cost evaluator (CostEvaluator)}
 \usage{
 vrp_cost_evaluator(load_penalties = 1, tw_penalty = 1, dist_penalty = 1)
 }
 \arguments{
-\item{load_penalties}{Penalidade por unidade de carga em excesso, por dimensão
-de carga. Escalar é reciclado para todas as dimensões.}
+\item{load_penalties}{Penalty per unit of excess load, per load dimension. A
+scalar is recycled across all dimensions.}
 
-\item{tw_penalty}{Penalidade por unidade de \emph{time warp} (violação de janela).}
+\item{tw_penalty}{Penalty per unit of time warp (time-window violation).}
 
-\item{dist_penalty}{Penalidade por unidade de distância acima do máximo.}
+\item{dist_penalty}{Penalty per unit of distance above the maximum.}
 }
 \value{
-Um objeto \code{vrpr_cost_evaluator}.
+A \code{vrpr_cost_evaluator} object.
 }
 \description{
-Cria um avaliador de custo penalizado. Penalidades multiplicam as violações
-de restrições (carga, janela de tempo, distância máxima) para formar o custo
-suavizado que o solver minimiza. Para uma solução \emph{viável}, o custo penalizado
-coincide com o custo objetivo.
+Creates a penalised-cost evaluator. Penalties multiply constraint violations
+(load, time window, maximum distance) to form the smoothed cost the solver
+minimises. For a \emph{feasible} solution, the penalised cost equals the objective
+cost.
 }

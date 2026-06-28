@@ -2,20 +2,20 @@
 % Please edit documentation in R/solution.R
 \name{vrp_solution}
 \alias{vrp_solution}
-\title{Construir uma solução a partir de rotas explícitas}
+\title{Build a solution from explicit routes}
 \usage{
 vrp_solution(problem_data, routes)
 }
 \arguments{
-\item{problem_data}{Um \code{\link[=vrp_problem_data]{vrp_problem_data()}}.}
+\item{problem_data}{A \code{\link[=vrp_problem_data]{vrp_problem_data()}}.}
 
-\item{routes}{Lista de vetores inteiros; cada vetor é uma rota dada como
-\emph{números de cliente} (1..n_clientes), na ordem de visita. Todas as rotas
-usam o primeiro tipo de veículo.}
+\item{routes}{A list of integer vectors; each vector is a route given as
+\emph{client numbers} (1..n_clients), in visit order. All routes use the first
+vehicle type.}
 }
 \value{
-Um objeto \code{vrpr_solution}.
+A \code{vrpr_solution} object.
 }
 \description{
-Construir uma solução a partir de rotas explícitas
+Build a solution from explicit routes
 }

@@ -2,7 +2,7 @@ CXX_STD = CXX20
 
 PKG_CPPFLAGS = -Ivendor/pyvrp -DNDEBUG
 
-# Espelha src/Makevars: a lista de objetos deve incluir o núcleo e o search/.
+# Mirrors src/Makevars: the object list must include the core and search/.
 OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) \
           vendor/pyvrp/ProblemData.o \
           vendor/pyvrp/CostEvaluator.o \

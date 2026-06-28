@@ -1,20 +1,19 @@
-# O núcleo C++ do PyVRP exige C++20.
+# PyVRP's C++ core requires C++20.
 CXX_STD = CXX20
 
-# Os fontes em vendor/pyvrp/search/ incluem headers de topo ("Measure.h",
-# "ProblemData.h", ...) por nome curto. Includes relativos ao próprio arquivo
-# têm precedência (os headers homônimos em search/ não são sombreados), então
-# basta tornar o diretório de topo visível como fallback.
-# -DNDEBUG desliga os assert() do núcleo vendorizado (inclui os checks de overflow
-# do Measure.h), espelhando o build de release do PyVRP. A validação numérica na
-# fronteira (measure_bridge.h, limite 2^53) é o guard real no lado R.
+# Sources under vendor/pyvrp/search/ include top-level headers ("Measure.h",
+# "ProblemData.h", ...) by short name. Includer-relative includes take
+# precedence (the like-named headers in search/ are not shadowed), so we only
+# need to make the top-level directory visible as a fallback.
+#
+# -DNDEBUG disables the vendored core's assert()s in release (matching PyVRP's
+# release build); the 2^53 validation in measure_bridge.h is the real R-side guard.
 PKG_CPPFLAGS = -Ivendor/pyvrp -DNDEBUG
 
-# Compila a camada de binding (nível superior de src/) mais os fontes do núcleo
-# PyVRP vendorizado que já estão ligados. Acrescentar aqui novos .cpp do vendor
-# conforme as variantes forem sendo expostas (search/, etc.). bindings.cpp
-# (pybind11) e logging.h (spdlog) do vendor NÃO são compilados — são substituídos
-# pela camada cpp11.
+# Compiles the binding layer (top level of src/) plus the vendored PyVRP core
+# sources that are wired in. Add new vendor .cpp files here as variants are
+# exposed. The vendor's bindings.cpp (pybind11) and logging.h (spdlog) are NOT
+# compiled -- they are replaced by the cpp11 binding layer.
 OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) \
           vendor/pyvrp/ProblemData.o \
           vendor/pyvrp/CostEvaluator.o \
