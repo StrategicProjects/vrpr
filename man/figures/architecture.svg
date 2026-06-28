@@ -62,26 +62,21 @@
   </g>
 
   <!-- ===== flow arrows ===== -->
-  <defs>
-    <!-- Right-pointing triangles; orient="auto" rotates them to match each
-         line's direction (down for the flow lines, up for the results line). -->
-    <marker id="down" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
-      <path d="M0,0 L9,4 L0,8 Z" fill="#3fa7d6"/>
-    </marker>
-    <marker id="up" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="9" refY="4.5" orient="auto">
-      <path d="M0,0 L10,4.5 L0,9 Z" fill="#59cd90"/>
-    </marker>
-  </defs>
+  <!-- downward "build & solve" flow between layers: line + explicit DOWN triangle -->
+  <g fill="#3fa7d6" stroke="none">
+    <line x1="380" y1="214" x2="380" y2="232" stroke="#3fa7d6" stroke-width="2"/>
+    <path d="M372,231 L388,231 L380,242 Z"/>
+    <line x1="380" y1="332" x2="380" y2="350" stroke="#3fa7d6" stroke-width="2"/>
+    <path d="M372,349 L388,349 L380,360 Z"/>
+    <line x1="380" y1="416" x2="380" y2="434" stroke="#3fa7d6" stroke-width="2"/>
+    <path d="M372,433 L388,433 L380,444 Z"/>
+  </g>
 
-  <!-- downward "build & solve" flow on the left -->
-  <line x1="380" y1="216" x2="380" y2="236" stroke="#3fa7d6" stroke-width="2" marker-end="url(#down)"/>
-  <line x1="380" y1="334" x2="380" y2="354" stroke="#3fa7d6" stroke-width="2" marker-end="url(#down)"/>
-  <line x1="380" y1="418" x2="380" y2="438" stroke="#3fa7d6" stroke-width="2" marker-end="url(#down)"/>
-
-  <!-- upward "results" flow on the right column -->
-  <line x1="826" y1="520" x2="826" y2="150" stroke="#59cd90" stroke-width="2.5" marker-end="url(#up)"/>
+  <!-- upward "results" flow on the right: line + explicit UP triangle -->
+  <line x1="826" y1="520" x2="826" y2="162" stroke="#59cd90" stroke-width="2.5"/>
+  <path d="M817,164 L835,164 L826,151 Z" fill="#59cd90" stroke="none"/>
   <text x="826" y="540" text-anchor="middle" class="flow">solve</text>
-  <g transform="translate(848,335) rotate(-90)">
+  <g transform="translate(848,340) rotate(-90)">
     <text x="0" y="0" text-anchor="middle" class="flow" fill="#3a7d6a">results → cost() · routes() · plot()</text>
   </g>
 </svg>
