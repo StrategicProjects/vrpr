@@ -15,6 +15,7 @@
 ^\.idea$
 ^_pkgdown\.yml$
 ^docs$
+^vignettes/articles$
 ^pkgdown$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$

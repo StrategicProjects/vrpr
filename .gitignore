@@ -46,3 +46,4 @@ tools/benchmark/*.sol
 .vscode/
 .idea/
 *.swp
+docs/
