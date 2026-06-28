@@ -42,6 +42,15 @@ res <- m |> vrp_solve(stop = max_runtime(5))
 `read_vrplib()` lê CVRP/VRPTW no formato VRPLIB/TSPLIB (EUC_2D); `read_solomon()` lê VRPTW no
 formato de Solomon. Ambos devolvem um `vrpr_model`.
 
+### Visualizar
+
+```r
+plot(res)   # depósitos, clientes e rotas (uma cor por rota) com {ggplot2}
+```
+
+`plot()` (em um resultado ou modelo) desenha os depósitos (quadrados), os clientes (pontos;
+opcionais não visitados aparecem vazados) e as rotas coloridas. Requer `{ggplot2}`.
+
 ```r
 library(vrpr)
 

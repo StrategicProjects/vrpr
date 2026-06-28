@@ -29,6 +29,7 @@ Imports:
 LinkingTo:
     cpp11
 Suggests:
+    ggplot2,
     reticulate,
     testthat (>= 3.0.0),
     withr

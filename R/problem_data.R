@@ -119,8 +119,15 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     duration = duration
   )
 
+  # Localizações (depósitos depois clientes), guardadas para plotagem/inspeção.
+  locations <- tibble::tibble(
+    x = loc_x, y = loc_y,
+    kind = c(rep("depot", n_depots), rep("client", n_clients)),
+    index = c(seq_len(n_depots), seq_len(n_clients))
+  )
+
   structure(
-    list(ptr = ptr, summary = vrpr_problem_data_summary(ptr)),
+    list(ptr = ptr, summary = vrpr_problem_data_summary(ptr), locations = locations),
     class = "vrpr_problem_data"
   )
 }
