@@ -4,27 +4,41 @@
 \alias{vrp_solve}
 \title{Resolver um modelo VRP}
 \usage{
-vrp_solve(model, stop, seed = 42L, display = TRUE)
+vrp_solve(model, stop, seed = 42L, params = ils_params(), display = TRUE)
 }
 \arguments{
-\item{model}{Um \code{\link[=vrp_model]{vrp_model()}}.}
+\item{model}{Um \code{\link[=vrp_model]{vrp_model()}} ou um \code{\link[=vrp_problem_data]{vrp_problem_data()}} já montado.}
 
 \item{stop}{Um critério de parada (ver \link{vrpr_stop}), p.ex. \code{max_runtime(10)}.}
 
 \item{seed}{Semente inteira para reprodutibilidade.}
 
+\item{params}{Parâmetros do solver (ver \code{\link[=ils_params]{ils_params()}}).}
+
 \item{display}{Mostrar progresso via \code{{cli}}?}
 }
 \value{
-(Quando implementado) um objeto \code{vrpr_result} com a melhor solução,
-custo, rotas e estatísticas.
+Um objeto \code{vrpr_result} com a melhor solução, custo, rotas e
+estatísticas da execução. Use \code{\link[=cost]{cost()}}, \code{\link[=routes]{routes()}} e \code{\link[=summary]{summary()}} para
+inspecioná-lo.
 }
 \description{
-Executa o solver de \emph{iterated local search} (ILS) sobre um \code{vrpr_model},
-usando o núcleo C++ vendorizado do PyVRP.
+Executa o solver de \emph{iterated local search} (ILS) sobre um modelo, usando o
+núcleo C++ vendorizado do PyVRP.
 }
-\details{
-\strong{Fase 1 — em construção.} O laço ILS, o \code{PenaltyManager} e a montagem do
-\code{ProblemData} em C++ ainda estão sendo ligados (ver \code{plano.md}). Por ora esta
-função valida os argumentos e sinaliza claramente o que falta.
+\examples{
+\dontrun{
+clientes <- tibble::tibble(
+  x = c(10, 25, 40, 15), y = c(5, 30, 12, 22),
+  demand = c(10, 15, 8, 12)
+)
+res <- vrp_model() |>
+  add_depot(x = 0, y = 0) |>
+  add_clients(clientes) |>
+  add_vehicle_type(num_available = 3, capacity = 50) |>
+  vrp_solve(stop = max_runtime(2))
+
+cost(res)
+routes(res)
+}
 }

@@ -12,7 +12,27 @@ mas nenhum solver moderno, forte e amigável para VRP de produção.
 
 ## Status
 
-🚧 **Em planejamento / desenvolvimento inicial.** Ainda não é um pacote instalável.
+🚧 **Desenvolvimento inicial** — o **CVRP já resolve end-to-end** (Fase 1). VRPTW, frota
+heterogênea, múltiplos depósitos e prize-collecting estão no roadmap (Fase 2).
+
+```r
+library(vrpr)
+
+clientes <- tibble::tibble(
+  x = c(10, 25, 40, 15), y = c(5, 30, 12, 22),
+  demand = c(10, 15, 8, 12)
+)
+
+res <- vrp_model() |>
+  add_depot(x = 0, y = 0) |>
+  add_clients(clientes) |>
+  add_vehicle_type(num_available = 3, capacity = 50) |>
+  vrp_solve(stop = max_runtime(2))
+
+cost(res)      # custo objetivo
+routes(res)    # tibble: route_id, position, client, vehicle_type
+summary(res)   # resumo de uma linha
+```
 
 ## Variantes alvo
 
