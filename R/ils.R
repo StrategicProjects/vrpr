@@ -26,10 +26,12 @@ ils_params <- function(num_neighbours = 20L,
   )
 }
 
-# Objetivo (custo sem penalidades) de uma solução.
+# Objetivo (custo sem penalidades de inviabilidade) de uma solução: custos de
+# rota mais os prêmios NÃO coletados (clientes opcionais não visitados). Para
+# instâncias sem clientes opcionais, uncollected_prizes = 0.
 solution_objective <- function(sol) {
   s <- sol$summary
-  s$distance_cost + s$duration_cost + s$fixed_vehicle_cost
+  s$distance_cost + s$duration_cost + s$fixed_vehicle_cost + s$uncollected_prizes
 }
 
 # Uma solução conta como resultado quando é viável e completa.

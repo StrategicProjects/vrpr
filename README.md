@@ -12,8 +12,9 @@ mas nenhum solver moderno, forte e amigável para VRP de produção.
 
 ## Status
 
-🚧 **Desenvolvimento inicial** — **CVRP, VRPTW** (janelas de tempo), **frota heterogênea** e
-**múltiplos depósitos (MDVRP)** já resolvem end-to-end. Prize-collecting está no roadmap (Fase 2).
+🚧 **Desenvolvimento inicial** — **CVRP, VRPTW** (janelas de tempo), **frota heterogênea**,
+**múltiplos depósitos (MDVRP)** e **prize-collecting** (clientes opcionais + grupos mutuamente
+exclusivos) já resolvem end-to-end. Faltam variantes avançadas (pickup & delivery, multi-trip) e polish.
 
 - **VRPTW:** acrescente `tw_early`, `tw_late`, `service` aos clientes; `routes()` traz
   `start_service` e `wait` por visita.
@@ -21,6 +22,9 @@ mas nenhum solver moderno, forte e amigável para VRP de produção.
   (`fixed_cost`, `unit_distance_cost`) e turnos distintos.
 - **MDVRP:** chame `add_depot()` várias vezes e use `add_vehicle_type(depot = i)` para basear
   cada tipo de veículo num depósito; `routes()` traz a coluna `depot`.
+- **Prize-collecting:** marque clientes com `required = FALSE` e `prize`; o solver decide quais
+  visitar. `add_client_group()` define alternativas mutuamente exclusivas. Veja os pulados com
+  `unvisited_clients()`.
 
 ```r
 library(vrpr)

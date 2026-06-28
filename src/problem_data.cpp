@@ -67,6 +67,9 @@ SEXP vrpr_problem_data_create(doubles depot_x,
                               doubles veh_unit_duration_cost,
                               integers veh_start_depot,
                               integers veh_end_depot,
+                              integers client_group,
+                              list group_members,
+                              logicals group_required,
                               doubles_matrix<> distance,
                               doubles_matrix<> duration)
 {
@@ -98,8 +101,27 @@ SEXP vrpr_problem_data_create(doubles depot_x,
                              vrpr::as_i64(client_release[i], "release_time do cliente"),
                              vrpr::as_i64(client_prize[i], "prize do cliente"),
                              client_required[i] == TRUE,
-                             std::nullopt,
+                             // -1 = sem grupo; senão índice 0-based do grupo.
+                             client_group[i] < 0
+                                 ? std::optional<size_t>(std::nullopt)
+                                 : std::optional<size_t>(
+                                       static_cast<size_t>(client_group[i])),
                              "");
+    }
+
+    // Grupos de clientes (mutuamente exclusivos): membros são índices de
+    // localização; cada grupo pode ser obrigatório (visitar exatamente um) ou
+    // não (visitar no máximo um).
+    std::vector<ProblemData::ClientGroup> groups;
+    groups.reserve(group_members.size());
+    for (R_xlen_t g = 0; g < group_members.size(); ++g)
+    {
+        integers members(group_members[g]);
+        std::vector<size_t> cl;
+        cl.reserve(members.size());
+        for (R_xlen_t i = 0; i < members.size(); ++i)
+            cl.push_back(static_cast<size_t>(members[i]));
+        groups.emplace_back(cl, group_required[g] == TRUE, "");
     }
 
     std::vector<ProblemData::VehicleType> vehicle_types;
@@ -135,7 +157,8 @@ SEXP vrpr_problem_data_create(doubles depot_x,
                                  std::move(depots),
                                  std::move(vehicle_types),
                                  std::move(dist_mats),
-                                 std::move(dur_mats));
+                                 std::move(dur_mats),
+                                 std::move(groups));
 
     return external_pointer<ProblemData>(data);
 }
@@ -150,6 +173,7 @@ list vrpr_problem_data_summary(SEXP ptr)
     return writable::list({
         "num_clients"_nm = static_cast<int>(data->numClients()),
         "num_depots"_nm = static_cast<int>(data->numDepots()),
+        "num_groups"_nm = static_cast<int>(data->numGroups()),
         "num_locations"_nm = static_cast<int>(data->numLocations()),
         "num_vehicle_types"_nm = static_cast<int>(data->numVehicleTypes()),
         "num_vehicles"_nm = static_cast<int>(data->numVehicles()),

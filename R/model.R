@@ -39,10 +39,39 @@ vrp_model <- function() {
         tw_early = double(), tw_late = double(), max_duration = double(),
         unit_distance_cost = double(), unit_duration_cost = double(),
         start_depot = integer(), end_depot = integer()
-      )
+      ),
+      groups = list()
     ),
     class = "vrpr_model"
   )
+}
+
+#' Adicionar um grupo de clientes mutuamente exclusivos
+#'
+#' Define um grupo do qual no máximo um cliente é visitado (ou exatamente um, se
+#' `required = TRUE`). Útil para *prize-collecting* com alternativas excludentes
+#' (p.ex. atender um de vários pontos equivalentes). Os clientes do grupo passam
+#' automaticamente a opcionais (`required = FALSE` individual); use `prize` para
+#' incentivar a visita.
+#'
+#' @param model Um `vrpr_model`.
+#' @param clients Vetor de números de cliente (1-based, na ordem de
+#'   [add_clients()]) que formam o grupo.
+#' @param required Se `TRUE`, exatamente um cliente do grupo deve ser visitado;
+#'   se `FALSE` (padrão), no máximo um.
+#' @return O `vrpr_model` atualizado.
+#' @export
+add_client_group <- function(model, clients, required = FALSE) {
+  check_model(model)
+  clients <- as.integer(clients)
+  if (length(clients) < 1L) {
+    cli::cli_abort("Um grupo precisa de ao menos um cliente.")
+  }
+  if (anyDuplicated(clients)) {
+    cli::cli_abort("Um grupo não pode ter clientes repetidos.")
+  }
+  model$groups <- c(model$groups, list(list(clients = clients, required = required)))
+  model
 }
 
 #' Adicionar um depósito ao modelo
@@ -132,7 +161,8 @@ print.vrpr_model <- function(x, ...) {
   cli::cli_bullets(c(
     "*" = "{nrow(x$depots)} depósito{?s}",
     "*" = "{nrow(x$clients)} cliente{?s}",
-    "*" = "{nrow(x$vehicle_types)} tipo{?s} de veículo"
+    "*" = "{nrow(x$vehicle_types)} tipo{?s} de veículo",
+    if (length(x$groups) > 0) c("*" = "{length(x$groups)} grupo{?s} de clientes")
   ))
   invisible(x)
 }

@@ -34,6 +34,25 @@ cost.vrpr_solution <- function(x, ...) solution_objective(x)
 #' @export
 routes.vrpr_result <- function(x, ...) routes(x$solution, ...)
 
+#' Clientes opcionais não visitados
+#'
+#' Em problemas *prize-collecting*, clientes com `required = FALSE` podem ficar
+#' de fora se o prêmio não compensar o custo de roteirização.
+#'
+#' @param x Um [vrp_solve()] resultado.
+#' @param ... Não usado.
+#' @return Vetor inteiro com os números dos clientes (1-based) não visitados.
+#' @export
+unvisited_clients <- function(x, ...) {
+  UseMethod("unvisited_clients")
+}
+
+#' @export
+unvisited_clients.vrpr_result <- function(x, ...) {
+  total <- x$problem_data$summary$num_clients
+  setdiff(seq_len(total), routes(x$solution)$client)
+}
+
 #' Resumo de um resultado, em uma linha (tibble)
 #'
 #' @param object Um [vrp_solve()] resultado.

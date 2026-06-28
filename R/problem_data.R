@@ -53,6 +53,27 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     }
   }
 
+  # Grupos de clientes mutuamente exclusivos. Cada cliente pertence a no máximo
+  # um grupo; membros de grupo viram opcionais (o grupo carrega a obrigatoriedade).
+  n_clients <- nrow(cl)
+  client_group <- rep(-1L, n_clients) # índice 0-based do grupo, -1 = sem grupo
+  group_members <- list()
+  group_required <- logical(0)
+  for (g in seq_along(model$groups)) {
+    grp <- model$groups[[g]]
+    members <- grp$clients
+    if (any(members < 1L | members > n_clients)) {
+      cli::cli_abort("Grupo {g}: cliente fora de 1..{n_clients}.")
+    }
+    if (any(client_group[members] >= 0L)) {
+      cli::cli_abort("Um cliente não pode pertencer a dois grupos.")
+    }
+    client_group[members] <- g - 1L
+    cl$required[members] <- FALSE # o grupo é mutuamente exclusivo
+    group_members[[g]] <- as.integer(n_depots + members - 1L) # -> localização
+    group_required[g] <- isTRUE(grp$required)
+  }
+
   ptr <- vrpr_problem_data_create(
     depot_x = as.double(model$depots$x),
     depot_y = as.double(model$depots$y),
@@ -80,6 +101,9 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     veh_unit_duration_cost = as.double(vt$unit_duration_cost),
     veh_start_depot = as.integer(vt$start_depot - 1L),
     veh_end_depot = as.integer(vt$end_depot - 1L),
+    client_group = client_group,
+    group_members = group_members,
+    group_required = group_required,
     distance = distance,
     duration = duration
   )
