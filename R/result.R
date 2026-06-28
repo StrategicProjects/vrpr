@@ -66,6 +66,7 @@ summary.vrpr_result <- function(object, ...) {
     cost = object$cost,
     is_feasible = object$is_feasible,
     num_routes = s$num_routes,
+    num_trips = s$num_trips,
     num_clients = s$num_clients,
     distance = s$distance,
     iterations = object$iterations,

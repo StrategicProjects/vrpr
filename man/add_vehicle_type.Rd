@@ -16,7 +16,9 @@ add_vehicle_type(
   unit_duration_cost = 0,
   depot = 1L,
   start_depot = depot,
-  end_depot = depot
+  end_depot = depot,
+  reload_depots = integer(0),
+  max_reloads = Inf
 )
 }
 \arguments{
@@ -43,6 +45,12 @@ e ao qual retornam. Atalho para definir \code{start_depot} e \code{end_depot} ju
 \item{start_depot, end_depot}{Índices (1-based) dos depósitos de partida e de
 retorno, na ordem de \code{\link[=add_depot]{add_depot()}}. Diferenciá-los entre tipos habilita o
 \strong{MDVRP} (múltiplos depósitos).}
+
+\item{reload_depots}{Índices (1-based) de depósitos onde os veículos deste
+tipo podem reabastecer/esvaziar no meio da rota, habilitando \strong{multi-trip}.
+Vazio (padrão) = sem reload.}
+
+\item{max_reloads}{Número máximo de reloads por rota. \code{Inf} = irrestrito.}
 }
 \value{
 O \code{vrpr_model} atualizado.

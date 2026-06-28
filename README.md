@@ -12,9 +12,10 @@ mas nenhum solver moderno, forte e amigável para VRP de produção.
 
 ## Status
 
-🚧 **Desenvolvimento inicial** — **CVRP, VRPTW** (janelas de tempo), **frota heterogênea**,
-**múltiplos depósitos (MDVRP)** e **prize-collecting** (clientes opcionais + grupos mutuamente
-exclusivos) já resolvem end-to-end. Faltam variantes avançadas (pickup & delivery, multi-trip) e polish.
+🚧 **Desenvolvimento inicial** — **todas as variantes do PyVRP** já resolvem end-to-end: CVRP,
+VRPTW (janelas de tempo), frota heterogênea, MDVRP (múltiplos depósitos), prize-collecting
+(opcionais + grupos), coleta-e-entrega simultânea / backhaul e multi-trip. Próximo: polish (leitura
+de instâncias, gráficos, vignettes, CI, CRAN).
 
 - **VRPTW:** acrescente `tw_early`, `tw_late`, `service` aos clientes; `routes()` traz
   `start_service` e `wait` por visita.
@@ -25,6 +26,10 @@ exclusivos) já resolvem end-to-end. Faltam variantes avançadas (pickup & deliv
 - **Prize-collecting:** marque clientes com `required = FALSE` e `prize`; o solver decide quais
   visitar. `add_client_group()` define alternativas mutuamente exclusivas. Veja os pulados com
   `unvisited_clients()`.
+- **Coleta-e-entrega / backhaul:** acrescente a coluna `pickup` aos clientes (a carga coletada
+  conta para a capacidade ao longo da rota).
+- **Multi-trip:** `add_vehicle_type(reload_depots = i, max_reloads = k)` deixa um veículo voltar
+  ao depósito para reabastecer e fazer várias viagens (`summary()$num_trips`).
 
 ```r
 library(vrpr)

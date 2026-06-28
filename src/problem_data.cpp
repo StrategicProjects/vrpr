@@ -10,6 +10,7 @@
 
 #include <cpp11.hpp>
 
+#include <cmath>
 #include <limits>
 #include <optional>
 #include <string>
@@ -67,6 +68,8 @@ SEXP vrpr_problem_data_create(doubles depot_x,
                               doubles veh_unit_duration_cost,
                               integers veh_start_depot,
                               integers veh_end_depot,
+                              list veh_reload_depots,
+                              doubles veh_max_reloads,
                               integers client_group,
                               list group_members,
                               logicals group_required,
@@ -131,6 +134,18 @@ SEXP vrpr_problem_data_create(doubles depot_x,
         std::vector<pyvrp::Load> const capacity{
             vrpr::as_i64(veh_capacity[i], "capacity do veículo")};
 
+        // Depósitos de reload (multi-trip): índices de localização 0-based.
+        integers reload_idx(veh_reload_depots[i]);
+        std::vector<std::size_t> reload_depots;
+        reload_depots.reserve(reload_idx.size());
+        for (R_xlen_t r = 0; r < reload_idx.size(); ++r)
+            reload_depots.push_back(static_cast<std::size_t>(reload_idx[r]));
+
+        auto const max_reloads
+            = std::isinf(veh_max_reloads[i])
+                  ? std::numeric_limits<std::size_t>::max()
+                  : static_cast<std::size_t>(veh_max_reloads[i]);
+
         vehicle_types.emplace_back(
             static_cast<std::size_t>(veh_num_available[i]),
             capacity,
@@ -142,7 +157,12 @@ SEXP vrpr_problem_data_create(doubles depot_x,
             vrpr::as_i64_or_max(veh_max_duration[i], "max_duration do veículo"),
             vrpr::as_i64_or_max(veh_max_distance[i], "max_distance do veículo"),
             vrpr::as_i64(veh_unit_distance_cost[i], "unit_distance_cost do veículo"),
-            vrpr::as_i64(veh_unit_duration_cost[i], "unit_duration_cost do veículo"));
+            vrpr::as_i64(veh_unit_duration_cost[i], "unit_duration_cost do veículo"),
+            0,                           // profile
+            std::nullopt,                // start_late
+            std::vector<pyvrp::Load>{},  // initial_load
+            reload_depots,
+            max_reloads);
     }
 
     std::vector<pyvrp::Matrix<pyvrp::Distance>> dist_mats;

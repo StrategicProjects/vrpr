@@ -30,7 +30,7 @@ vrp_model <- function() {
         tw_early = double(), tw_late = double(), service = double()
       ),
       clients = tibble::tibble(
-        x = double(), y = double(), demand = double(),
+        x = double(), y = double(), demand = double(), pickup = double(),
         tw_early = double(), tw_late = double(), service = double(),
         release_time = double(), prize = double(), required = logical()
       ),
@@ -38,7 +38,8 @@ vrp_model <- function() {
         num_available = integer(), capacity = double(), fixed_cost = double(),
         tw_early = double(), tw_late = double(), max_duration = double(),
         unit_distance_cost = double(), unit_duration_cost = double(),
-        start_depot = integer(), end_depot = integer()
+        start_depot = integer(), end_depot = integer(),
+        reload_depots = list(), max_reloads = double()
       ),
       groups = list()
     ),
@@ -97,9 +98,10 @@ add_depot <- function(model, x, y, tw_early = 0, tw_late = Inf, service = 0) {
 #'
 #' @param model Um `vrpr_model`.
 #' @param data Um tibble/data.frame com, no mínimo, colunas `x` e `y`. Colunas
-#'   opcionais: `demand`, `tw_early`, `tw_late`, `service`, `release_time`,
-#'   `prize`, `required`. As janelas de tempo (`tw_early`/`tw_late`/`service`)
-#'   habilitam o VRPTW.
+#'   opcionais: `demand` (entrega), `pickup` (coleta), `tw_early`, `tw_late`,
+#'   `service`, `release_time`, `prize`, `required`. As janelas de tempo
+#'   (`tw_early`/`tw_late`/`service`) habilitam o VRPTW; `pickup` habilita
+#'   coleta-e-entrega simultânea / backhaul.
 #' @return O `vrpr_model` atualizado.
 #' @export
 add_clients <- function(model, data) {
@@ -130,6 +132,10 @@ add_clients <- function(model, data) {
 #' @param start_depot,end_depot Índices (1-based) dos depósitos de partida e de
 #'   retorno, na ordem de [add_depot()]. Diferenciá-los entre tipos habilita o
 #'   **MDVRP** (múltiplos depósitos).
+#' @param reload_depots Índices (1-based) de depósitos onde os veículos deste
+#'   tipo podem reabastecer/esvaziar no meio da rota, habilitando **multi-trip**.
+#'   Vazio (padrão) = sem reload.
+#' @param max_reloads Número máximo de reloads por rota. `Inf` = irrestrito.
 #' @details Chame `add_vehicle_type()` várias vezes para uma frota com múltiplos
 #'   tipos de veículo (capacidades, custos, turnos ou depósitos distintos).
 #' @return O `vrpr_model` atualizado.
@@ -137,7 +143,8 @@ add_clients <- function(model, data) {
 add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0,
                              tw_early = 0, tw_late = Inf, max_duration = Inf,
                              unit_distance_cost = 1, unit_duration_cost = 0,
-                             depot = 1L, start_depot = depot, end_depot = depot) {
+                             depot = 1L, start_depot = depot, end_depot = depot,
+                             reload_depots = integer(0), max_reloads = Inf) {
   check_model(model)
   model$vehicle_types <- tibble::add_row(
     model$vehicle_types,
@@ -150,7 +157,9 @@ add_vehicle_type <- function(model, num_available, capacity, fixed_cost = 0,
     unit_distance_cost = as.double(unit_distance_cost),
     unit_duration_cost = as.double(unit_duration_cost),
     start_depot = as.integer(start_depot),
-    end_depot = as.integer(end_depot)
+    end_depot = as.integer(end_depot),
+    reload_depots = list(as.integer(reload_depots)),
+    max_reloads = as.double(max_reloads)
   )
   model
 }
@@ -179,7 +188,7 @@ check_model <- function(model, call = rlang::caller_env()) {
 # Empilha clientes preenchendo colunas opcionais ausentes com defaults sensatos.
 vctrs_rbind_clients <- function(acc, data) {
   defaults <- list(
-    demand = 0, tw_early = 0, tw_late = Inf,
+    demand = 0, pickup = 0, tw_early = 0, tw_late = Inf,
     service = 0, release_time = 0, prize = 0, required = TRUE
   )
   for (col in names(defaults)) {

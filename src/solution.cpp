@@ -104,6 +104,7 @@ list vrpr_solution_summary(SEXP ptr)
 
     return writable::list({
         "num_routes"_nm = static_cast<int>(sol->numRoutes()),
+        "num_trips"_nm = static_cast<int>(sol->numTrips()),
         "num_clients"_nm = static_cast<int>(sol->numClients()),
         "num_missing_clients"_nm = static_cast<int>(sol->numMissingClients()),
         "is_feasible"_nm = static_cast<bool>(sol->isFeasible()),

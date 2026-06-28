@@ -53,6 +53,15 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     }
   }
 
+  # Multi-trip: depósitos de reload 1-based -> localização 0-based.
+  reload_loc <- lapply(vt$reload_depots, function(r) {
+    r <- as.integer(r)
+    if (length(r) > 0 && any(r < 1L | r > n_depots)) {
+      cli::cli_abort("{.field reload_depots} deve estar em 1..{n_depots}.")
+    }
+    as.integer(r - 1L)
+  })
+
   # Grupos de clientes mutuamente exclusivos. Cada cliente pertence a no máximo
   # um grupo; membros de grupo viram opcionais (o grupo carrega a obrigatoriedade).
   n_clients <- nrow(cl)
@@ -83,7 +92,7 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     client_x = as.double(cl$x),
     client_y = as.double(cl$y),
     client_delivery = as.double(cl$demand),
-    client_pickup = rep(0, nrow(cl)),
+    client_pickup = as.double(cl$pickup),
     client_service = as.double(cl$service),
     client_tw_early = as.double(cl$tw_early),
     client_tw_late = as.double(cl$tw_late),
@@ -101,6 +110,8 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     veh_unit_duration_cost = as.double(vt$unit_duration_cost),
     veh_start_depot = as.integer(vt$start_depot - 1L),
     veh_end_depot = as.integer(vt$end_depot - 1L),
+    veh_reload_depots = reload_loc,
+    veh_max_reloads = as.double(vt$max_reloads),
     client_group = client_group,
     group_members = group_members,
     group_required = group_required,
