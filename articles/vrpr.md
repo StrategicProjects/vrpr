@@ -66,7 +66,7 @@ summary(res)
 #> # A tibble: 1 × 8
 #>    cost is_feasible num_routes num_trips num_clients distance iterations runtime
 #>   <dbl> <lgl>            <int>     <int>       <int>    <dbl>      <int>   <dbl>
-#> 1   567 TRUE                 5         5          20      567        500   0.197
+#> 1   567 TRUE                 5         5          20      567        500   0.196
 ```
 
 If [ggplot2](https://ggplot2.tidyverse.org) is installed,
