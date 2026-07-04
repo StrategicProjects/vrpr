@@ -1,6 +1,8 @@
 # vrpr <img src="man/figures/logo.svg" align="right" height="139" alt="vrpr logo" />
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/vrpr)](https://CRAN.R-project.org/package=vrpr)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/vrpr)](https://CRAN.R-project.org/package=vrpr)
 [![R-CMD-check](https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/StrategicProjects/vrpr/actions/workflows/pkgdown.yaml/badge.svg)](https://strategicprojects.github.io/vrpr/)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
@@ -33,6 +35,14 @@ but no modern, strong, friendly solver for production vehicle routing.
 - **Reads standard instances** (VRPLIB / TSPLIB and Solomon) and **plots** solutions with ggplot2.
 
 ## Installation
+
+Install the released version from CRAN:
+
+```r
+install.packages("vrpr")
+```
+
+Or the development version from GitHub:
 
 ```r
 # install.packages("pak")
