@@ -2,6 +2,8 @@
 
 ## vrpr 0.1.0
 
+CRAN release: 2026-07-04
+
 First release.
 
 - A tidy, pipe-friendly R interface to the ‘PyVRP’ vehicle routing

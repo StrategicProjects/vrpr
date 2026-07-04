@@ -95,7 +95,11 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
+<p>Install the released version from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"vrpr"</span><span class="op">)</span></span></code></pre></div>
+<p>Or the development version from GitHub:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"StrategicProjects/vrpr"</span><span class="op">)</span></span></code></pre></div>
 <p>A C++20 toolchain is required to build from source (R &gt;= 4.3).</p>
@@ -103,7 +107,7 @@
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/StrategicProjects/vrpr" class="external-link">vrpr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">clients</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
@@ -168,7 +172,7 @@
 <div class="section level2">
 <h2 id="reading-standard-instances">Reading standard instances<a class="anchor" aria-label="anchor" href="#reading-standard-instances"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_vrplib.html">read_vrplib</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample-n6-k2.vrp"</span>, package <span class="op">=</span> <span class="st">"vrpr"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_solomon.html">read_solomon</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"sample-solomon.txt"</span>, package <span class="op">=</span> <span class="st">"vrpr"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">res</span> <span class="op">&lt;-</span> <span class="va">m</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/vrp_solve.html">vrp_solve</a></span><span class="op">(</span>stop <span class="op">=</span> <span class="fu"><a href="reference/vrpr_stop.html">max_runtime</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -200,6 +204,7 @@
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=vrpr" class="external-link">View on CRAN</a></li>
 <li><a href="https://github.com/StrategicProjects/vrpr/" class="external-link">Browse source code</a></li>
 <li><a href="https://github.com/StrategicProjects/vrpr/issues" class="external-link">Report a bug</a></li>
 </ul>
@@ -236,6 +241,8 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
+<li><a href="https://CRAN.R-project.org/package=vrpr" class="external-link"><img src="https://www.r-pkg.org/badges/version/vrpr" alt="CRAN status"></a></li>
+<li><a href="https://CRAN.R-project.org/package=vrpr" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/vrpr" alt="CRAN downloads"></a></li>
 <li><a href="https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://strategicprojects.github.io/vrpr/"><img src="https://github.com/StrategicProjects/vrpr/actions/workflows/pkgdown.yaml/badge.svg" alt="pkgdown"></a></li>
 <li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
