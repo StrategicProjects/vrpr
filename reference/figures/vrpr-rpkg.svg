@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 231" width="200" height="231" role="img" aria-label="vrpr">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16323d"/>
+      <stop offset="1" stop-color="#0b1d24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- hexágono -->
+  <polygon points="100,8.5 192.7,62 192.7,169 100,222.5 7.3,169 7.3,62"
+           fill="url(#bg)" stroke="#59cd90" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- rotas (depósito -> cliente -> cliente -> depósito) -->
+  <g fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="100,96 58,74 50,104" stroke="#ee6352"/>
+    <polygon points="100,96 142,72 152,102" stroke="#3fa7d6"/>
+    <polygon points="100,96 90,48 120,50" stroke="#f7b801"/>
+  </g>
+
+  <!-- clientes -->
+  <g fill="#ffffff" stroke-width="2">
+    <circle cx="58" cy="74" r="5" stroke="#ee6352"/>
+    <circle cx="50" cy="104" r="5" stroke="#ee6352"/>
+    <circle cx="142" cy="72" r="5" stroke="#3fa7d6"/>
+    <circle cx="152" cy="102" r="5" stroke="#3fa7d6"/>
+    <circle cx="90" cy="48" r="5" stroke="#f7b801"/>
+    <circle cx="120" cy="50" r="5" stroke="#f7b801"/>
+  </g>
+
+  <!-- depósito -->
+  <rect x="91.5" y="87.5" width="17" height="17" rx="2.5"
+        fill="#ffd166" stroke="#16323d" stroke-width="2"/>
+
+  <!-- nome -->
+  <text x="100" y="176" text-anchor="middle"
+        font-family="'DejaVu Sans','Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="56" font-weight="700" fill="#ffffff" letter-spacing="1">vrpr</text>
+  <text x="100" y="194" text-anchor="middle"
+        font-family="'DejaVu Sans','Helvetica Neue',Helvetica,Arial,sans-serif"
+        font-size="8.5" font-weight="600" fill="#9fc6c0" letter-spacing="3">VRP SOLVER</text>
+</svg>
