@@ -1,3 +1,22 @@
+# vrpr 0.1.1
+
+Portability fixes for CRAN builders; no user-facing changes.
+
+* Fixed compilation with LLVM 23's libc++ (CRAN's clang23 additional checks),
+  which no longer provides `std::back_inserter` transitively: the vendored
+  `search/LocalSearch.cpp` and `Solution.cpp` now include `<iterator>`
+  explicitly.
+* Fixed compilation on the CRAN macOS builders that use Apple's MacOSX11.3 SDK
+  (r-release-macos-x86_64 and r-oldrel-macos), whose libc++ `<concepts>` lacks
+  `std::convertible_to`: a small compatibility shim (`vrpr_compat.h`) supplies
+  the concept where the standard library does not.
+* `Route::Iterator` in the vendored sources now declares all five iterator
+  member typedefs, as required by pre-C++20 `std::iterator_traits` on the same
+  older libc++ (verified by compiling every translation unit against the
+  MacOSX11.3 SDK's libc++ headers).
+* These fixups are applied by `tools/vendor.R` on top of the verbatim PyVRP
+  sources, so they survive re-vendoring.
+
 # vrpr 0.1.0
 
 First release.

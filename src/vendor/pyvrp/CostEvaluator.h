@@ -3,6 +3,7 @@
 
 #include "Measure.h"
 #include "Solution.h"
+#include "vrpr_compat.h"  // vrpr: compat::convertible_to fallback
 
 #include <cassert>
 #include <concepts>
@@ -20,7 +21,7 @@ concept CostEvaluatable = requires(T arg) {
     { arg.distanceCost() } -> std::same_as<Cost>;
     { arg.durationCost() } -> std::same_as<Cost>;
     { arg.fixedVehicleCost() } -> std::same_as<Cost>;
-    { arg.excessLoad() } -> std::convertible_to<std::vector<Load>>;
+    { arg.excessLoad() } -> compat::convertible_to<std::vector<Load>>;
     { arg.excessDistance() } -> std::same_as<Distance>;
     { arg.timeWarp() } -> std::same_as<Duration>;
     { arg.empty() } -> std::same_as<bool>;
@@ -40,8 +41,8 @@ concept PrizeCostEvaluatable = CostEvaluatable<T> && requires(T arg) {
 template <typename T>
 concept DeltaCostEvaluatable = requires(T arg, size_t dimension) {
     { arg.route() };
-    { arg.distance() } -> std::convertible_to<std::pair<Cost, Distance>>;
-    { arg.duration() } -> std::convertible_to<std::pair<Cost, Duration>>;
+    { arg.distance() } -> compat::convertible_to<std::pair<Cost, Distance>>;
+    { arg.duration() } -> compat::convertible_to<std::pair<Cost, Duration>>;
     { arg.excessLoad(dimension) } -> std::same_as<Load>;
 };
 

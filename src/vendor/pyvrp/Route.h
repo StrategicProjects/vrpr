@@ -46,6 +46,11 @@ public:
         using iterator_category = std::forward_iterator_tag;
         using difference_type = std::ptrdiff_t;
         using value_type = Client;
+        // vrpr: pre-C++20 std::iterator_traits (e.g. the libc++ in Apple's
+        // MacOSX11.3 SDK) requires all five member typedefs; these two match
+        // what the C++20 traits deduce (operator* returns Client by value).
+        using reference = Client;
+        using pointer = void;
 
         Iterator(Route const &route, size_t idx);
 

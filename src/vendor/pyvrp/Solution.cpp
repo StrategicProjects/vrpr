@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iterator>  // vrpr: std::back_inserter (libc++ >= 23)
 #include <numeric>
 #include <unordered_map>
 

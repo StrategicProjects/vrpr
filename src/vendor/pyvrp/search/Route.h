@@ -5,6 +5,7 @@
 #include "DurationSegment.h"
 #include "LoadSegment.h"
 #include "ProblemData.h"
+#include "vrpr_compat.h"  // vrpr: compat::convertible_to fallback
 
 #include <algorithm>
 #include <cassert>
@@ -23,9 +24,9 @@ concept Segment = requires(T arg, size_t profile, size_t dimension) {
     { arg.size() } -> std::same_as<size_t>;
     { arg.startsAtReloadDepot() } -> std::same_as<bool>;
     { arg.endsAtReloadDepot() } -> std::same_as<bool>;
-    { arg.distance(profile) } -> std::convertible_to<Distance>;
-    { arg.duration(profile) } -> std::convertible_to<DurationSegment>;
-    { arg.load(dimension) } -> std::convertible_to<LoadSegment>;
+    { arg.distance(profile) } -> compat::convertible_to<Distance>;
+    { arg.duration(profile) } -> compat::convertible_to<DurationSegment>;
+    { arg.load(dimension) } -> compat::convertible_to<LoadSegment>;
 };
 
 namespace detail

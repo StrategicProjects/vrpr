@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iterator>  // vrpr: std::back_inserter (libc++ >= 23)
 #include <numeric>
 
 using pyvrp::Solution;
