@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">vrpr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,15 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.1" id="vrpr-011">vrpr 0.1.1<a class="anchor" aria-label="anchor" href="#vrpr-011"></a></h2>
+<p>Portability fixes for CRAN builders; no user-facing changes.</p>
+<ul><li>Fixed compilation with LLVM 23’s libc++ (CRAN’s clang23 additional checks), which no longer provides <code>std::back_inserter</code> transitively: the vendored <code>search/LocalSearch.cpp</code> and <code>Solution.cpp</code> now include <code>&lt;iterator&gt;</code> explicitly.</li>
+<li>Fixed compilation on the CRAN macOS builders that use Apple’s MacOSX11.3 SDK (r-release-macos-x86_64 and r-oldrel-macos), whose libc++ <code>&lt;concepts&gt;</code> lacks <code>std::convertible_to</code>: a small compatibility shim (<code>vrpr_compat.h</code>) supplies the concept where the standard library does not.</li>
+<li>
+<code>Route::Iterator</code> in the vendored sources now declares all five iterator member typedefs, as required by pre-C++20 <code>std::iterator_traits</code> on the same older libc++ (verified by compiling every translation unit against the MacOSX11.3 SDK’s libc++ headers).</li>
+<li>These fixups are applied by <code>tools/vendor.R</code> on top of the verbatim PyVRP sources, so they survive re-vendoring.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="vrpr-010">vrpr 0.1.0<a class="anchor" aria-label="anchor" href="#vrpr-010"></a></h2><p class="text-muted">CRAN release: 2026-07-04</p>
 <p>First release.</p>
 <ul><li>A tidy, pipe-friendly R interface to the ‘PyVRP’ vehicle routing solver. PyVRP’s high-performance C++ core is vendored and rewired through ‘cpp11’, with no ‘Python’ runtime dependency.</li>
@@ -46,7 +55,8 @@
 <code><a href="../reference/read_vrplib.html">read_vrplib()</a></code> and <code><a href="../reference/read_solomon.html">read_solomon()</a></code> read standard VRPLIB/TSPLIB and Solomon instances; <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> draws solutions with ‘ggplot2’.</li>
 <li>The solver is a faithful port of PyVRP’s iterated local search; objective and solution-quality parity with PyVRP is verified in <code>tools/benchmark/</code>.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
@@ -54,7 +64,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>
