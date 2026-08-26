@@ -4,22 +4,38 @@ PKG_CPPFLAGS = -Ivendor/pyvrp -DNDEBUG
 
 # Mirrors src/Makevars: the object list must include the core and search/.
 OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp)) \
-          vendor/pyvrp/ProblemData.o \
+          vendor/pyvrp/Activity.o \
+          vendor/pyvrp/Client.o \
+          vendor/pyvrp/ClientGroup.o \
           vendor/pyvrp/CostEvaluator.o \
-          vendor/pyvrp/Solution.o \
-          vendor/pyvrp/Route.o \
-          vendor/pyvrp/Trip.o \
+          vendor/pyvrp/Depot.o \
           vendor/pyvrp/DurationSegment.o \
-          vendor/pyvrp/LoadSegment.o \
           vendor/pyvrp/DynamicBitset.o \
+          vendor/pyvrp/LoadSegment.o \
+          vendor/pyvrp/Location.o \
+          vendor/pyvrp/ProblemData.o \
           vendor/pyvrp/RandomNumberGenerator.o \
+          vendor/pyvrp/Route.o \
+          vendor/pyvrp/Shipment.o \
+          vendor/pyvrp/Solution.o \
+          vendor/pyvrp/VehicleType.o \
+          vendor/pyvrp/search/InsertOptionalClient.o \
+          vendor/pyvrp/search/InsertOptionalShipment.o \
           vendor/pyvrp/search/LocalSearch.o \
-          vendor/pyvrp/search/SearchSpace.o \
-          vendor/pyvrp/search/Route.o \
-          vendor/pyvrp/search/Solution.o \
-          vendor/pyvrp/search/primitives.o \
+          vendor/pyvrp/search/neighbourhood.o \
           vendor/pyvrp/search/PerturbationManager.o \
-          vendor/pyvrp/search/SwapTails.o \
-          vendor/pyvrp/search/SwapStar.o \
-          vendor/pyvrp/search/SwapRoutes.o \
-          vendor/pyvrp/search/RelocateWithDepot.o
+          vendor/pyvrp/search/RelocateAlternative.o \
+          vendor/pyvrp/search/RelocateDelivery.o \
+          vendor/pyvrp/search/RelocatePickup.o \
+          vendor/pyvrp/search/RelocateShipment.o \
+          vendor/pyvrp/search/RelocateWithDepot.o \
+          vendor/pyvrp/search/RemoveAdjacentDepot.o \
+          vendor/pyvrp/search/RemoveOptionalClient.o \
+          vendor/pyvrp/search/RemoveOptionalShipment.o \
+          vendor/pyvrp/search/ReplaceGroup.o \
+          vendor/pyvrp/search/ReplaceOptionalClient.o \
+          vendor/pyvrp/search/ReplaceOptionalShipment.o \
+          vendor/pyvrp/search/Route.o \
+          vendor/pyvrp/search/SearchSpace.o \
+          vendor/pyvrp/search/Solution.o \
+          vendor/pyvrp/search/SwapTails.o
