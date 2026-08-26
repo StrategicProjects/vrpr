@@ -61,11 +61,12 @@ res <- vrp_model() |>
 cost(res)
 #> [1] 105
 routes(res)
-#> # A tibble: 4 × 7
-#>   route_id depot position client vehicle_type start_service  wait
-#>      <int> <int>    <int>  <int>        <int>         <dbl> <dbl>
-#> 1        1     1        1      1            1            11     0
-#> 2        1     1        2      3            1            42     0
-#> 3        1     1        3      2            1            65     0
-#> 4        1     1        4      4            1            78     0
+#> # A tibble: 4 × 10
+#>   route_id depot position activity client shipment  trip vehicle_type
+#>      <int> <int>    <int> <chr>     <int>    <int> <int>        <int>
+#> 1        1     1        1 client        4       NA     1            1
+#> 2        1     1        2 client        2       NA     1            1
+#> 3        1     1        3 client        3       NA     1            1
+#> 4        1     1        4 client        1       NA     1            1
+#> # ℹ 2 more variables: start_service <dbl>, wait <dbl>
 ```

@@ -12,6 +12,8 @@ Build a VRP model by piping together depots, clients and vehicle types.
   : Add clients to the model
 - [`add_vehicle_type()`](https://strategicprojects.github.io/vrpr/reference/add_vehicle_type.md)
   : Add a vehicle type to the model
+- [`add_shipments()`](https://strategicprojects.github.io/vrpr/reference/add_shipments.md)
+  : Add shipments (pickup and delivery pairs) to the model
 - [`add_client_group()`](https://strategicprojects.github.io/vrpr/reference/add_client_group.md)
   : Add a mutually exclusive group of clients
 
@@ -41,6 +43,8 @@ Inspect and visualise a solution.
   : One-row summary of a result (tibble)
 - [`unvisited_clients()`](https://strategicprojects.github.io/vrpr/reference/unvisited_clients.md)
   : Unvisited optional clients
+- [`unplanned()`](https://strategicprojects.github.io/vrpr/reference/unplanned.md)
+  : Unplanned activities of a solution
 - [`plot(`*`<vrpr_result>`*`)`](https://strategicprojects.github.io/vrpr/reference/plot.vrpr_result.md)
   : Plot the solution of a VRP result
 - [`plot(`*`<vrpr_model>`*`)`](https://strategicprojects.github.io/vrpr/reference/plot.vrpr_model.md)

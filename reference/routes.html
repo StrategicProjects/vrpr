@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">vrpr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,10 +61,13 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with one row per visit: <code>route_id</code>, <code>depot</code> (start depot,
-1-based), <code>position</code>, <code>client</code>, <code>vehicle_type</code>, <code>start_service</code> (start of
-service) and <code>wait</code> (waiting time). The last two are only meaningful with
-time windows (VRPTW); <code>depot</code> varies in the MDVRP.</p>
+    <p>A tibble with one row per client, pickup or delivery visit:
+<code>route_id</code>, <code>depot</code> (start depot, 1-based), <code>position</code>, <code>activity</code>
+(<code>"client"</code>, <code>"pickup"</code> or <code>"delivery"</code>), <code>client</code> (client number, <code>NA</code>
+for shipment visits), <code>shipment</code> (shipment number, <code>NA</code> for client
+visits), <code>trip</code>, <code>vehicle_type</code>, <code>start_service</code> (start of service) and
+<code>wait</code> (waiting time). The last two are only meaningful with time windows
+(VRPTW); <code>depot</code> varies in the MDVRP; <code>trip</code> in multi-trip routes.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

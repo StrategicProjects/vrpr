@@ -6,12 +6,9 @@ ILS solver parameters
 
 ``` r
 ils_params(
-  num_neighbours = 20L,
+  num_neighbours = 50L,
   min_perturbations = 1L,
   max_perturbations = 25L,
-  init_load = 20,
-  init_tw = 6,
-  init_dist = 6,
   history_length = 300L,
   num_iters_no_improvement = 150000L,
   exhaustive_on_best = TRUE
@@ -22,15 +19,12 @@ ils_params(
 
 - num_neighbours:
 
-  Granular neighbourhood size (k neighbours per client).
+  Granular neighbourhood size (activities per neighbourhood). Default
+  50, as in PyVRP.
 
 - min_perturbations, max_perturbations:
 
   Range of perturbations per iteration.
-
-- init_load, init_tw, init_dist:
-
-  Initial penalties.
 
 - history_length:
 

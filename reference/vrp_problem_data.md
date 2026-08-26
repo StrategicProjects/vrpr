@@ -2,8 +2,8 @@
 
 Builds PyVRP's C++ `ProblemData` structure from a
 [`vrp_model()`](https://strategicprojects.github.io/vrpr/reference/vrp_model.md).
-Locations follow PyVRP's convention: depots first (low indices), then
-clients.
+Locations follow vrpr's convention: depots first (low indices), then
+clients, then one pickup and one delivery location per shipment.
 
 ## Usage
 
@@ -21,9 +21,9 @@ vrp_problem_data(model, distance = NULL, duration = NULL)
 
 - distance, duration:
 
-  Matrices (`numeric`, `n x n`, locations in depots-then-clients order)
-  of distance and duration. If `NULL`, they are computed as the rounded
-  Euclidean distance between coordinates; `duration` defaults to
+  Matrices (`numeric`, `n x n`, locations in depots/clients/shipments
+  order) of distance and duration. If `NULL`, they are computed as the
+  rounded Euclidean distance between coordinates; `duration` defaults to
   `distance`.
 
 ## Value

@@ -39,7 +39,7 @@ res
 #> ── vrpr result ─────────────────────────────────────────────────────────────────
 #> • cost 567 - feasible
 #> • 5 routes - 20 clients
-#> • 500 iterations - 0.2s
+#> • 500 iterations - 0.09s
 ```
 
 Inspect the result with
@@ -53,20 +53,22 @@ Inspect the result with
 cost(res)
 #> [1] 567
 head(routes(res))
-#> # A tibble: 6 × 7
-#>   route_id depot position client vehicle_type start_service  wait
-#>      <int> <int>    <int>  <int>        <int>         <dbl> <dbl>
-#> 1        1     1        1     11            1            29     0
-#> 2        1     1        2     12            1            41     0
-#> 3        1     1        3      1            1            75     0
-#> 4        1     1        4     19            1            99     0
-#> 5        2     1        1     14            1            33     0
-#> 6        2     1        2      2            1            35     0
+#> # A tibble: 6 × 10
+#>   route_id depot position activity client shipment  trip vehicle_type
+#>      <int> <int>    <int> <chr>     <int>    <int> <int>        <int>
+#> 1        1     1        1 client       16       NA     1            1
+#> 2        1     1        2 client        9       NA     1            1
+#> 3        1     1        3 client       15       NA     1            1
+#> 4        1     1        4 client       17       NA     1            1
+#> 5        2     1        1 client        8       NA     1            1
+#> 6        2     1        2 client       20       NA     1            1
+#> # ℹ 2 more variables: start_service <dbl>, wait <dbl>
 summary(res)
-#> # A tibble: 1 × 8
-#>    cost is_feasible num_routes num_trips num_clients distance iterations runtime
-#>   <dbl> <lgl>            <int>     <int>       <int>    <dbl>      <int>   <dbl>
-#> 1   567 TRUE                 5         5          20      567        500   0.197
+#> # A tibble: 1 × 9
+#>    cost is_feasible num_routes num_trips num_clients num_shipments distance
+#>   <dbl> <lgl>            <int>     <int>       <int>         <int>    <dbl>
+#> 1   567 TRUE                 5         5          20             0      567
+#> # ℹ 2 more variables: iterations <int>, runtime <dbl>
 ```
 
 If [ggplot2](https://ggplot2.tidyverse.org) is installed,
@@ -126,8 +128,8 @@ routes(res_tw)[, c("route_id", "client", "start_service", "wait")]
 #> 2        1      2            70     0
 #> 3        1      3            90     0
 #> 4        1      4           110     0
-#> 5        1      5           130     0
-#> 6        1      6           150     0
+#> 5        1      6           150    10
+#> 6        1      5           170     0
 ```
 
 ## Heterogeneous fleet
@@ -150,7 +152,7 @@ res_het <- vrp_solve(het, stop = max_iterations(500), seed = 1, display = FALSE)
 table(routes(res_het)$vehicle_type)
 #> 
 #>  1  2 
-#> 13  7
+#> 12  8
 ```
 
 ## Multiple depots (MDVRP)
@@ -178,13 +180,55 @@ routes(res_md)[, c("route_id", "depot", "client")]
 #> # A tibble: 6 × 3
 #>   route_id depot client
 #>      <int> <int>  <int>
-#> 1        1     1      1
+#> 1        1     1      2
 #> 2        1     1      3
-#> 3        1     1      2
-#> 4        2     2      4
+#> 3        1     1      1
+#> 4        2     2      5
 #> 5        2     2      6
-#> 6        2     2      5
+#> 6        2     2      4
 ```
+
+## Pickup and delivery (shipments)
+
+A *shipment* pairs a pickup point with a delivery point: the same
+vehicle must visit the pickup first and then the delivery, in the same
+trip. Add shipments with
+[`add_shipments()`](https://strategicprojects.github.io/vrpr/reference/add_shipments.md);
+they can be mixed freely with regular clients, time windows and every
+other feature.
+
+``` r
+
+sh <- tibble::tibble(
+  pickup_x   = c(-20, 10, 30),  pickup_y   = c(10, -25, 20),
+  delivery_x = c(25, -15, -30), delivery_y = c(-10, 30, -20),
+  amount     = c(4, 6, 3)
+)
+
+pdp <- vrp_model() |>
+  add_depot(0, 0) |>
+  add_shipments(sh) |>
+  add_vehicle_type(num_available = 2, capacity = 10)
+
+res_pdp <- vrp_solve(pdp, stop = max_iterations(300), seed = 1, display = FALSE)
+routes(res_pdp)
+#> # A tibble: 6 × 10
+#>   route_id depot position activity client shipment  trip vehicle_type
+#>      <int> <int>    <int> <chr>     <int>    <int> <int>        <int>
+#> 1        1     1        1 pickup       NA        1     1            1
+#> 2        1     1        2 pickup       NA        3     1            1
+#> 3        1     1        3 delivery     NA        1     1            1
+#> 4        1     1        4 pickup       NA        2     1            1
+#> 5        1     1        5 delivery     NA        3     1            1
+#> 6        1     1        6 delivery     NA        2     1            1
+#> # ℹ 2 more variables: start_service <dbl>, wait <dbl>
+```
+
+The `activity` column distinguishes pickups from deliveries, and
+`shipment` identifies the pair. Optional shipments (`required = FALSE`,
+with a `prize`) may be left out;
+[`unplanned()`](https://strategicprojects.github.io/vrpr/reference/unplanned.md)
+lists them.
 
 ## Prize-collecting
 

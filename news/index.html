@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">vrpr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,31 @@
       <small>Source: <a href="https://github.com/StrategicProjects/vrpr/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="vrpr-020">vrpr 0.2.0<a class="anchor" aria-label="anchor" href="#vrpr-020"></a></h2>
+<p>Upgrades the vendored solver core to <strong>PyVRP 0.14.0</strong> (from 0.13.4), a major upstream release that reworks the data model and the search engine.</p>
+<div class="section level3">
+<h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
+<ul><li>
+<strong>Pickup and delivery (shipments)</strong>: <code><a href="../reference/add_shipments.html">add_shipments()</a></code> adds paired pickup/delivery visits (same vehicle, pickup first, same trip), enabling the PDP/PDPTW family of problems. Solutions report <code>num_shipments</code> and <code>num_missing_shipments</code>.</li>
+<li>New <code><a href="../reference/unplanned.html">unplanned()</a></code> accessor: a tidy view of the optional clients and shipments left out of the solution (prize collecting).</li>
+<li>
+<code><a href="../reference/routes.html">routes()</a></code> now also reports <code>activity</code> (<code>"client"</code>, <code>"pickup"</code> or <code>"delivery"</code>), <code>shipment</code> and <code>trip</code> columns; client rows keep the previous columns, so pure client instances read as before.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="upstream-changes-tracked-0-2-0">Upstream changes tracked<a class="anchor" aria-label="anchor" href="#upstream-changes-tracked-0-2-0"></a></h3>
+<ul><li>The search engine follows PyVRP 0.14’s design: a single operator family (<code>Relocate</code>/<code>Swap</code> plus explicit optional-client/shipment/group operators) replaces the old node/route operator split; the granular neighbourhood is now computed by upstream C++ code (default <code>num_neighbours = 50</code>).</li>
+<li>The penalty manager follows PyVRP 0.14: midpoint initial penalties, violation-magnitude registration, update every 500 solutions and <code>penalty_decrease = 0.90</code>. The <code>init_load</code>/<code>init_tw</code>/<code>init_dist</code> arguments of <code><a href="../reference/ils_params.html">ils_params()</a></code> were removed accordingly.</li>
+<li>Internally, routes are sequences of typed activities; reload depots (multi trip) appear as depot activities inside the route.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
+<ul><li>
+<code><a href="../reference/ils_params.html">ils_params()</a></code> lost <code>init_load</code>, <code>init_tw</code> and <code>init_dist</code> (see above); <code>num_neighbours</code> now defaults to 50 (PyVRP’s default).</li>
+<li>
+<code><a href="../reference/routes.html">routes()</a></code> gains columns; code that relied on the exact column set should select explicitly.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.1" id="vrpr-011">vrpr 0.1.1<a class="anchor" aria-label="anchor" href="#vrpr-011"></a></h2>
 <p>Portability fixes for CRAN builders; no user-facing changes.</p>

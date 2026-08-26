@@ -39,7 +39,7 @@ res
 #> ── vrpr result ─────────────────────────────────────────────────────────────────
 #> • cost 722 - feasible
 #> • 4 routes - 24 clients
-#> • 800 iterations - 0.38s
+#> • 800 iterations - 0.18s
 plot(res)
 ```
 
@@ -77,8 +77,8 @@ routes(res_tw)[, c("route_id", "client", "start_service", "wait")]
 #> 2        1      2            70     0
 #> 3        1      3            90     0
 #> 4        1      4           110     0
-#> 5        1      5           130     0
-#> 6        1      6           150     0
+#> 5        1      6           150    10
+#> 6        1      5           170     0
 ```
 
 Notice that the solver may *delay departure* so that no time is wasted
