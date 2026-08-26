@@ -1,69 +1,37 @@
 #include "Route.h"
 
-#include <cmath>
-#include <numbers>
 #include <ostream>
 #include <utility>
 
 using pyvrp::search::Route;
 
-Route::Node::Node(size_t loc) : loc_(loc), idx_(0), trip_(0), route_(nullptr) {}
-
-void Route::Node::assign(Route *route, size_t idx, size_t trip)
+Route::Node::Node(Activity::ActivityType type, size_t idx)
+    : Node(Activity{type, idx})
 {
-    idx_ = idx;
+}
+
+Route::Node::Node(Activity activity)
+    : activity_(activity), pos_(0), trip_(0), route_(nullptr)
+{
+}
+
+void Route::Node::assign(Route *route, size_t pos, size_t trip)
+{
+    pos_ = pos;
     trip_ = trip;
     route_ = route;
 }
 
 void Route::Node::unassign()
 {
-    idx_ = 0;
+    pos_ = 0;
     trip_ = 0;
     route_ = nullptr;
 }
 
-Route::Iterator::Iterator(std::vector<Node *> const &nodes, size_t idx)
-    : nodes_(&nodes), idx_(idx)
-{
-    ensureValidIndex();
-}
-
-void Route::Iterator::ensureValidIndex()
-{
-    // size() - 1 is the index of the end depot, and what's returned by
-    // Route::end() - we must not exceed it.
-    while (idx_ < nodes_->size() - 1 && operator*() -> isReloadDepot())
-        idx_++;  // skip any intermediate reload depots
-
-    assert(0 < idx_ && idx_ < nodes_->size());
-}
-
-bool Route::Iterator::operator==(Iterator const &other) const
-{
-    return nodes_ == other.nodes_ && idx_ == other.idx_;
-}
-
-Route::Node *Route::Iterator::operator*() const { return (*nodes_)[idx_]; }
-
-Route::Iterator Route::Iterator::operator++(int)
-{
-    auto tmp = *this;
-    ++*this;
-    return tmp;
-}
-
-Route::Iterator &Route::Iterator::operator++()
-{
-    idx_++;
-    ensureValidIndex();
-    return *this;
-}
-
-Route::Route(ProblemData const &data, size_t idx, size_t vehicleType)
+Route::Route(ProblemData const &data, size_t vehicleType)
     : data(data),
       vehicleType_(data.vehicleType(vehicleType)),
-      idx_(idx),
       loadAt(data.numLoadDimensions()),
       loadAfter(data.numLoadDimensions()),
       loadBefore(data.numLoadDimensions()),
@@ -75,39 +43,20 @@ Route::Route(ProblemData const &data, size_t idx, size_t vehicleType)
 
 Route::~Route() { clear(); }
 
-Route::Iterator Route::begin() const { return Iterator(nodes, 1); }
-
-Route::Iterator Route::end() const { return Iterator(nodes, nodes.size() - 1); }
-
-std::pair<pyvrp::Coordinate, pyvrp::Coordinate> const &Route::centroid() const
+std::vector<Route::Node *>::const_iterator Route::begin() const
 {
-    assert(!dirty);
-    return centroid_;
+    return nodes.begin();
+}
+
+std::vector<Route::Node *>::const_iterator Route::end() const
+{
+    return nodes.end();
 }
 
 size_t Route::vehicleType() const
 {
     auto const &vehicleTypes = data.vehicleTypes();
     return std::distance(&vehicleTypes[0], &vehicleType_);
-}
-
-bool Route::overlapsWith(Route const &other, double tolerance) const
-{
-    assert(!dirty && !other.dirty);
-
-    auto const [dX, dY] = data.centroid();
-    auto const [tX, tY] = this->centroid_;
-    auto const [oX, oY] = other.centroid_;
-
-    // Each angle is in [-pi, pi], so the absolute difference is in [0, tau].
-    auto const thisAngle = std::atan2((tY - dY).get(), (tX - dX).get());
-    auto const otherAngle = std::atan2((oY - dY).get(), (oX - dX).get());
-    auto const absDiff = std::abs(thisAngle - otherAngle);
-
-    // First case is obvious. Second case exists because tau and 0 are also
-    // close together but separated by one period.
-    auto constexpr tau = 2 * std::numbers::pi;
-    return absDiff <= tolerance * tau || absDiff >= (1 - tolerance) * tau;
 }
 
 void Route::clear()
@@ -122,8 +71,9 @@ void Route::clear()
     nodes.clear();
     depots_.clear();
 
-    depots_.emplace_back(vehicleType_.startDepot);
-    depots_.emplace_back(vehicleType_.endDepot);
+    depots_.emplace_back(Activity::ActivityType::DEPOT,
+                         vehicleType_.startDepot);
+    depots_.emplace_back(Activity::ActivityType::DEPOT, vehicleType_.endDepot);
 
     for (size_t idx : {0, 1})
     {
@@ -140,18 +90,24 @@ void Route::reserve(size_t size) { nodes.reserve(size); }
 void Route::insert(size_t idx, Node *node)
 {
     assert(0 < idx && idx < nodes.size());
-    auto const isDepot = node->client() < data.numDepots();
 
-    if (isDepot)  // is depot, so we need to insert a copy into our own memory
+    switch (node->type())
+    {
+    case Activity::ActivityType::DEPOT:  // insert copy into owned memory
     {
         if (depots_.size() == depots_.capacity())  // then we reallocate and
         {                                          // must update references
             depots_.reserve(depots_.size() + 1);
             for (auto &depot : depots_)
-                nodes[depot.idx()] = &depot;
+                nodes[depot.pos()] = &depot;
         }
 
-        node = &depots_.emplace_back(node->client());
+        node = &depots_.emplace_back(node->activity());
+        break;
+    }
+
+    default:
+        break;
     }
 
     if (numTrips() > maxTrips())
@@ -162,10 +118,14 @@ void Route::insert(size_t idx, Node *node)
 
     for (size_t after = idx; after != nodes.size(); ++after)
     {
-        nodes[after]->idx_ = after;
-        if (isDepot)  // then we need to bump each following trip index
+        nodes[after]->pos_ = after;
+        if (node->isDepot())  // then we need to bump each following trip index
             nodes[after]->trip_++;
     }
+
+#ifndef NDEBUG
+    dirty = true;
+#endif
 }
 
 void Route::push_back(Node *node) { insert(nodes.size() - 1, node); }
@@ -183,7 +143,7 @@ void Route::remove(size_t idx)
         auto const depotIdx = std::distance(depots_.data(), nodes[idx]);
         auto it = depots_.erase(depots_.begin() + depotIdx);
         for (; it != depots_.end(); ++it)
-            nodes[it->idx()] = &*it;
+            nodes[it->pos()] = &*it;
     }
     else
         // We do not own this node, so we only unassign it.
@@ -192,7 +152,7 @@ void Route::remove(size_t idx)
     nodes.erase(nodes.begin() + idx);  // remove dangling pointer
     for (auto after = idx; after != nodes.size(); ++after)
     {
-        nodes[after]->idx_ = after;
+        nodes[after]->pos_ = after;
         if (isDepot)  // then we need to decrease each following trip index
             nodes[after]->trip_--;
     }
@@ -208,13 +168,13 @@ void Route::swap(Node *first, Node *second)
 
     // TODO specialise std::swap for Node
     if (first->route_)
-        first->route_->nodes[first->idx_] = second;
+        first->route_->nodes[first->pos_] = second;
 
     if (second->route_)
-        second->route_->nodes[second->idx_] = first;
+        second->route_->nodes[second->pos_] = first;
 
     std::swap(first->route_, second->route_);
-    std::swap(first->idx_, second->idx_);
+    std::swap(first->pos_, second->pos_);
     std::swap(first->trip_, second->trip_);
 
 #ifndef NDEBUG
@@ -228,20 +188,51 @@ void Route::swap(Node *first, Node *second)
 
 void Route::update()
 {
-    visits.clear();
+    locations.clear();
     for (auto const *node : nodes)
-        visits.emplace_back(node->client());
+        switch (node->type())
+        {
+        case Activity::ActivityType::DEPOT:
+            locations.emplace_back(data.depot(node->idx()).location);
+            break;
 
-    centroid_ = {0, 0};
-    for (auto const *node : nodes)
-    {
-        if (node->isDepot())
-            continue;
+        case Activity::ActivityType::CLIENT:
+            locations.emplace_back(data.client(node->idx()).location);
+            break;
 
-        ProblemData::Client const &clientData = data.location(node->client());
-        centroid_.first += static_cast<double>(clientData.x) / numClients();
-        centroid_.second += static_cast<double>(clientData.y) / numClients();
-    }
+        case Activity::ActivityType::PICKUP:
+        {
+            auto const &pickup = data.shipment(node->idx()).pickup;
+            locations.emplace_back(pickup.location);
+            break;
+        }
+
+        case Activity::ActivityType::DELIVERY:
+        {
+            auto const &delivery = data.shipment(node->idx()).delivery;
+            locations.emplace_back(delivery.location);
+            break;
+        }
+        }
+
+    // Client counter.
+    numClients_.resize(nodes.size());
+    numClients_[0] = 0;
+    for (size_t idx = 1; idx != nodes.size(); ++idx)
+        numClients_[idx] = numClients_[idx - 1] + nodes[idx]->isClient();
+
+    // Pickup counter.
+    numPickups_.resize(nodes.size());
+    numPickups_[0] = 0;
+    for (size_t idx = 1; idx != nodes.size(); ++idx)
+        numPickups_[idx] = numPickups_[idx - 1] + nodes[idx]->isPickup();
+
+    // Delivery counter.
+    numDeliveries_.resize(nodes.size());
+    numDeliveries_[0] = 0;
+    for (size_t idx = 1; idx != nodes.size(); ++idx)
+        numDeliveries_[idx]
+            = numDeliveries_[idx - 1] + nodes[idx]->isDelivery();
 
     // Distance.
     auto const &distMat = data.distanceMatrix(profile());
@@ -249,17 +240,18 @@ void Route::update()
     cumDist.resize(nodes.size());
     cumDist[0] = 0;
     for (size_t idx = 1; idx != nodes.size(); ++idx)
-        cumDist[idx] = cumDist[idx - 1] + distMat(visits[idx - 1], visits[idx]);
+        cumDist[idx]
+            = cumDist[idx - 1] + distMat(locations[idx - 1], locations[idx]);
 
     // Duration.
     durAt.resize(nodes.size());
 
-    ProblemData::Depot const &start = data.location(startDepot());
+    auto const &start = data.depot(startDepot());
     DurationSegment const vehStart(vehicleType_, vehicleType_.startLate);
     DurationSegment const depotStart(start, start.serviceDuration);
     durAt[0] = DurationSegment::merge(vehStart, depotStart);
 
-    ProblemData::Depot const &end = data.location(endDepot());
+    auto const &end = data.depot(endDepot());
     DurationSegment const depotEnd(end, 0);
     DurationSegment const vehEnd(vehicleType_, vehicleType_.twLate);
     durAt[nodes.size() - 1] = DurationSegment::merge(depotEnd, vehEnd);
@@ -267,16 +259,23 @@ void Route::update()
     for (size_t idx = 1; idx != nodes.size() - 1; ++idx)
     {
         auto const *node = nodes[idx];
+        switch (node->type())
+        {
+        case Activity::ActivityType::DEPOT:
+            durAt[idx] = {data.depot(node->idx()), 0};
+            break;
 
-        if (!node->isReloadDepot())
-        {
-            ProblemData::Client const &client = data.location(node->client());
-            durAt[idx] = {client};
-        }
-        else
-        {
-            ProblemData::Depot const &depot = data.location(node->client());
-            durAt[idx] = {depot, 0};
+        case Activity::ActivityType::CLIENT:
+            durAt[idx] = {data.client(node->idx())};
+            break;
+
+        case Activity::ActivityType::PICKUP:
+            durAt[idx] = {data.shipment(node->idx()).pickup};
+            break;
+
+        case Activity::ActivityType::DELIVERY:
+            durAt[idx] = {data.shipment(node->idx()).delivery};
+            break;
         }
     }
 
@@ -295,11 +294,11 @@ void Route::update()
         {
             // Then we need to first account for depot service before we merge
             // with the idx segment.
-            ProblemData::Depot const &depot = data.location(visits[prev]);
+            auto const &depot = data.depot(nodes[prev]->idx());
             before = DurationSegment::merge(before, {depot.serviceDuration});
         }
 
-        auto const edgeDur = durations(visits[prev], visits[idx]);
+        auto const edgeDur = durations(locations[prev], locations[idx]);
         durBefore[idx] = DurationSegment::merge(edgeDur, before, durAt[idx]);
     }
 
@@ -318,11 +317,11 @@ void Route::update()
             // at idx after already travelling to next, but that's OK since
             // we're essentially using the trick of adding service to the
             // outgoing edge.
-            ProblemData::Depot const &depot = data.location(visits[idx]);
+            auto const &depot = data.depot(nodes[idx]->idx());
             after = DurationSegment::merge({depot.serviceDuration}, after);
         }
 
-        auto const edgeDur = durations(visits[idx], visits[next]);
+        auto const edgeDur = durations(locations[idx], locations[next]);
         durAfter[idx] = DurationSegment::merge(edgeDur, durAt[idx], after);
     }
 
@@ -335,11 +334,26 @@ void Route::update()
         loadAt[dim][0] = {vehicleType_, dim};  // initial load
         loadAt[dim][nodes.size() - 1] = {};
 
-        for (size_t idx = 1; idx != nodes.size() - 1; ++idx)
-            loadAt[dim][idx]
-                = nodes[idx]->isReloadDepot()
-                      ? LoadSegment{}
-                      : LoadSegment{data.location(visits[idx]), dim};
+        for (size_t pos = 1; pos != nodes.size() - 1; ++pos)
+            switch (nodes[pos]->type())
+            {
+            case Activity::ActivityType::DEPOT:
+                loadAt[dim][pos] = {};
+                break;
+
+            case Activity::ActivityType::CLIENT:
+                loadAt[dim][pos] = {data.client(nodes[pos]->idx()), dim};
+                break;
+
+            case Activity::ActivityType::PICKUP:
+                [[fallthrough]];
+            case Activity::ActivityType::DELIVERY:
+            {
+                auto const &shipment = data.shipment(nodes[pos]->idx());
+                loadAt[dim][pos] = {shipment, nodes[pos]->type(), dim};
+                break;
+            }
+            }
 
         loadBefore[dim].resize(nodes.size());
         loadBefore[dim][0] = loadAt[dim][0];
@@ -358,7 +372,7 @@ void Route::update()
         excessLoad_[dim]
             = loadBefore[dim][nodes.size() - 1].excessLoad(capacity);
         for (auto it = depots_.begin() + 1; it != depots_.end(); ++it)
-            load_[dim] += loadBefore[dim][it->idx()].load();
+            load_[dim] += loadBefore[dim][it->pos()].load();
 
         loadAfter[dim].resize(nodes.size());
         loadAfter[dim][nodes.size() - 1] = loadAt[dim][nodes.size() - 1];
@@ -397,44 +411,14 @@ bool Route::operator==(Route const &other) const
     assert(!dirty && !other.dirty);
 
     // First compare simple attributes, since that's a quick and cheap check.
-    // Only when these are the same we test if the visits are all equal.
+    // Only when these are the same we test if the nodes are all equal.
     // clang-format off
     return distance_ == other.distance_
         && duration_ == other.duration_
         && timeWarp_ == other.timeWarp_
         && vehicleType_ == other.vehicleType_
-        && visits == other.visits;
+        && nodes == other.nodes;
     // clang-format on
-}
-
-bool Route::operator==(pyvrp::Route const &other) const
-{
-    assert(!dirty);
-
-    // clang-format off
-    bool const simpleChecks = distance_ == other.distance()
-                              && duration_ == other.duration()
-                              && timeWarp_ == other.timeWarp()
-                              && vehicleType() == other.vehicleType()
-                              && numTrips() == other.numTrips()
-                              && numClients() == other.size();
-    // clang-format on
-
-    if (!simpleChecks)
-        return false;
-
-    size_t idx = 0;
-    for (auto const &trip : other.trips())
-    {
-        if (trip.startDepot() != visits[idx++])
-            return false;  // not the same reload depot
-
-        for (auto const visit : trip)
-            if (visit != visits[idx++])
-                return false;
-    }
-
-    return true;
 }
 
 std::ostream &operator<<(std::ostream &out, Route const &route)
@@ -455,5 +439,5 @@ std::ostream &operator<<(std::ostream &out, Route const &route)
 
 std::ostream &operator<<(std::ostream &out, Route::Node const &node)
 {
-    return out << node.client();
+    return out << node.activity();
 }

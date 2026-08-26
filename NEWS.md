@@ -1,3 +1,40 @@
+# vrpr 0.2.0
+
+Upgrades the vendored solver core to **PyVRP 0.14.0** (from 0.13.4), a major
+upstream release that reworks the data model and the search engine.
+
+## New features
+
+* **Pickup and delivery (shipments)**: `add_shipments()` adds paired
+  pickup/delivery visits (same vehicle, pickup first, same trip), enabling the
+  PDP/PDPTW family of problems. Solutions report `num_shipments` and
+  `num_missing_shipments`.
+* New `unplanned()` accessor: a tidy view of the optional clients and
+  shipments left out of the solution (prize collecting).
+* `routes()` now also reports `activity` (`"client"`, `"pickup"` or
+  `"delivery"`), `shipment` and `trip` columns; client rows keep the previous
+  columns, so pure client instances read as before.
+
+## Upstream changes tracked
+
+* The search engine follows PyVRP 0.14's design: a single operator family
+  (`Relocate`/`Swap` plus explicit optional-client/shipment/group operators)
+  replaces the old node/route operator split; the granular neighbourhood is
+  now computed by upstream C++ code (default `num_neighbours = 50`).
+* The penalty manager follows PyVRP 0.14: midpoint initial penalties,
+  violation-magnitude registration, update every 500 solutions and
+  `penalty_decrease = 0.90`. The `init_load`/`init_tw`/`init_dist` arguments
+  of `ils_params()` were removed accordingly.
+* Internally, routes are sequences of typed activities; reload depots (multi
+  trip) appear as depot activities inside the route.
+
+## Breaking changes
+
+* `ils_params()` lost `init_load`, `init_tw` and `init_dist` (see above);
+  `num_neighbours` now defaults to 50 (PyVRP's default).
+* `routes()` gains columns; code that relied on the exact column set should
+  select explicitly.
+
 # vrpr 0.1.1
 
 Portability fixes for CRAN builders; no user-facing changes.

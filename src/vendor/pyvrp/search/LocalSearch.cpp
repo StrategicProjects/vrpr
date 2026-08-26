@@ -1,159 +1,108 @@
 #include "LocalSearch.h"
 #include "DynamicBitset.h"
 #include "Measure.h"
-#include "Trip.h"
-#include "primitives.h"
+#include "logging.h"
 
 #include <algorithm>
 #include <cassert>
-#include <iterator>  // vrpr: std::back_inserter (libc++ >= 23)
+#include <iterator>
 #include <numeric>
 
 using pyvrp::Solution;
+using pyvrp::search::BinaryOperator;
 using pyvrp::search::LocalSearch;
-using pyvrp::search::NodeOperator;
-using pyvrp::search::RouteOperator;
 using pyvrp::search::SearchSpace;
+using pyvrp::search::UnaryOperator;
 
 pyvrp::Solution LocalSearch::operator()(pyvrp::Solution const &solution,
                                         CostEvaluator const &costEvaluator,
                                         bool exhaustive)
 {
-    loadSolution(solution);
+    PYVRP_DEBUG(
+        "pyvrp.search", "Applying local search (exhaustive={}).", exhaustive);
 
-    if (!exhaustive)
+    std::fill(lastTest_.begin(), lastTest_.end(), -1);
+    std::fill(lastUpdate_.begin(), lastUpdate_.end(), 0);
+    numUpdates_ = 0;
+
+    solution_.load(solution);
+
+    for (auto *op : unaryOps_)
+        op->init(solution_);
+
+    for (auto *op : binaryOps_)
+        op->init(solution_);
+
+    if (exhaustive)
+        searchSpace_.markAllPromising();
+    else
         perturbationManager_.perturb(solution_, searchSpace_, costEvaluator);
 
-    while (true)
-    {
-        search(costEvaluator);
-        auto const numUpdates = numUpdates_;  // after node search
-
-        intensify(costEvaluator);
-        if (numUpdates_ == numUpdates)
-            // Then intensify (route search) did not do any additional
-            // updates, so the solution is locally optimal.
-            break;
-    }
-
-    return solution_.unload();
-}
-
-pyvrp::Solution LocalSearch::search(pyvrp::Solution const &solution,
-                                    CostEvaluator const &costEvaluator)
-{
-    loadSolution(solution);
+    ensureStructuralFeasibility(costEvaluator);
     search(costEvaluator);
-    return solution_.unload();
-}
 
-pyvrp::Solution LocalSearch::intensify(pyvrp::Solution const &solution,
-                                       CostEvaluator const &costEvaluator)
-{
-    loadSolution(solution);
-    intensify(costEvaluator);
+    [[maybe_unused]] auto const stats = statistics();
+    PYVRP_DEBUG("pyvrp.search",
+                "Completed local search: improving={}, updates={}, moves={}.",
+                stats.numImproving,
+                stats.numUpdates,
+                stats.numMoves);
+
     return solution_.unload();
 }
 
 void LocalSearch::search(CostEvaluator const &costEvaluator)
 {
-    if (nodeOps.empty())
+    if (unaryOps_.empty() && binaryOps_.empty())
         return;
 
-    markRequiredMissingAsPromising();
-
     searchCompleted_ = false;
-    for (int step = 0; !searchCompleted_; ++step)
+    for ([[maybe_unused]] int step = 0; !searchCompleted_; ++step)
     {
+        PYVRP_DEBUG("pyvrp.search", "Entering search loop (step={}).", step);
         searchCompleted_ = true;
 
-        // Node operators are evaluated for neighbouring (U, V) pairs.
-        for (auto const uClient : searchSpace_.clientOrder())
+        for (auto const &uActivity : searchSpace_.activityOrder())
         {
-            if (!searchSpace_.isPromising(uClient))
+            if (!searchSpace_.isPromising(uActivity))
                 continue;
 
-            auto *U = &solution_.nodes[uClient];
+            auto *U = solution_[uActivity];
+            assert(U);
 
-            auto const lastTested = lastTestedNodes[U->client()];
-            lastTestedNodes[U->client()] = numUpdates_;
+            // lastTest_ is ordered - #clients (lower indices) and #pickups
+            // (upper indices).
+            auto const idx = (U->isClient() ? 0 : data.numClients()) + U->idx();
+            auto const lastTest = lastTest_[idx];
+            lastTest_[idx] = numUpdates_;
 
-            // First test removing or inserting U. Particularly relevant if not
-            // all clients are required (e.g., when prize collecting).
-            applyOptionalClientMoves(U, costEvaluator);
+            applyUnaryOps(U, costEvaluator);
 
-            // Evaluate moves involving the client's group, if it is in any.
-            applyGroupMoves(U, costEvaluator);
-
-            if (!U->route())  // we already evaluated inserting U, so there is
-                continue;     // nothing left to be done for this client.
-
-            // If U borders a reload depot, try removing it.
-            applyDepotRemovalMove(p(U), costEvaluator);
-            applyDepotRemovalMove(n(U), costEvaluator);
-
-            // We next apply the regular operators that work on pairs of nodes
-            // (U, V), where both U and V are in the solution.
-            for (auto const vClient : searchSpace_.neighboursOf(U->client()))
+            for (auto const &vActivity : searchSpace_.neighboursOf(uActivity))
             {
-                auto *V = &solution_.nodes[vClient];
+                auto *V = solution_[vActivity];
+                assert(V);
 
                 if (!V->route())
                     continue;
 
-                if (lastUpdated[U->route()->idx()] > lastTested
-                    || lastUpdated[V->route()->idx()] > lastTested)
+                auto *routes = solution_.routes.data();
+                auto uUpdate = 0;
+                if (U->route())
+                    uUpdate = lastUpdate_[std::distance(routes, U->route())];
+                auto vUpdate = lastUpdate_[std::distance(routes, V->route())];
+                if (uUpdate > lastTest || vUpdate > lastTest)
                 {
-                    if (applyNodeOps(U, V, costEvaluator))
+                    if (applyBinaryOps(U, V, costEvaluator))
                         continue;
 
                     if (p(V)->isStartDepot()
-                        && applyNodeOps(U, p(V), costEvaluator))
+                        && applyBinaryOps(U, p(V), costEvaluator))
                         continue;
                 }
             }
 
-            // Moves involving empty routes are not tested in the first
-            // iteration to avoid using too many routes.
-            if (step > 0)
-                applyEmptyRouteMoves(U, costEvaluator);
-        }
-    }
-}
-
-void LocalSearch::intensify(CostEvaluator const &costEvaluator)
-{
-    if (routeOps.empty())
-        return;
-
-    searchCompleted_ = false;
-    while (!searchCompleted_)
-    {
-        searchCompleted_ = true;
-
-        for (auto const rU : searchSpace_.routeOrder())
-        {
-            auto *U = &solution_.routes[rU];
-            assert(U->idx() == rU);
-
-            if (U->empty())
-                continue;
-
-            auto const lastTested = lastTestedRoutes[U->idx()];
-            lastTestedRoutes[U->idx()] = numUpdates_;
-
-            for (size_t rV = U->idx() + 1; rV != solution_.routes.size(); ++rV)
-            {
-                auto *V = &solution_.routes[rV];
-                assert(V->idx() == rV);
-
-                if (V->empty())
-                    continue;
-
-                if (lastUpdated[U->idx()] > lastTested
-                    || lastUpdated[V->idx()] > lastTested)
-                    applyRouteOps(U, V, costEvaluator);
-            }
+            applyEmptyRouteMoves(U, costEvaluator);
         }
     }
 }
@@ -163,72 +112,48 @@ void LocalSearch::shuffle(RandomNumberGenerator &rng)
     perturbationManager_.shuffle(rng);
     searchSpace_.shuffle(rng);
 
-    rng.shuffle(nodeOps.begin(), nodeOps.end());
-    rng.shuffle(routeOps.begin(), routeOps.end());
+    rng.shuffle(unaryOps_.begin(), unaryOps_.end());
+    rng.shuffle(binaryOps_.begin(), binaryOps_.end());
 }
 
-bool LocalSearch::applyNodeOps(Route::Node *U,
-                               Route::Node *V,
-                               CostEvaluator const &costEvaluator)
-{
-    for (auto *nodeOp : nodeOps)
-    {
-        auto const deltaCost = nodeOp->evaluate(U, V, costEvaluator);
-        if (deltaCost < 0)
-        {
-            auto *rU = U->route();  // copy these because the operator can
-            auto *rV = V->route();  // modify the nodes' route membership
-
-            [[maybe_unused]] auto const costBefore
-                = costEvaluator.penalisedCost(*rU)
-                  + Cost(rU != rV) * costEvaluator.penalisedCost(*rV);
-
-            searchSpace_.markPromising(U);
-            searchSpace_.markPromising(V);
-
-            nodeOp->apply(U, V);
-            update(rU, rV);
-
-            [[maybe_unused]] auto const costAfter
-                = costEvaluator.penalisedCost(*rU)
-                  + Cost(rU != rV) * costEvaluator.penalisedCost(*rV);
-
-            // When there is an improving move, the delta cost evaluation must
-            // be exact. The resulting cost is then the sum of the cost before
-            // the move, plus the delta cost.
-            assert(costAfter == costBefore + deltaCost);
-
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool LocalSearch::applyRouteOps(Route *U,
-                                Route *V,
+bool LocalSearch::applyUnaryOps(Route::Node *U,
                                 CostEvaluator const &costEvaluator)
 {
-    for (auto *routeOp : routeOps)
+    for (auto *op : unaryOps_)
     {
-        auto const deltaCost = routeOp->evaluate(U, V, costEvaluator);
-        if (deltaCost < 0)
+        auto const [deltaCost, shouldApply] = op->evaluate(U, costEvaluator);
+        if (shouldApply)
         {
-            [[maybe_unused]] auto const costBefore
-                = costEvaluator.penalisedCost(*U)
-                  + Cost(U != V) * costEvaluator.penalisedCost(*V);
+            PYVRP_DEBUG("pyvrp.search",
+                        "Applying operator {} to U={} (delta={}).",
+                        op->name(),
+                        U->idx(),
+                        deltaCost);
 
-            routeOp->apply(U, V);
-            update(U, V);
+            auto *rU = U->route();
+            if (rU)
+                searchSpace_.markPromising(U);
 
-            [[maybe_unused]] auto const costAfter
-                = costEvaluator.penalisedCost(*U)
-                  + Cost(U != V) * costEvaluator.penalisedCost(*V);
+#ifndef NDEBUG
+            auto const costBefore = costEvaluator.penalisedCost(solution_);
+#endif
 
+            op->apply(U);
+            if (!rU)  // then U wasn't in the solution before, and the operator
+            {         // just inserted it.
+                rU = U->route();
+                searchSpace_.markPromising(U);
+            }
+
+            update(rU, rU);
+
+#ifndef NDEBUG
+            auto const costAfter = costEvaluator.penalisedCost(solution_);
             // When there is an improving move, the delta cost evaluation must
             // be exact. The resulting cost is then the sum of the cost before
             // the move, plus the delta cost.
             assert(costAfter == costBefore + deltaCost);
+#endif
 
             return true;
         }
@@ -237,29 +162,55 @@ bool LocalSearch::applyRouteOps(Route *U,
     return false;
 }
 
-void LocalSearch::applyDepotRemovalMove(Route::Node *U,
-                                        CostEvaluator const &costEvaluator)
+bool LocalSearch::applyBinaryOps(Route::Node *U,
+                                 Route::Node *V,
+                                 CostEvaluator const &costEvaluator)
 {
-    if (!U->isReloadDepot())
-        return;
-
-    // We remove the depot when that's either better, or neutral. It can be
-    // neutral if for example it's the same depot visited consecutively, but
-    // that's then unnecessary.
-    if (removeCost(U, data, costEvaluator) <= 0)
+    for (auto *op : binaryOps_)
     {
-        searchSpace_.markPromising(U);  // U's neighbours might not be depots
-        auto *route = U->route();
-        route->remove(U->idx());
-        update(route, route);
+        auto const [deltaCost, shouldApply] = op->evaluate(U, V, costEvaluator);
+        if (shouldApply)
+        {
+            PYVRP_DEBUG("pyvrp.search",
+                        "Applying operator {} to U={} and V={} (delta={}).",
+                        op->name(),
+                        U->idx(),
+                        V->idx(),
+                        deltaCost);
+
+            auto *rU = U->route();
+            auto *rV = V->route();
+            assert(rV);
+
+            if (rU)
+                searchSpace_.markPromising(U);
+            searchSpace_.markPromising(V);
+
+#ifndef NDEBUG
+            auto const costBefore = costEvaluator.penalisedCost(solution_);
+#endif
+
+            op->apply(U, V);
+            update(rU, rV);
+
+#ifndef NDEBUG
+            auto const costAfter = costEvaluator.penalisedCost(solution_);
+            // When there is an improving move, the delta cost evaluation must
+            // be exact. The resulting cost is then the sum of the cost before
+            // the move, plus the delta cost.
+            assert(costAfter == costBefore + deltaCost);
+#endif
+
+            return true;
+        }
     }
+
+    return false;
 }
 
 void LocalSearch::applyEmptyRouteMoves(Route::Node *U,
                                        CostEvaluator const &costEvaluator)
 {
-    assert(U->route());
-
     // We apply moves involving empty routes in the (randomised) order of
     // orderVehTypes. This helps because empty vehicle moves incur fixed cost,
     // and a purely greedy approach over-prioritises vehicles with low fixed
@@ -271,237 +222,164 @@ void LocalSearch::applyEmptyRouteMoves(Route::Node *U,
         auto const pred = [](auto const &route) { return route.empty(); };
         auto empty = std::find_if(begin, end, pred);
 
-        if (empty != end && applyNodeOps(U, (*empty)[0], costEvaluator))
+        if (empty != end && applyBinaryOps(U, (*empty)[0], costEvaluator))
             break;
     }
 }
 
-void LocalSearch::applyOptionalClientMoves(Route::Node *U,
-                                           CostEvaluator const &costEvaluator)
+void LocalSearch::ensureStructuralFeasibility(
+    CostEvaluator const &costEvaluator)
 {
-    ProblemData::Client const &uData = data.location(U->client());
-
-    if (uData.required && !U->route())  // then we must insert U
+    std::vector<size_t> groupCount(data.numGroups(), 0);  // tracks membership
+    for (size_t idx = 0; idx != data.numGroups(); ++idx)  // count in solution
     {
-        solution_.insert(U, searchSpace_, costEvaluator, true);
-        update(U->route(), U->route());
-        searchSpace_.markPromising(U);
+        auto const &group = data.group(idx);
+        for (auto const client : group)
+            if (solution_.clients[client].route())
+                groupCount[idx]++;
     }
 
-    // Required clients are not optional, and have just been inserted above
-    // if not already in the solution. Groups have their own operator and are
-    // not processed here.
-    if (uData.required || uData.group)
-        return;
-
-    if (removeCost(U, data, costEvaluator) < 0)  // remove if improving
+    // Ensure all required clients, groups and shipments are present in the
+    // solution.
+    for (auto const &activity : searchSpace_.activityOrder())
     {
-        searchSpace_.markPromising(U);
-        auto *route = U->route();
-        route->remove(U->idx());
-        update(route, route);
-    }
-
-    if (U->route())
-        return;
-
-    // Attempt to re-insert U using a first-improving neighbourhood search.
-    for (auto const vClient : searchSpace_.neighboursOf(U->client()))
-    {
-        auto *V = &solution_.nodes[vClient];
-        auto *route = V->route();
-
-        if (!route)
-            continue;
-
-        if (insertCost(U, V, data, costEvaluator) < 0)  // insert if improving
+        switch (activity.type())
         {
-            route->insert(V->idx() + 1, U);
-            update(route, route);
-            searchSpace_.markPromising(U);
-            return;
-        }
-
-        // We prefer inserting over replacing, but if V is not required, not in
-        // a group, and replacing V with U is improving, we also do that now.
-        ProblemData::Client const &vData = data.location(V->client());
-        if (!vData.required && !vData.group
-            && inplaceCost(U, V, data, costEvaluator) < 0)
+        case Activity::ActivityType::CLIENT:
         {
-            searchSpace_.markPromising(V);
-            auto const idx = V->idx();
-            route->remove(idx);
-            route->insert(idx, U);
-            update(route, route);
-            searchSpace_.markPromising(U);
-            return;
-        }
-    }
+            auto &node = solution_.clients[activity.idx()];
+            auto const &client = data.client(activity.idx());
 
-    // Evaluate inserting after the first route's start depot as a fallback if
-    // U has not already been inserted.
-    auto &route = solution_.routes[0];
-    if (!U->route() && insertCost(U, route[0], data, costEvaluator) < 0)
-    {
-        route.insert(1, U);
-        update(&route, &route);
-        searchSpace_.markPromising(U);
-    }
-}
-
-void LocalSearch::applyGroupMoves(Route::Node *U,
-                                  CostEvaluator const &costEvaluator)
-{
-    ProblemData::Client const &uData = data.location(U->client());
-
-    if (!uData.group)
-        return;
-
-    auto const &group = data.group(*uData.group);
-    assert(group.mutuallyExclusive);
-
-    std::vector<size_t> inSol;
-    auto const pred
-        = [&](auto client) { return solution_.nodes[client].route(); };
-    std::copy_if(group.begin(), group.end(), std::back_inserter(inSol), pred);
-
-    if (inSol.empty())
-    {
-        auto const required = group.required;
-        if (solution_.insert(U, searchSpace_, costEvaluator, required))
-        {
-            update(U->route(), U->route());
-            searchSpace_.markPromising(U);
-        }
-
-        return;
-    }
-
-    // We remove clients in order of increasing cost delta (biggest improvement
-    // first), and evaluate swapping the last client with U.
-    std::vector<Cost> costs;
-    for (auto const client : inSol)
-    {
-        auto cost = removeCost(&solution_.nodes[client], data, costEvaluator);
-        costs.push_back(cost);
-    }
-
-    // Sort clients in order of increasing removal costs.
-    std::vector<size_t> range(inSol.size());
-    std::iota(range.begin(), range.end(), 0);
-    std::sort(range.begin(),
-              range.end(),
-              [&costs](auto idx1, auto idx2)
-              { return costs[idx1] < costs[idx2]; });
-
-    // Remove all but the last client, whose removal is the least valuable.
-    for (auto idx = range.begin(); idx != range.end() - 1; ++idx)
-    {
-        auto const client = inSol[*idx];
-        auto const &node = solution_.nodes[client];
-        auto *route = node.route();
-
-        searchSpace_.markPromising(&node);
-        route->remove(node.idx());
-        update(route, route);
-    }
-
-    // Test swapping U and V, and do so if U is better to have than V.
-    auto *V = &solution_.nodes[inSol[range.back()]];
-    if (U != V && inplaceCost(U, V, data, costEvaluator) < 0)
-    {
-        auto *route = V->route();
-        auto const idx = V->idx();
-        route->remove(idx);
-        route->insert(idx, U);
-        update(route, route);
-        searchSpace_.markPromising(U);
-    }
-}
-
-void LocalSearch::markRequiredMissingAsPromising()
-{
-    for (auto client = data.numDepots(); client != data.numLocations();
-         ++client)
-    {
-        if (solution_.nodes[client].route())  // then it's not missing, so
-            continue;                         // nothing to do
-
-        ProblemData::Client const &clientData = data.location(client);
-        if (clientData.required)
-        {
-            searchSpace_.markPromising(client);
-            continue;
-        }
-
-        if (clientData.group)  // mark the group's first client as promising so
-        {                      // the group at least gets inserted if needed
-            auto const &group = data.group(clientData.group.value());
-            if (group.required && group.clients().front() == client)
+            if (!node.route() && client.required)  // must insert
             {
-                searchSpace_.markPromising(client);
+                solution_.insert(&node, searchSpace_, costEvaluator, true);
+                update(node.route(), node.route());
+                searchSpace_.markPromising(&node);
                 continue;
             }
+
+            if (client.group)
+            {
+                auto const idx = *client.group;
+                auto const &group = data.group(idx);
+
+                if (group.required && groupCount[idx] == 0)  // must insert
+                {
+                    assert(!node.route());
+                    solution_.insert(&node, searchSpace_, costEvaluator, true);
+                    update(node.route(), node.route());
+                    searchSpace_.markPromising(&node);
+                    groupCount[idx]++;
+                    continue;
+                }
+
+                if (node.route() && groupCount[idx] > 1)  // must remove
+                {
+                    searchSpace_.markPromising(&node);
+                    auto *route = node.route();
+                    route->remove(node.pos());
+                    update(route, route);
+                    groupCount[idx]--;
+                }
+            }
+
+            break;
+        }
+
+        case Activity::ActivityType::PICKUP:
+        {
+            auto const idx = activity.idx();
+            auto &[pickup, delivery] = solution_.shipments[idx];
+            auto const &shipment = data.shipment(idx);
+
+            if (!pickup.route() && shipment.required)
+            {
+                solution_.insert(
+                    &pickup, &delivery, searchSpace_, costEvaluator, true);
+                update(pickup.route(), delivery.route());
+                searchSpace_.markPromising(&pickup);
+                searchSpace_.markPromising(&delivery);
+            }
+
+            break;
+        }
+
+        default:
+            continue;
         }
     }
+
+#ifndef NDEBUG
+    // Debug checks to ensure we have restored structural feasibility.
+    for (size_t idx = 0; idx != data.numClients(); ++idx)
+    {
+        auto const &node = solution_.clients[idx];
+        auto const &clientData = data.client(idx);
+        assert(node.route() || !clientData.required);
+    }
+
+    for (size_t idx = 0; idx != data.numGroups(); ++idx)
+    {
+        auto const &group = data.group(idx);
+        assert(group.required ? groupCount[idx] == 1 : groupCount[idx] <= 1);
+    }
+
+    for (size_t idx = 0; idx != data.numShipments(); ++idx)
+    {
+        auto const &[pickup, delivery] = solution_.shipments[idx];
+        auto const &shipment = data.shipment(idx);
+        assert(pickup.route() == delivery.route());
+        assert(pickup.route() || !shipment.required);
+    }
+#endif
 }
 
 void LocalSearch::update(Route *U, Route *V)
 {
+    assert(V);
     numUpdates_++;
     searchCompleted_ = false;
 
-    U->update();
-    lastUpdated[U->idx()] = numUpdates_;
+    auto const update = [&](Route *route)
+    {
+        route->update();
+        if (route->empty())  // if route turned empty we clear it to remove any
+            route->clear();  // lingering non-client nodes.
 
-    for (auto *op : routeOps)  // this is used by some route operators
-        op->update(U);         // to keep caches in sync.
+        auto const idx = std::distance(solution_.routes.data(), route);
+        lastUpdate_[idx] = numUpdates_;
+
+        for (auto *op : unaryOps_)   // some operators cache partial evaluations
+            op->update(route);       // and rely on this call to keep those
+        for (auto *op : binaryOps_)  // caches in sync.
+            op->update(route);
+    };
+
+    if (U)
+        update(U);
 
     if (U != V)
-    {
-        V->update();
-        lastUpdated[V->idx()] = numUpdates_;
-
-        for (auto *op : routeOps)  // this is used by some route operators
-            op->update(V);         // to keep caches in sync.
-    }
+        update(V);
 }
 
-void LocalSearch::loadSolution(pyvrp::Solution const &solution)
+void LocalSearch::addOperator(UnaryOperator &op)
 {
-    std::fill(lastTestedNodes.begin(), lastTestedNodes.end(), -1);
-    std::fill(lastTestedRoutes.begin(), lastTestedRoutes.end(), -1);
-    std::fill(lastUpdated.begin(), lastUpdated.end(), 0);
-    searchSpace_.markAllPromising();
-    numUpdates_ = 0;
-
-    solution_.load(solution);
-
-    for (auto *nodeOp : nodeOps)
-        nodeOp->init(solution);
-
-    for (auto *routeOp : routeOps)
-        routeOp->init(solution);
+    unaryOps_.emplace_back(&op);
 }
 
-void LocalSearch::addNodeOperator(NodeOperator &op)
+void LocalSearch::addOperator(BinaryOperator &op)
 {
-    nodeOps.emplace_back(&op);
+    binaryOps_.emplace_back(&op);
 }
 
-void LocalSearch::addRouteOperator(RouteOperator &op)
+std::vector<UnaryOperator *> const &LocalSearch::unaryOperators() const
 {
-    routeOps.emplace_back(&op);
+    return unaryOps_;
 }
 
-std::vector<NodeOperator *> const &LocalSearch::nodeOperators() const
+std::vector<BinaryOperator *> const &LocalSearch::binaryOperators() const
 {
-    return nodeOps;
-}
-
-std::vector<RouteOperator *> const &LocalSearch::routeOperators() const
-{
-    return routeOps;
+    return binaryOps_;
 }
 
 void LocalSearch::setNeighbours(SearchSpace::Neighbours neighbours)
@@ -526,8 +404,8 @@ LocalSearch::Statistics LocalSearch::statistics() const
         numImproving += stats.numApplications;
     };
 
-    std::for_each(nodeOps.begin(), nodeOps.end(), count);
-    std::for_each(routeOps.begin(), routeOps.end(), count);
+    std::for_each(unaryOps_.begin(), unaryOps_.end(), count);
+    std::for_each(binaryOps_.begin(), binaryOps_.end(), count);
 
     assert(numImproving <= numUpdates_);
     return {numMoves, numImproving, numUpdates_};
@@ -540,8 +418,7 @@ LocalSearch::LocalSearch(ProblemData const &data,
       solution_(data),
       searchSpace_(data, neighbours),
       perturbationManager_(perturbationManager),
-      lastTestedNodes(data.numLocations()),
-      lastTestedRoutes(data.numVehicles()),
-      lastUpdated(data.numVehicles())
+      lastTest_(data.numClients() + data.numShipments()),
+      lastUpdate_(data.numVehicles())
 {
 }

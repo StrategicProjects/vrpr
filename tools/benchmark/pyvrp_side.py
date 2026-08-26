@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-"""PyVRP side of the parity benchmark. Solves a VRPLIB CVRP instance and prints
-JSON with the best cost. The distance matrix uses round-half-up (floor(d+0.5)),
-identical to vrpr's euclidean_matrix(), for a fair comparison.
+"""PyVRP side of the parity benchmark (PyVRP >= 0.14). Solves a VRPLIB CVRP
+instance and prints JSON with the best cost. The distance matrix uses
+round-half-up (floor(d+0.5)), identical to vrpr's euclidean_matrix(), for a
+fair comparison.
 
 Usage: python pyvrp_side.py <file.vrp> <num_vehicles> <seconds> [seed]
 """
 import sys, json, numpy as np, vrplib
-from pyvrp import ProblemData, Client, Depot, VehicleType, Solution, CostEvaluator, solve
+from pyvrp import ProblemData, Location, Client, Depot, VehicleType, solve
 from pyvrp.stop import MaxRuntime
 
 path, n_veh, secs = sys.argv[1], int(sys.argv[2]), float(sys.argv[3])
@@ -24,11 +25,14 @@ for i in range(n):
     for j in range(n):
         D[i, j] = int(np.floor(np.hypot(*(coords[i] - coords[j])) + 0.5))
 
-clients = [Client(x=int(coords[k, 0]), y=int(coords[k, 1]), delivery=[int(demand[k])])
+locations = [Location(x=float(coords[k, 0]), y=float(coords[k, 1]))
+             for k in range(n)]
+clients = [Client(location=k, delivery=[int(demand[k])])
            for k in range(n) if k != depot]
 data = ProblemData(
+    locations=locations,
     clients=clients,
-    depots=[Depot(x=int(coords[depot, 0]), y=int(coords[depot, 1]))],
+    depots=[Depot(location=depot)],
     vehicle_types=[VehicleType(num_available=n_veh, capacity=[cap])],
     distance_matrices=[D], duration_matrices=[D],
 )

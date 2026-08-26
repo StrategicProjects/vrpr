@@ -13,69 +13,64 @@ bool onLastTrip(pyvrp::search::Route::Node *node)
     auto const *route = node->route();
     return node->trip() + 1 == route->numTrips();
 }
+
+bool splitsShipment(pyvrp::search::Route::Node *node)
+{
+    auto const *route = node->route();
+    return route->numPickups(node->pos()) != route->numDeliveries(node->pos());
+}
 }  // namespace
 
-pyvrp::Cost SwapTails::evaluate(Route::Node *U,
-                                Route::Node *V,
-                                CostEvaluator const &costEvaluator)
+std::pair<pyvrp::Cost, bool> SwapTails::evaluate(
+    Route::Node *U, Route::Node *V, CostEvaluator const &costEvaluator)
 {
     stats_.numEvaluations++;
-    assert(!U->isEndDepot() && !U->isReloadDepot());
+    assert(!U->isDepot());
     assert(!V->isEndDepot() && !V->isReloadDepot());
 
     auto const *uRoute = U->route();
     auto const *vRoute = V->route();
 
-    if (uRoute == vRoute)
-        return 0;  // same route
+    if (!uRoute || uRoute == vRoute)
+        return std::make_pair(0, false);  // unassigned, or same route
 
-    if (uRoute->idx() > vRoute->idx() && !uRoute->empty() && !vRoute->empty())
-        return 0;  // move will be tackled in a later iteration
+    if (uRoute > vRoute && !uRoute->empty() && !vRoute->empty())
+        return std::make_pair(0, false);  // move will be tackled later
 
     if (!onLastTrip(U) || !onLastTrip(V))
         // We cannot move reload depots, so we only evaluate a move if it does
         // not include a reload depot.
-        return 0;
+        return std::make_pair(0, false);
+
+    if (splitsShipment(U) || splitsShipment(V))
+        // Cannot evaluate this move because it would leave part of a shipment
+        // in the other route.
+        return std::make_pair(0, false);
 
     Cost deltaCost = 0;
-
-    // We're going to incur fixed cost if a route is currently empty but
-    // becomes non-empty due to the proposed move.
-    if (uRoute->empty() && !n(V)->isEndDepot())
-        deltaCost += uRoute->fixedVehicleCost();
-
-    if (vRoute->empty() && !n(U)->isEndDepot())
-        deltaCost += vRoute->fixedVehicleCost();
-
-    // We lose fixed cost if a route becomes empty due to the proposed move.
-    if (!uRoute->empty() && U->isStartDepot() && n(V)->isEndDepot())
-        deltaCost -= uRoute->fixedVehicleCost();
-
-    if (!vRoute->empty() && V->isStartDepot() && n(U)->isEndDepot())
-        deltaCost -= vRoute->fixedVehicleCost();
 
     if (!n(U)->isEndDepot() && !n(V)->isEndDepot())
     {
         auto const uProposal
-            = Route::Proposal(uRoute->before(U->idx()),
-                              vRoute->between(V->idx() + 1, vRoute->size() - 2),
+            = Route::Proposal(uRoute->before(U->pos()),
+                              vRoute->between(V->pos() + 1, vRoute->size() - 2),
                               uRoute->at(uRoute->size() - 1));
 
         auto const vProposal
-            = Route::Proposal(vRoute->before(V->idx()),
-                              uRoute->between(U->idx() + 1, uRoute->size() - 2),
+            = Route::Proposal(vRoute->before(V->pos()),
+                              uRoute->between(U->pos() + 1, uRoute->size() - 2),
                               vRoute->at(vRoute->size() - 1));
 
         costEvaluator.deltaCost(deltaCost, uProposal, vProposal);
     }
     else if (!n(U)->isEndDepot() && n(V)->isEndDepot())
     {
-        auto const uProposal = Route::Proposal(uRoute->before(U->idx()),
+        auto const uProposal = Route::Proposal(uRoute->before(U->pos()),
                                                uRoute->at(uRoute->size() - 1));
 
         auto const vProposal
-            = Route::Proposal(vRoute->before(V->idx()),
-                              uRoute->between(U->idx() + 1, uRoute->size() - 2),
+            = Route::Proposal(vRoute->before(V->pos()),
+                              uRoute->between(U->pos() + 1, uRoute->size() - 2),
                               vRoute->at(vRoute->size() - 1));
 
         costEvaluator.deltaCost(deltaCost, uProposal, vProposal);
@@ -83,17 +78,24 @@ pyvrp::Cost SwapTails::evaluate(Route::Node *U,
     else if (n(U)->isEndDepot() && !n(V)->isEndDepot())
     {
         auto const uProposal
-            = Route::Proposal(uRoute->before(U->idx()),
-                              vRoute->between(V->idx() + 1, vRoute->size() - 2),
+            = Route::Proposal(uRoute->before(U->pos()),
+                              vRoute->between(V->pos() + 1, vRoute->size() - 2),
                               uRoute->at(uRoute->size() - 1));
 
-        auto const vProposal = Route::Proposal(vRoute->before(V->idx()),
-                                               vRoute->at(vRoute->size() - 1));
-
-        costEvaluator.deltaCost(deltaCost, uProposal, vProposal);
+        if (V->isStartDepot())  // this move empties V's route, so we subtract
+        {                       // its cost and only evaluate U's proposal
+            deltaCost -= costEvaluator.penalisedCost(*vRoute);
+            costEvaluator.deltaCost(deltaCost, uProposal);
+        }
+        else
+            costEvaluator.deltaCost(
+                deltaCost,
+                uProposal,
+                Route::Proposal(vRoute->before(V->pos()),
+                                vRoute->at(vRoute->size() - 1)));
     }
 
-    return deltaCost;
+    return std::make_pair(deltaCost, deltaCost < 0);
 }
 
 void SwapTails::apply(Route::Node *U, Route::Node *V) const
@@ -102,27 +104,31 @@ void SwapTails::apply(Route::Node *U, Route::Node *V) const
     auto *nU = n(U);
     auto *nV = n(V);
 
-    auto insertIdx = U->idx() + 1;
+    auto insertIdx = U->pos() + 1;
     while (!nV->isEndDepot())
     {
         auto *node = nV;
         nV = n(nV);
-        V->route()->remove(node->idx());
+        V->route()->remove(node->pos());
         U->route()->insert(insertIdx++, node);
     }
 
-    insertIdx = V->idx() + 1;
+    insertIdx = V->pos() + 1;
     while (!nU->isEndDepot())
     {
         auto *node = nU;
         nU = n(nU);
-        U->route()->remove(node->idx());
+        U->route()->remove(node->pos());
         V->route()->insert(insertIdx++, node);
     }
 }
 
-template <> bool pyvrp::search::supports<SwapTails>(ProblemData const &data)
+std::string SwapTails::name() const { return "SwapTails"; }
+
+bool SwapTails::supports(ProblemData const &data)
 {
-    // Does not work for TSP, since the operator needs at least two routes.
-    return data.numVehicles() > 1;
+    // Does not work for TSP, since the operator needs two routes. Also requires
+    // at least one client, as swapping whole tails does not make much sense
+    // for pure shipments since it likely breaks pickup-and-delivery pairs.
+    return data.numVehicles() > 1 && data.numClients() > 0;
 }

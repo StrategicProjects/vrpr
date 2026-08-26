@@ -2,8 +2,11 @@
 //
 // Builds a pyvrp::ProblemData from R vectors/matrices (measures as doubles, see
 // measure_bridge.h) and returns it as an external pointer with a finalizer.
-// Covers the single-load-dimension CVRP/VRPTW case; multi-dimensional variants
-// will come later.
+//
+// Location layout (vrpr convention, fixed): depots first (0..D-1), then
+// clients (D..D+C-1), then one pickup and one delivery location per shipment
+// (D+C+2s and D+C+2s+1 for shipment s). The R side builds the distance and
+// duration matrices in this same order.
 
 #include "measure_bridge.h"
 #include "vendor/pyvrp/ProblemData.h"
@@ -39,8 +42,7 @@ pyvrp::Matrix<T> to_matrix(doubles_matrix<> const &m, char const *what)
 }
 }  // namespace
 
-// Creates a ProblemData. Locations are ordered with depots first (low indices),
-// then clients, following PyVRP's convention.
+// Creates a ProblemData following the vrpr location layout described above.
 [[cpp11::register]]
 SEXP vrpr_problem_data_create(doubles depot_x,
                               doubles depot_y,
@@ -73,29 +75,57 @@ SEXP vrpr_problem_data_create(doubles depot_x,
                               integers client_group,
                               list group_members,
                               logicals group_required,
+                              doubles ship_pickup_x,
+                              doubles ship_pickup_y,
+                              doubles ship_delivery_x,
+                              doubles ship_delivery_y,
+                              doubles ship_pickup_tw_early,
+                              doubles ship_pickup_tw_late,
+                              doubles ship_pickup_service,
+                              doubles ship_delivery_tw_early,
+                              doubles ship_delivery_tw_late,
+                              doubles ship_delivery_service,
+                              doubles ship_amount,
+                              doubles ship_prize,
+                              logicals ship_required,
                               doubles_matrix<> distance,
                               doubles_matrix<> duration)
 {
-    std::vector<ProblemData::Depot> depots;
-    depots.reserve(depot_x.size());
-    for (R_xlen_t i = 0; i < depot_x.size(); ++i)
-        depots.emplace_back(depot_x[i],
-                            depot_y[i],
+    auto const n_depots = static_cast<std::size_t>(depot_x.size());
+    auto const n_clients = static_cast<std::size_t>(client_x.size());
+    auto const n_shipments = static_cast<std::size_t>(ship_pickup_x.size());
+
+    // Locations: depots, clients, then shipment pickup/delivery pairs.
+    std::vector<pyvrp::Location> locations;
+    locations.reserve(n_depots + n_clients + 2 * n_shipments);
+    for (std::size_t i = 0; i < n_depots; ++i)
+        locations.emplace_back(depot_x[i], depot_y[i]);
+    for (std::size_t i = 0; i < n_clients; ++i)
+        locations.emplace_back(client_x[i], client_y[i]);
+    for (std::size_t i = 0; i < n_shipments; ++i)
+    {
+        locations.emplace_back(ship_pickup_x[i], ship_pickup_y[i]);
+        locations.emplace_back(ship_delivery_x[i], ship_delivery_y[i]);
+    }
+
+    std::vector<pyvrp::Depot> depots;
+    depots.reserve(n_depots);
+    for (std::size_t i = 0; i < n_depots; ++i)
+        depots.emplace_back(i,  // location index
                             vrpr::as_i64(depot_tw_early[i], "tw_early (depot)"),
                             vrpr::as_i64_or_max(depot_tw_late[i], "tw_late (depot)"),
                             vrpr::as_i64(depot_service[i], "service (depot)"));
 
-    std::vector<ProblemData::Client> clients;
-    clients.reserve(client_x.size());
-    for (R_xlen_t i = 0; i < client_x.size(); ++i)
+    std::vector<pyvrp::Client> clients;
+    clients.reserve(n_clients);
+    for (std::size_t i = 0; i < n_clients; ++i)
     {
         std::vector<pyvrp::Load> const delivery{
             vrpr::as_i64(client_delivery[i], "demand (client)")};
         std::vector<pyvrp::Load> const pickup{
             vrpr::as_i64(client_pickup[i], "pickup (client)")};
 
-        clients.emplace_back(client_x[i],
-                             client_y[i],
+        clients.emplace_back(n_depots + i,  // location index
                              delivery,
                              pickup,
                              vrpr::as_i64(client_service[i], "service (client)"),
@@ -112,9 +142,8 @@ SEXP vrpr_problem_data_create(doubles depot_x,
                              "");
     }
 
-    // Client groups (mutually exclusive): members are location indices; each group
-    // may be required (visit exactly one) or not (visit at most one).
-    std::vector<ProblemData::ClientGroup> groups;
+    // Client groups (mutually exclusive): members are 0-based CLIENT indices.
+    std::vector<pyvrp::ClientGroup> groups;
     groups.reserve(group_members.size());
     for (R_xlen_t g = 0; g < group_members.size(); ++g)
     {
@@ -126,14 +155,37 @@ SEXP vrpr_problem_data_create(doubles depot_x,
         groups.emplace_back(cl, group_required[g] == TRUE, "");
     }
 
-    std::vector<ProblemData::VehicleType> vehicle_types;
+    // Shipments (pickup-and-delivery pairs); single load dimension.
+    std::vector<pyvrp::Shipment> shipments;
+    shipments.reserve(n_shipments);
+    for (std::size_t i = 0; i < n_shipments; ++i)
+    {
+        std::vector<pyvrp::Load> const amount{
+            vrpr::as_i64(ship_amount[i], "amount (shipment)")};
+
+        shipments.emplace_back(
+            n_depots + n_clients + 2 * i,      // pickup location
+            n_depots + n_clients + 2 * i + 1,  // delivery location
+            vrpr::as_i64(ship_pickup_tw_early[i], "pickup_tw_early (shipment)"),
+            vrpr::as_i64_or_max(ship_pickup_tw_late[i], "pickup_tw_late (shipment)"),
+            vrpr::as_i64(ship_pickup_service[i], "pickup_service (shipment)"),
+            vrpr::as_i64(ship_delivery_tw_early[i], "delivery_tw_early (shipment)"),
+            vrpr::as_i64_or_max(ship_delivery_tw_late[i], "delivery_tw_late (shipment)"),
+            vrpr::as_i64(ship_delivery_service[i], "delivery_service (shipment)"),
+            amount,
+            vrpr::as_i64(ship_prize[i], "prize (shipment)"),
+            ship_required[i] == TRUE,
+            "");
+    }
+
+    std::vector<pyvrp::VehicleType> vehicle_types;
     vehicle_types.reserve(veh_num_available.size());
     for (R_xlen_t i = 0; i < veh_num_available.size(); ++i)
     {
         std::vector<pyvrp::Load> const capacity{
             vrpr::as_i64(veh_capacity[i], "capacity (vehicle)")};
 
-        // Reload depots (multi-trip): 0-based location indices.
+        // Reload depots (multi-trip): 0-based depot indices.
         integers reload_idx(veh_reload_depots[i]);
         std::vector<std::size_t> reload_depots;
         reload_depots.reserve(reload_idx.size());
@@ -153,6 +205,7 @@ SEXP vrpr_problem_data_create(doubles depot_x,
             vrpr::as_i64(veh_fixed_cost[i], "fixed_cost (vehicle)"),
             vrpr::as_i64(veh_tw_early[i], "tw_early (vehicle)"),
             vrpr::as_i64_or_max(veh_tw_late[i], "tw_late (vehicle)"),
+            // max_duration maps to shift_duration (no overtime in vrpr yet).
             vrpr::as_i64_or_max(veh_max_duration[i], "max_duration (vehicle)"),
             vrpr::as_i64_or_max(veh_max_distance[i], "max_distance (vehicle)"),
             vrpr::as_i64(veh_unit_distance_cost[i], "unit_distance_cost (vehicle)"),
@@ -172,12 +225,14 @@ SEXP vrpr_problem_data_create(doubles depot_x,
 
     // The constructor calls validate() and throws std::exception on inconsistent
     // data; cpp11 translates that into an R error automatically.
-    auto *data = new ProblemData(std::move(clients),
+    auto *data = new ProblemData(std::move(locations),
+                                 std::move(clients),
                                  std::move(depots),
                                  std::move(vehicle_types),
                                  std::move(dist_mats),
                                  std::move(dur_mats),
-                                 std::move(groups));
+                                 std::move(groups),
+                                 std::move(shipments));
 
     return external_pointer<ProblemData>(data);
 }
@@ -193,6 +248,7 @@ list vrpr_problem_data_summary(SEXP ptr)
         "num_clients"_nm = static_cast<int>(data->numClients()),
         "num_depots"_nm = static_cast<int>(data->numDepots()),
         "num_groups"_nm = static_cast<int>(data->numGroups()),
+        "num_shipments"_nm = static_cast<int>(data->numShipments()),
         "num_locations"_nm = static_cast<int>(data->numLocations()),
         "num_vehicle_types"_nm = static_cast<int>(data->numVehicleTypes()),
         "num_vehicles"_nm = static_cast<int>(data->numVehicles()),

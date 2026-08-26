@@ -12,10 +12,13 @@ routes(x, ...)
 \item{...}{Unused.}
 }
 \value{
-A tibble with one row per visit: \code{route_id}, \code{depot} (start depot,
-1-based), \code{position}, \code{client}, \code{vehicle_type}, \code{start_service} (start of
-service) and \code{wait} (waiting time). The last two are only meaningful with
-time windows (VRPTW); \code{depot} varies in the MDVRP.
+A tibble with one row per client, pickup or delivery visit:
+\code{route_id}, \code{depot} (start depot, 1-based), \code{position}, \code{activity}
+(\code{"client"}, \code{"pickup"} or \code{"delivery"}), \code{client} (client number, \code{NA}
+for shipment visits), \code{shipment} (shipment number, \code{NA} for client
+visits), \code{trip}, \code{vehicle_type}, \code{start_service} (start of service) and
+\code{wait} (waiting time). The last two are only meaningful with time windows
+(VRPTW); \code{depot} varies in the MDVRP; \code{trip} in multi-trip routes.
 }
 \description{
 Routes of a solution, in long (tidy) format

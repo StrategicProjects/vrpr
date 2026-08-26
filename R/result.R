@@ -49,9 +49,12 @@ unvisited_clients <- function(x, ...) {
 
 #' @export
 unvisited_clients.vrpr_result <- function(x, ...) {
-  total <- x$problem_data$summary$num_clients
-  setdiff(seq_len(total), routes(x$solution)$client)
+  u <- unplanned(x$solution)
+  sort(unique(u$index[u$activity == "client"]))
 }
+
+#' @export
+unplanned.vrpr_result <- function(x, ...) unplanned(x$solution, ...)
 
 #' One-row summary of a result (tibble)
 #'
@@ -68,6 +71,7 @@ summary.vrpr_result <- function(object, ...) {
     num_routes = s$num_routes,
     num_trips = s$num_trips,
     num_clients = s$num_clients,
+    num_shipments = s$num_shipments,
     distance = s$distance,
     iterations = object$iterations,
     runtime = object$runtime

@@ -5,23 +5,19 @@
 \title{ILS solver parameters}
 \usage{
 ils_params(
-  num_neighbours = 20L,
+  num_neighbours = 50L,
   min_perturbations = 1L,
   max_perturbations = 25L,
-  init_load = 20,
-  init_tw = 6,
-  init_dist = 6,
   history_length = 300L,
   num_iters_no_improvement = 150000L,
   exhaustive_on_best = TRUE
 )
 }
 \arguments{
-\item{num_neighbours}{Granular neighbourhood size (k neighbours per client).}
+\item{num_neighbours}{Granular neighbourhood size (activities per
+neighbourhood). Default 50, as in PyVRP.}
 
 \item{min_perturbations, max_perturbations}{Range of perturbations per iteration.}
-
-\item{init_load, init_tw, init_dist}{Initial penalties.}
 
 \item{history_length}{Length of the late-acceptance history (> 0). Default
 300, as in PyVRP.}

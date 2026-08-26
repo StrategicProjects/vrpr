@@ -13,11 +13,11 @@ cluster_cvrp <- function(n = 12, seed = 1) {
     vrp_problem_data()
 }
 
-test_that("the engine registers node and route operators", {
+test_that("the engine registers unary and binary operators", {
   ls <- new_local_search(cluster_cvrp(), seed = 42)
-  expect_gt(ls$info$num_node_operators, 0L)
+  expect_gt(ls$info$num_binary_operators, 0L)
   # at least one operator should be active
-  expect_gte(ls$info$num_node_operators + ls$info$num_route_operators, 1L)
+  expect_gte(ls$info$num_unary_operators + ls$info$num_binary_operators, 1L)
 })
 
 test_that("local search does not worsen the solution (pure descent)", {

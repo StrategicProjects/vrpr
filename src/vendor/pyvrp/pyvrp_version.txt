@@ -1,6 +1,6 @@
 source: https://github.com/PyVRP/PyVRP
-tag: v0.13.4
+tag: v0.14.0
 vendored_from: PyVRP/PyVRP/pyvrp/cpp
-n_source_files: 45
+n_source_files: 85
 note: bindings.* (pybind11) and logging.h (spdlog) are replaced by the cpp11 layer.
 note: portability fixups applied on top of the verbatim copy (see patch_vendor in tools/vendor.R).

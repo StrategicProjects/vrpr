@@ -2,8 +2,8 @@
 //
 // Bundles into a single persistent object (LSBundle, exposed as an external
 // pointer) everything local search needs: a copy of the data, the RNG, the
-// PerturbationManager, the set of (node and route) operators and the LocalSearch
-// itself. This way the ILS loop reuses the same engine across iterations.
+// PerturbationManager, the operators and the LocalSearch itself. This way the
+// ILS loop reuses the same engine across iterations.
 //
 // LocalSearch::operator()(sol, ce, exhaustive=false) is ONE ILS iteration
 // (perturb + local search to a local optimum). With exhaustive=true it does not
@@ -14,19 +14,30 @@
 #include "vendor/pyvrp/ProblemData.h"
 #include "vendor/pyvrp/RandomNumberGenerator.h"
 #include "vendor/pyvrp/Solution.h"
-#include "vendor/pyvrp/search/Exchange.h"
+#include "vendor/pyvrp/search/InsertOptionalClient.h"
+#include "vendor/pyvrp/search/InsertOptionalShipment.h"
 #include "vendor/pyvrp/search/LocalSearch.h"
 #include "vendor/pyvrp/search/LocalSearchOperator.h"
 #include "vendor/pyvrp/search/PerturbationManager.h"
+#include "vendor/pyvrp/search/Relocate.h"
+#include "vendor/pyvrp/search/RelocateAlternative.h"
+#include "vendor/pyvrp/search/RelocateDelivery.h"
+#include "vendor/pyvrp/search/RelocatePickup.h"
+#include "vendor/pyvrp/search/RelocateShipment.h"
 #include "vendor/pyvrp/search/RelocateWithDepot.h"
+#include "vendor/pyvrp/search/RemoveAdjacentDepot.h"
+#include "vendor/pyvrp/search/RemoveOptionalClient.h"
+#include "vendor/pyvrp/search/RemoveOptionalShipment.h"
+#include "vendor/pyvrp/search/ReplaceGroup.h"
+#include "vendor/pyvrp/search/ReplaceOptionalClient.h"
+#include "vendor/pyvrp/search/ReplaceOptionalShipment.h"
 #include "vendor/pyvrp/search/SearchSpace.h"
-#include "vendor/pyvrp/search/SwapRoutes.h"
-#include "vendor/pyvrp/search/SwapStar.h"
+#include "vendor/pyvrp/search/Swap.h"
 #include "vendor/pyvrp/search/SwapTails.h"
+#include "vendor/pyvrp/search/neighbourhood.h"
 
 #include <cpp11.hpp>
 
-#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -37,12 +48,12 @@ using pyvrp::CostEvaluator;
 using pyvrp::ProblemData;
 using pyvrp::RandomNumberGenerator;
 using pyvrp::Solution;
+using pyvrp::search::BinaryOperator;
 using pyvrp::search::LocalSearch;
-using pyvrp::search::NodeOperator;
+using pyvrp::search::NeighbourhoodParams;
 using pyvrp::search::PerturbationManager;
 using pyvrp::search::PerturbationParams;
-using pyvrp::search::RouteOperator;
-using pyvrp::search::SearchSpace;
+using pyvrp::search::UnaryOperator;
 
 namespace
 {
@@ -56,45 +67,14 @@ CostEvaluator *as_cost_evaluator(SEXP p)
     return external_pointer<CostEvaluator>(p).get();
 }
 
-// Granular neighbourhood: for each client, the k nearest clients by distance
-// (profile 0). Depots have no neighbours. Mirrors the role of PyVRP's
-// compute_neighbours (a simple, proximity-based version).
-SearchSpace::Neighbours compute_neighbours(ProblemData const &data, size_t k)
-{
-    auto const num_loc = data.numLocations();
-    auto const num_dep = data.numDepots();
-    auto const &dist = data.distanceMatrix(0);
-
-    SearchSpace::Neighbours nb(num_loc);
-    for (size_t i = num_dep; i < num_loc; ++i)
-    {
-        std::vector<std::pair<std::int64_t, size_t>> cand;
-        cand.reserve(num_loc - num_dep);
-        for (size_t j = num_dep; j < num_loc; ++j)
-            if (j != i)
-                cand.emplace_back(static_cast<std::int64_t>(dist(i, j)), j);
-
-        auto const kk = std::min(k, cand.size());
-        std::partial_sort(cand.begin(), cand.begin() + kk, cand.end());
-
-        std::vector<size_t> row;
-        row.reserve(kk);
-        for (size_t t = 0; t != kk; ++t)
-            row.push_back(cand[t].second);
-        std::sort(row.begin(), row.end());  // stable neighbour order
-        nb[i] = std::move(row);
-    }
-    return nb;
-}
-
 // Everything local search needs, with lifetimes tied together.
 struct LSBundle
 {
     std::shared_ptr<ProblemData> data;
     std::shared_ptr<RandomNumberGenerator> rng;
     PerturbationManager pm;
-    std::vector<std::unique_ptr<NodeOperator>> node_ops;
-    std::vector<std::unique_ptr<RouteOperator>> route_ops;
+    std::vector<std::unique_ptr<UnaryOperator>> unary_ops;
+    std::vector<std::unique_ptr<BinaryOperator>> binary_ops;
     LocalSearch ls;
 
     LSBundle(ProblemData const &d,
@@ -105,42 +85,52 @@ struct LSBundle
         : data(std::make_shared<ProblemData>(d)),
           rng(std::make_shared<RandomNumberGenerator>(seed)),
           pm(PerturbationParams(min_pert, max_pert)),
-          ls(*data, compute_neighbours(*data, num_neighbours), pm)
+          ls(*data,
+             pyvrp::search::computeNeighbours(
+                 *data, NeighbourhoodParams(0.2, num_neighbours, true)),
+             pm)
     {
-        // Node operators: the Exchange<N,M> family (relocate/swap) + SwapTails (2-opt*).
-        add_node<pyvrp::search::Exchange<1, 0>>();
-        add_node<pyvrp::search::Exchange<2, 0>>();
-        add_node<pyvrp::search::Exchange<3, 0>>();
-        add_node<pyvrp::search::Exchange<1, 1>>();
-        add_node<pyvrp::search::Exchange<2, 1>>();
-        add_node<pyvrp::search::Exchange<3, 1>>();
-        add_node<pyvrp::search::Exchange<2, 2>>();
-        add_node<pyvrp::search::Exchange<3, 2>>();
-        add_node<pyvrp::search::Exchange<3, 3>>();
-        add_node<pyvrp::search::SwapTails>();
-        add_node<pyvrp::search::RelocateWithDepot>();  // only active with reload depots
-
-        // Route operators.
-        add_route<pyvrp::search::SwapStar>();
-        add_route<pyvrp::search::SwapRoutes>();
+        // PyVRP's default operator set (pyvrp.search.OPERATORS), in the same
+        // registration order. Each operator is added only when it supports the
+        // instance at hand.
+        namespace ps = pyvrp::search;
+        add<ps::Relocate<1>>();
+        add<ps::Relocate<2>>();
+        add<ps::Swap<1, 1>>();
+        add<ps::Swap<2, 1>>();
+        add<ps::Swap<2, 2>>();
+        add<ps::SwapTails>();
+        add<ps::RelocateAlternative>();
+        add<ps::RelocatePickup>();
+        add<ps::RelocateDelivery>();
+        add<ps::RelocateWithDepot>();
+        add<ps::RemoveAdjacentDepot>();
+        add<ps::RemoveOptionalClient>();
+        add<ps::InsertOptionalClient>();
+        add<ps::ReplaceOptionalClient>();
+        add<ps::RemoveOptionalShipment>();
+        add<ps::InsertOptionalShipment>();
+        add<ps::ReplaceOptionalShipment>();
+        add<ps::ReplaceGroup>();
+        add<ps::RelocateShipment>();
     }
 
-    template <typename Op> void add_node()
+    template <typename Op> void add()
     {
-        if (!pyvrp::search::supports<Op>(*data))
+        if (!Op::supports(*data))
             return;
         auto op = std::make_unique<Op>(*data);
-        ls.addNodeOperator(*op);
-        node_ops.push_back(std::move(op));
+        ls.addOperator(*op);
+        store(std::move(op));
     }
 
-    template <typename Op> void add_route()
+    template <typename Op>
+    void store(std::unique_ptr<Op> op)
     {
-        if (!pyvrp::search::supports<Op>(*data))
-            return;
-        auto op = std::make_unique<Op>(*data);
-        ls.addRouteOperator(*op);
-        route_ops.push_back(std::move(op));
+        if constexpr (std::is_base_of_v<UnaryOperator, Op>)
+            unary_ops.push_back(std::move(op));
+        else
+            binary_ops.push_back(std::move(op));
     }
 };
 
@@ -185,7 +175,7 @@ list vrpr_local_search_info(SEXP bundle)
     auto *b = as_bundle(bundle);
     using namespace cpp11::literals;
     return writable::list({
-        "num_node_operators"_nm = static_cast<int>(b->node_ops.size()),
-        "num_route_operators"_nm = static_cast<int>(b->route_ops.size()),
+        "num_unary_operators"_nm = static_cast<int>(b->unary_ops.size()),
+        "num_binary_operators"_nm = static_cast<int>(b->binary_ops.size()),
     });
 }

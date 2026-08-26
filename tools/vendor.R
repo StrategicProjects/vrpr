@@ -42,26 +42,61 @@ patch_vendor <- function(dest) {
     invisible(TRUE)
   }
 
-  # (1) LLVM >= 23 libc++ dropped transitive includes: std::back_inserter needs
-  # an explicit <iterator> (flagged by CRAN's clang23 additional checks).
-  # Upstream added the include to LocalSearch.cpp after v0.13.4.
-  for (file in c("search/LocalSearch.cpp", "Solution.cpp")) {
+  # Whole-text substitution, for multi-line anchors.
+  sub_in_text <- function(file, old, new, expect = 1L) {
+    path <- file.path(dest, file)
+    txt <- paste(readLines(path, warn = FALSE), collapse = "\n")
+    hits <- length(gregexpr(old, txt, fixed = TRUE)[[1]])
+    if (!grepl(old, txt, fixed = TRUE)) hits <- 0L
+    if (hits != expect) {
+      warn(sprintf(
+        "patch_vendor: expected %d match(es) in %s, found %d -- review this fixup",
+        expect, file, hits
+      ))
+      if (hits == 0) return(invisible(FALSE))
+    }
+    writeLines(gsub(old, new, txt, fixed = TRUE), path)
+    invisible(TRUE)
+  }
+
+  # (0) Upstream's logging.h wraps spdlog, which R packages cannot depend on.
+  # Replace it with no-op macro definitions (logging is a debug aid upstream;
+  # release wheels compile it out via PYVRP_LOG_LEVEL anyway).
+  if (file.exists(file.path(dest, "logging.h"))) {
+    writeLines(vrpr_logging_h, file.path(dest, "logging.h"))
+  }
+
+  # Inserts `#include <header>` into `file` (alphabetically within its block of
+  # <...> includes) unless already present.
+  ensure_std_include <- function(file, header) {
     path <- file.path(dest, file)
     txt <- readLines(path, warn = FALSE)
-    if (!any(grepl("#include <iterator>", txt, fixed = TRUE))) {
-      anchor <- grep("#include <algorithm>", txt, fixed = TRUE)
-      if (length(anchor) == 1) {
-        txt <- append(
-          txt,
-          "#include <iterator>  // vrpr: std::back_inserter (libc++ >= 23)",
-          after = anchor
-        )
-        writeLines(txt, path)
-      } else {
-        warn(sprintf("patch_vendor: no <algorithm> anchor in %s -- add <iterator> manually", file))
-      }
+    line <- sprintf("#include <%s>", header)
+    if (any(grepl(line, txt, fixed = TRUE))) {
+      return(invisible(FALSE))
     }
+    std <- grep("^#include <", txt)
+    if (length(std) == 0) {
+      warn(sprintf("patch_vendor: no <...> include block in %s -- add %s manually",
+                   file, line))
+      return(invisible(FALSE))
+    }
+    line <- paste0(line, "  // vrpr: missing on older standard libraries")
+    before <- std[txt[std] > line]
+    at <- if (length(before) > 0) min(before) - 1L else max(std)
+    writeLines(append(txt, line, after = at), path)
+    invisible(TRUE)
   }
+
+  # (1) Missing standard includes. Newer libc++/libstdc++ provide these
+  # transitively (which is why upstream compiles), but LLVM >= 23 libc++
+  # (CRAN's clang23 checks) and the old libc++ in Apple's MacOSX11.3 SDK do
+  # not. Verified by compiling every TU against the MacOSX11.3 SDK headers.
+  ensure_std_include("Solution.cpp", "iterator")       # std::back_inserter
+  ensure_std_include("search/LocalSearch.cpp", "iterator")
+  ensure_std_include("Client.h", "optional")           # std::optional group
+  ensure_std_include("Shipment.h", "string")           # std::string ctor arg
+  ensure_std_include("Shipment.h", "vector")           # std::vector<Load>
 
   # (2) Apple's MacOSX11.3 SDK (r-release-macos-x86_64 / r-oldrel-macos CRAN
   # builders) ships a libc++ whose <concepts> implements only std::same_as;
@@ -71,35 +106,102 @@ patch_vendor <- function(dest) {
   # headers at it.
   writeLines(vrpr_compat_h, file.path(dest, "vrpr_compat.h"))
   sub_in_file(
-    "CostEvaluator.h", "#include \"Solution.h\"",
-    "#include \"Solution.h\"\n#include \"vrpr_compat.h\"  // vrpr: std::convertible_to fallback"
+    "CostEvaluator.h", "#include \"Measure.h\"",
+    "#include \"Measure.h\"\n#include \"vrpr_compat.h\"  // vrpr: portability shim"
   )
   sub_in_file(
     "search/Route.h", "#include \"ProblemData.h\"",
-    "#include \"ProblemData.h\"\n#include \"vrpr_compat.h\"  // vrpr: std::convertible_to fallback"
+    "#include \"ProblemData.h\"\n#include \"vrpr_compat.h\"  // vrpr: portability shim"
   )
-  sub_in_file("CostEvaluator.h", "std::convertible_to", "compat::convertible_to", expect = 3L)
-  sub_in_file("search/Route.h", "std::convertible_to", "compat::convertible_to", expect = 3L)
+  sub_in_file("CostEvaluator.h", "std::convertible_to", "compat::convertible_to", expect = 2L)
+  sub_in_file("search/Route.h", "std::convertible_to", "compat::convertible_to", expect = 5L)
 
-  # (3) Route::Iterator declares only three of the five member typedefs.
-  # Pre-C++20 std::iterator_traits (same old libc++ as in (2)) requires all
-  # five, otherwise the traits are empty and e.g. the iterator-range vector
-  # constructor used by Route::visits() is SFINAE'd away. The two additions
-  # match what the C++20 traits deduce (operator* returns Client by value).
-  sub_in_file(
-    "Route.h", "        using value_type = Client;",
+  # (3) <format> does not exist in older standard libraries (Apple's MacOSX11.3
+  # SDK has none; libstdc++ only ships it from GCC 13). The vendored core only
+  # uses it for a std::formatter<Measure> specialisation that nothing in the
+  # compiled sources calls, so guard both the include and the specialisation
+  # behind the feature-test macro.
+  sub_in_text(
+    "Measure.h", "#include <format>",
     paste0(
-      "        using value_type = Client;\n",
-      "        // vrpr: pre-C++20 std::iterator_traits (e.g. the libc++ in Apple's\n",
-      "        // MacOSX11.3 SDK) requires all five member typedefs; these two match\n",
-      "        // what the C++20 traits deduce (operator* returns Client by value).\n",
-      "        using reference = Client;\n",
-      "        using pointer = void;"
+      "#if defined(__has_include)\n",
+      "#if __has_include(<version>)\n",
+      "#include <version>\n",
+      "#endif\n",
+      "#endif\n",
+      "#if defined(__cpp_lib_format)  // vrpr: <format> is missing on older stdlibs\n",
+      "#include <format>\n",
+      "#endif"
+    )
+  )
+  sub_in_text(
+    "Measure.h",
+    paste0(
+      "template <pyvrp::MeasureType Type, pyvrp::NumberType Value>\n",
+      "struct std::formatter<pyvrp::Measure<Type, Value>> : std::formatter<Value>\n",
+      "{\n",
+      "    auto format(pyvrp::Measure<Type, Value> const measure, auto &ctx) const\n",
+      "    {\n",
+      "        return std::formatter<Value>::format(measure.get(), ctx);\n",
+      "    }\n",
+      "};"
+    ),
+    paste0(
+      "#if defined(__cpp_lib_format)  // vrpr: guarded with the include above\n",
+      "template <pyvrp::MeasureType Type, pyvrp::NumberType Value>\n",
+      "struct std::formatter<pyvrp::Measure<Type, Value>> : std::formatter<Value>\n",
+      "{\n",
+      "    auto format(pyvrp::Measure<Type, Value> const measure, auto &ctx) const\n",
+      "    {\n",
+      "        return std::formatter<Value>::format(measure.get(), ctx);\n",
+      "    }\n",
+      "};\n",
+      "#endif  // __cpp_lib_format"
+    )
+  )
+
+  # (4) <ranges> does not exist in older standard libraries either; the only
+  # use is a compile-time sanity static_assert in Solution.cpp. Guard it (and
+  # a proper <ranges> include, which upstream relies on transitively) behind
+  # the feature-test macro.
+  sub_in_text(
+    "Solution.cpp", "#include <numeric>",
+    paste0(
+      "#include <numeric>\n",
+      "#if defined(__cpp_lib_ranges)  // vrpr: <ranges> is missing on older stdlibs\n",
+      "#include <ranges>\n",
+      "#endif"
+    )
+  )
+  sub_in_text(
+    "Solution.cpp",
+    "        static_assert(std::ranges::input_range<Route>);",
+    paste0(
+      "#if defined(__cpp_lib_ranges)  // vrpr: guarded with the include above\n",
+      "        static_assert(std::ranges::input_range<Route>);\n",
+      "#endif"
     )
   )
 
   invisible(NULL)
 }
+
+vrpr_logging_h <- c(
+  "#ifndef PYVRP_LOGGING_H",
+  "#define PYVRP_LOGGING_H",
+  "",
+  "// vrpr replacement (written by tools/vendor.R; upstream's logging.h wraps",
+  "// spdlog, which an R package cannot depend on). All logging macros are",
+  "// no-ops, matching upstream release builds with logging compiled out.",
+  "",
+  "#define PYVRP_DEBUG(name, ...) (void)0",
+  "#define PYVRP_INFO(name, ...) (void)0",
+  "#define PYVRP_WARN(name, ...) (void)0",
+  "#define PYVRP_ERROR(name, ...) (void)0",
+  "#define PYVRP_CRITICAL(name, ...) (void)0",
+  "",
+  "#endif  // PYVRP_LOGGING_H"
+)
 
 vrpr_compat_h <- c(
   "#ifndef VRPR_COMPAT_H",

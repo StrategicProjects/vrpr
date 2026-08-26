@@ -5,6 +5,28 @@
 #include <cmath>
 #include <compare>
 #include <cstdint>
+#if defined(__has_include)
+#if __has_include(<version>)
+#include <version>
+#endif
+#endif
+#if defined(__cpp_lib_format)  // vrpr: <format> is missing on older stdlibs
+#if defined(__has_include)
+#if __has_include(<version>)
+#include <version>
+#endif
+#endif
+#if defined(__cpp_lib_format)  // vrpr: <format> is missing on older stdlibs
+#if defined(__has_include)
+#if __has_include(<version>)
+#include <version>
+#endif
+#endif
+#if defined(__cpp_lib_format)  // vrpr: <format> is missing on older stdlibs
+#include <format>
+#endif
+#endif
+#endif
 #include <functional>
 #include <iostream>
 #include <limits>
@@ -230,7 +252,7 @@ std::ostream &operator<<(std::ostream &out,
     return out << measure.get();
 }
 
-// Specialisations for hashing and numerical limits.
+// Specialisations for hashing, numerical limits, and formatting.
 
 template <pyvrp::MeasureType Type, pyvrp::NumberType Value>
 struct std::hash<pyvrp::Measure<Type, Value>>
@@ -255,5 +277,20 @@ public:
         return std::numeric_limits<Value>::min();
     }
 };
+
+#if defined(__cpp_lib_format)  // vrpr: guarded with the include above
+#if defined(__cpp_lib_format)  // vrpr: guarded with the include above
+#if defined(__cpp_lib_format)  // vrpr: guarded with the include above
+template <pyvrp::MeasureType Type, pyvrp::NumberType Value>
+struct std::formatter<pyvrp::Measure<Type, Value>> : std::formatter<Value>
+{
+    auto format(pyvrp::Measure<Type, Value> const measure, auto &ctx) const
+    {
+        return std::formatter<Value>::format(measure.get(), ctx);
+    }
+};
+#endif  // __cpp_lib_format
+#endif  // __cpp_lib_format
+#endif  // __cpp_lib_format
 
 #endif  // PYVRP_MEASURE_H

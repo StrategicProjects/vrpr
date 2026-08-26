@@ -2,7 +2,8 @@
 #define PYVRP_COSTEVALUATOR_H
 
 #include "Measure.h"
-#include "Solution.h"
+#include "vrpr_compat.h"  // vrpr: portability shim
+#include "vrpr_compat.h"  // vrpr: portability shim
 #include "vrpr_compat.h"  // vrpr: compat::convertible_to fallback
 
 #include <cassert>
@@ -14,33 +15,12 @@
 
 namespace pyvrp
 {
-// The following methods must be implemented for a type to be evaluatable by
-// the CostEvaluator.
-template <typename T>
-concept CostEvaluatable = requires(T arg) {
-    { arg.distanceCost() } -> std::same_as<Cost>;
-    { arg.durationCost() } -> std::same_as<Cost>;
-    { arg.fixedVehicleCost() } -> std::same_as<Cost>;
-    { arg.excessLoad() } -> compat::convertible_to<std::vector<Load>>;
-    { arg.excessDistance() } -> std::same_as<Distance>;
-    { arg.timeWarp() } -> std::same_as<Duration>;
-    { arg.empty() } -> std::same_as<bool>;
-    { arg.isFeasible() } -> std::same_as<bool>;
-};
-
-// If, additionally, methods related to optional clients and prize collecting
-// are implemented we can also take that aspect into account. See the
-// CostEvaluator implementation for details.
-template <typename T>
-concept PrizeCostEvaluatable = CostEvaluatable<T> && requires(T arg) {
-    { arg.uncollectedPrizes() } -> std::same_as<Cost>;
-};
-
 // The following methods must be available before a type's delta cost can be
 // evaluated by the CostEvaluator.
 template <typename T>
 concept DeltaCostEvaluatable = requires(T arg, size_t dimension) {
     { arg.route() };
+    { arg.fixedVehicleCost() } -> std::same_as<Cost>;
     { arg.distance() } -> compat::convertible_to<std::pair<Cost, Distance>>;
     { arg.duration() } -> compat::convertible_to<std::pair<Cost, Duration>>;
     { arg.excessLoad(dimension) } -> std::same_as<Load>;
@@ -118,10 +98,8 @@ public:
     /**
      * Computes a smoothed objective (penalised cost) for a given solution.
      */
-    // The docstring above is written for Python, where we only expose this
-    // method for Solution.
-    template <CostEvaluatable T>
-    [[nodiscard]] Cost penalisedCost(T const &arg) const;
+    template <typename T> [[nodiscard]] Cost penalisedCost(T const &arg) const;
+    // We only expose penalisedCost() for the Solution class to Python.
 
     /**
      * Hand-waving some details, each solution consists of a set of non-empty
@@ -130,11 +108,11 @@ public:
      * route :math:`R` has an assigned vehicle type that equips the route with
      * fixed vehicle cost :math:`f_R`, and unit distance, duration and overtime
      * costs :math:`c^\text{distance}_R`, :math:`c^\text{duration}_R`,
-     * :math:`c^\text{overtime}_R`, respectively. Let
-     * :math:`V_R = \{i : (i, j) \in R \}` be the set of locations visited by
-     * route :math:`R`, and :math:`d_R`, :math:`t_R`, and :math:`o_R` the total
-     * route distance, duration, and overtime, respectively. The objective value
-     * is then given by
+     * :math:`c^\text{overtime}_R`, respectively. Let :math:`V` be the set of
+     * clients and shipments, and :math:`V_R \subseteq V` those serviced by
+     * route :math:`R`. Finally, let :math:`d_R`, :math:`t_R`, and :math:`o_R`
+     * be the total route distance, duration, and overtime, respectively. The
+     * objective value is then given by
      *
      * .. math::
      *
@@ -148,7 +126,7 @@ public:
      *
      * where the first part lists each route's fixed, distance, duration and
      * overtime costs, respectively, and the second part the uncollected prizes
-     * of unvisited clients.
+     * of unplanned clients and shipments.
      *
      * .. note::
      *
@@ -157,9 +135,8 @@ public:
      *    If that is not what you want, consider calling :meth:`penalised_cost`
      *    instead.
      */
-    // The docstring above is written for Python, where we only expose this
-    // method for the Solution class.
-    template <CostEvaluatable T> [[nodiscard]] Cost cost(T const &arg) const;
+    template <typename T> [[nodiscard]] Cost cost(T const &arg) const;
+    // We only expose cost() for the Solution class to Python.
 
     /**
      * Evaluates the cost delta of the given route proposal, and writes the
@@ -171,7 +148,6 @@ public:
      * The return value indicates whether the evaluation was exact or not.
      */
     template <bool exact = false,
-              bool skipLoad = false,
               typename... Args,
               template <typename...>
               class T>
@@ -188,7 +164,6 @@ public:
      * The return value indicates whether the evaluation was exact or not.
      */
     template <bool exact = false,
-              bool skipLoad = false,
               typename... uArgs,
               typename... vArgs,
               template <typename...>
@@ -237,29 +212,7 @@ Cost CostEvaluator::excessDistPenalty(Distance excessDistance) const
     return static_cast<Cost>(excessDistance.get() * distPenalty_);
 }
 
-template <CostEvaluatable T>
-Cost CostEvaluator::penalisedCost(T const &arg) const
-{
-    if (arg.empty())
-    {
-        if constexpr (PrizeCostEvaluatable<T>)
-            return arg.uncollectedPrizes();
-        return 0;
-    }
-
-    // Standard objective plus infeasibility-related penalty terms.
-    auto const cost
-        = arg.distanceCost() + arg.durationCost() + arg.fixedVehicleCost()
-          + excessLoadPenalties(arg.excessLoad()) + twPenalty(arg.timeWarp())
-          + distPenalty(arg.excessDistance(), 0);
-
-    if constexpr (PrizeCostEvaluatable<T>)
-        return cost + arg.uncollectedPrizes();
-
-    return cost;
-}
-
-template <CostEvaluatable T> Cost CostEvaluator::cost(T const &arg) const
+template <typename T> Cost CostEvaluator::cost(T const &arg) const
 {
     // Penalties are zero when the solution is feasible, so we can fall back to
     // penalised cost in that case.
@@ -267,26 +220,14 @@ template <CostEvaluatable T> Cost CostEvaluator::cost(T const &arg) const
                             : std::numeric_limits<Cost>::max();
 }
 
-template <bool exact,
-          bool skipLoad,
-          typename... Args,
-          template <typename...>
-          class T>
+template <bool exact, typename... Args, template <typename...> class T>
     requires(DeltaCostEvaluatable<T<Args...>>)
 bool CostEvaluator::deltaCost(Cost &out, T<Args...> const &proposal) const
 {
     auto const *route = proposal.route();
-    if (!route->empty())
-    {
-        out -= route->distanceCost();
-        out -= excessDistPenalty(route->excessDistance());
+    out -= penalisedCost(*route);
 
-        if constexpr (!skipLoad)
-            out -= excessLoadPenalties(route->excessLoad());
-
-        out -= route->durationCost();
-        out -= twPenalty(route->timeWarp());
-    }
+    out += proposal.fixedVehicleCost();
 
     if (route->hasDistanceCost())
     {
@@ -295,17 +236,14 @@ bool CostEvaluator::deltaCost(Cost &out, T<Args...> const &proposal) const
         out += excessDistPenalty(excess);
     }
 
-    if constexpr (!skipLoad)
+    auto const &capacity = route->capacity();
+    for (size_t dim = 0; dim != capacity.size(); ++dim)
     {
-        auto const &capacity = route->capacity();
-        for (size_t dim = 0; dim != capacity.size(); ++dim)
-        {
-            if constexpr (!exact)
-                if (out >= 0)
-                    return false;
+        if constexpr (!exact)
+            if (out >= 0)
+                return false;
 
-            out += loadPenalty(proposal.excessLoad(dim), 0, dim);
-        }
+        out += loadPenalty(proposal.excessLoad(dim), 0, dim);
     }
 
     if (route->hasDurationCost())
@@ -319,7 +257,6 @@ bool CostEvaluator::deltaCost(Cost &out, T<Args...> const &proposal) const
 }
 
 template <bool exact,
-          bool skipLoad,
           typename... uArgs,
           typename... vArgs,
           template <typename...>
@@ -331,30 +268,13 @@ bool CostEvaluator::deltaCost(Cost &out,
                               T<vArgs...> const &vProposal) const
 {
     auto const *uRoute = uProposal.route();
-    if (!uRoute->empty())
-    {
-        out -= uRoute->distanceCost();
-        out -= excessDistPenalty(uRoute->excessDistance());
-
-        if constexpr (!skipLoad)
-            out -= excessLoadPenalties(uRoute->excessLoad());
-
-        out -= uRoute->durationCost();
-        out -= twPenalty(uRoute->timeWarp());
-    }
-
     auto const *vRoute = vProposal.route();
-    if (!vRoute->empty())
-    {
-        out -= vRoute->distanceCost();
-        out -= excessDistPenalty(vRoute->excessDistance());
 
-        if constexpr (!skipLoad)
-            out -= excessLoadPenalties(vRoute->excessLoad());
+    out -= penalisedCost(*uRoute);
+    out -= penalisedCost(*vRoute);
 
-        out -= vRoute->durationCost();
-        out -= twPenalty(vRoute->timeWarp());
-    }
+    out += uProposal.fixedVehicleCost();
+    out += vProposal.fixedVehicleCost();
 
     if (uRoute->hasDistanceCost())
     {
@@ -370,27 +290,24 @@ bool CostEvaluator::deltaCost(Cost &out,
         out += excessDistPenalty(excess);
     }
 
-    if constexpr (!skipLoad)
+    auto const &uCapacity = uRoute->capacity();
+    for (size_t dim = 0; dim != uCapacity.size(); ++dim)
     {
-        auto const &uCapacity = uRoute->capacity();
-        for (size_t dim = 0; dim != uCapacity.size(); ++dim)
-        {
-            if constexpr (!exact)
-                if (out >= 0)
-                    return false;
+        if constexpr (!exact)
+            if (out >= 0)
+                return false;
 
-            out += loadPenalty(uProposal.excessLoad(dim), 0, dim);
-        }
+        out += loadPenalty(uProposal.excessLoad(dim), 0, dim);
+    }
 
-        auto const &vCapacity = vRoute->capacity();
-        for (size_t dim = 0; dim != vCapacity.size(); ++dim)
-        {
-            if constexpr (!exact)
-                if (out >= 0)
-                    return false;
+    auto const &vCapacity = vRoute->capacity();
+    for (size_t dim = 0; dim != vCapacity.size(); ++dim)
+    {
+        if constexpr (!exact)
+            if (out >= 0)
+                return false;
 
-            out += loadPenalty(vProposal.excessLoad(dim), 0, dim);
-        }
+        out += loadPenalty(vProposal.excessLoad(dim), 0, dim);
     }
 
     if constexpr (!exact)

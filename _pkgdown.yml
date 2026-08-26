@@ -13,6 +13,7 @@ reference:
   - add_depot
   - add_clients
   - add_vehicle_type
+  - add_shipments
   - add_client_group
 
 - title: Solving
@@ -29,6 +30,7 @@ reference:
   - routes
   - summary.vrpr_result
   - unvisited_clients
+  - unplanned
   - plot.vrpr_result
   - plot.vrpr_model
 

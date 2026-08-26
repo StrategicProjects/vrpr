@@ -12,8 +12,8 @@ vrpr_local_search_info <- function(bundle) {
   .Call(`_vrpr_vrpr_local_search_info`, bundle)
 }
 
-vrpr_problem_data_create <- function(depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_duration, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, veh_reload_depots, veh_max_reloads, client_group, group_members, group_required, distance, duration) {
-  .Call(`_vrpr_vrpr_problem_data_create`, depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_duration, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, veh_reload_depots, veh_max_reloads, client_group, group_members, group_required, distance, duration)
+vrpr_problem_data_create <- function(depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_duration, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, veh_reload_depots, veh_max_reloads, client_group, group_members, group_required, ship_pickup_x, ship_pickup_y, ship_delivery_x, ship_delivery_y, ship_pickup_tw_early, ship_pickup_tw_late, ship_pickup_service, ship_delivery_tw_early, ship_delivery_tw_late, ship_delivery_service, ship_amount, ship_prize, ship_required, distance, duration) {
+  .Call(`_vrpr_vrpr_problem_data_create`, depot_x, depot_y, depot_tw_early, depot_tw_late, depot_service, client_x, client_y, client_delivery, client_pickup, client_service, client_tw_early, client_tw_late, client_release, client_prize, client_required, veh_num_available, veh_capacity, veh_fixed_cost, veh_tw_early, veh_tw_late, veh_max_duration, veh_max_distance, veh_unit_distance_cost, veh_unit_duration_cost, veh_start_depot, veh_end_depot, veh_reload_depots, veh_max_reloads, client_group, group_members, group_required, ship_pickup_x, ship_pickup_y, ship_delivery_x, ship_delivery_y, ship_pickup_tw_early, ship_pickup_tw_late, ship_pickup_service, ship_delivery_tw_early, ship_delivery_tw_late, ship_delivery_service, ship_amount, ship_prize, ship_required, distance, duration)
 }
 
 vrpr_problem_data_summary <- function(ptr) {
@@ -40,8 +40,8 @@ vrpr_cost_evaluator_create <- function(load_penalties, tw_penalty, dist_penalty)
   .Call(`_vrpr_vrpr_cost_evaluator_create`, load_penalties, tw_penalty, dist_penalty)
 }
 
-vrpr_solution_from_routes <- function(pd, routes) {
-  .Call(`_vrpr_vrpr_solution_from_routes`, pd, routes)
+vrpr_solution_from_routes <- function(pd, routes, veh_types) {
+  .Call(`_vrpr_vrpr_solution_from_routes`, pd, routes, veh_types)
 }
 
 vrpr_solution_random <- function(pd, rng) {
@@ -52,8 +52,12 @@ vrpr_solution_summary <- function(ptr) {
   .Call(`_vrpr_vrpr_solution_summary`, ptr)
 }
 
-vrpr_solution_routes <- function(ptr, num_depots) {
-  .Call(`_vrpr_vrpr_solution_routes`, ptr, num_depots)
+vrpr_solution_routes <- function(ptr) {
+  .Call(`_vrpr_vrpr_solution_routes`, ptr)
+}
+
+vrpr_solution_unplanned <- function(ptr) {
+  .Call(`_vrpr_vrpr_solution_unplanned`, ptr)
 }
 
 vrpr_penalised_cost <- function(ce, sol) {

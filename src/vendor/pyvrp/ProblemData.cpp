@@ -5,35 +5,20 @@
 #include <numeric>
 #include <stdexcept>
 
+using pyvrp::Client;
+using pyvrp::ClientGroup;
+using pyvrp::Depot;
 using pyvrp::Distance;
 using pyvrp::Duration;
 using pyvrp::Load;
+using pyvrp::Location;
 using pyvrp::Matrix;
 using pyvrp::ProblemData;
+using pyvrp::Shipment;
+using pyvrp::VehicleType;
 
 namespace
 {
-// Small local helper for what is essentially strdup() from the C23 standard,
-// which my compiler does not (yet) have. See here for the actual recipe:
-// https://stackoverflow.com/a/252802/4316405 (modified to use new instead of
-// malloc). We do all this so we can use C-style strings, rather than C++'s
-// std::string, which are much larger objects.
-static char *duplicate(char const *src)
-{
-    char *dst = new char[std::strlen(src) + 1];  // space for src + null
-    std::strcpy(dst, src);
-    return dst;
-}
-
-// Pad vec1 with zeroes to the size of vec1 and vec2, whichever is larger.
-auto &pad(auto &vec1, auto const &vec2)
-{
-    vec1.resize(std::max(vec1.size(), vec2.size()));
-    return vec1;
-}
-
-bool isNegative(auto value) { return value < 0; }
-
 // Small helper that determines if the time windows of a and b overlap.
 bool hasTimeOverlap(auto const &a, auto const &b)
 {
@@ -53,466 +38,23 @@ bool hasTimeWindow(auto const &arg)
 }
 }  // namespace
 
-ProblemData::Client::Client(Coordinate x,
-                            Coordinate y,
-                            std::vector<Load> delivery,
-                            std::vector<Load> pickup,
-                            Duration serviceDuration,
-                            Duration twEarly,
-                            Duration twLate,
-                            Duration releaseTime,
-                            Cost prize,
-                            bool required,
-                            std::optional<size_t> group,
-                            std::string name)
-    : x(x),
-      y(y),
-      serviceDuration(serviceDuration),
-      twEarly(twEarly),
-      twLate(twLate),
-      delivery(pad(delivery, pickup)),
-      pickup(pad(pickup, delivery)),
-      releaseTime(releaseTime),
-      prize(prize),
-      required(required),
-      group(group),
-      name(duplicate(name.data()))
+std::vector<Location> const &ProblemData::locations() const
 {
-    assert(delivery.size() == pickup.size());
-
-    if (std::any_of(delivery.begin(), delivery.end(), isNegative<Load>))
-        throw std::invalid_argument("delivery amounts must be >= 0.");
-
-    if (std::any_of(pickup.begin(), pickup.end(), isNegative<Load>))
-        throw std::invalid_argument("pickup amounts must be >= 0.");
-
-    if (serviceDuration < 0)
-        throw std::invalid_argument("service_duration must be >= 0.");
-
-    if (twEarly > twLate)
-        throw std::invalid_argument("tw_early must be <= tw_late.");
-
-    if (twEarly < 0)
-        throw std::invalid_argument("tw_early must be >= 0.");
-
-    if (releaseTime > twLate)
-        throw std::invalid_argument("release_time must be <= tw_late");
-
-    if (releaseTime < 0)
-        throw std::invalid_argument("release_time must be >= 0.");
-
-    if (prize < 0)
-        throw std::invalid_argument("prize must be >= 0.");
+    return locations_;
 }
 
-ProblemData::Client::Client(Client const &client)
-    : x(client.x),
-      y(client.y),
-      serviceDuration(client.serviceDuration),
-      twEarly(client.twEarly),
-      twLate(client.twLate),
-      delivery(client.delivery),
-      pickup(client.pickup),
-      releaseTime(client.releaseTime),
-      prize(client.prize),
-      required(client.required),
-      group(client.group),
-      name(duplicate(client.name))
+std::vector<Client> const &ProblemData::clients() const { return clients_; }
+
+std::vector<Depot> const &ProblemData::depots() const { return depots_; }
+
+std::vector<ClientGroup> const &ProblemData::groups() const { return groups_; }
+
+std::vector<Shipment> const &ProblemData::shipments() const
 {
+    return shipments_;
 }
 
-ProblemData::Client::Client(Client &&client)
-    : x(client.x),
-      y(client.y),
-      serviceDuration(client.serviceDuration),
-      twEarly(client.twEarly),
-      twLate(client.twLate),
-      delivery(std::move(client.delivery)),
-      pickup(std::move(client.pickup)),
-      releaseTime(client.releaseTime),
-      prize(client.prize),
-      required(client.required),
-      group(client.group),
-      name(client.name)  // we can steal
-{
-    client.name = nullptr;  // stolen
-}
-
-ProblemData::Client::~Client() { delete[] name; }
-
-bool ProblemData::Client::operator==(Client const &other) const
-{
-    // clang-format off
-    return x == other.x
-        && y == other.y
-        && delivery == other.delivery
-        && pickup == other.pickup
-        && serviceDuration == other.serviceDuration
-        && twEarly == other.twEarly
-        && twLate == other.twLate
-        && releaseTime == other.releaseTime
-        && prize == other.prize
-        && required == other.required
-        && group == other.group
-        && std::strcmp(name, other.name) == 0;
-    // clang-format on
-}
-
-ProblemData::ClientGroup::ClientGroup(std::vector<size_t> clients,
-                                      bool required,
-                                      std::string name)
-    : required(required), name(duplicate(name.data()))
-{
-    for (auto const client : clients)
-        addClient(client);
-}
-
-ProblemData::ClientGroup::ClientGroup(ClientGroup const &group)
-    : clients_(group.clients_),
-      required(group.required),
-      name(duplicate(group.name))
-{
-}
-
-ProblemData::ClientGroup::ClientGroup(ClientGroup &&group)
-    : clients_(std::move(group.clients_)),
-      required(group.required),
-      name(group.name)  // we can steal
-{
-    group.name = nullptr;  // stolen
-}
-
-bool ProblemData::ClientGroup::operator==(ClientGroup const &other) const
-{
-    // clang-format off
-    return clients_ == other.clients_
-        && required == other.required
-        && mutuallyExclusive == other.mutuallyExclusive
-        && std::strcmp(name, other.name) == 0;
-    // clang-format on
-}
-
-ProblemData::ClientGroup::~ClientGroup() { delete[] name; }
-
-bool ProblemData::ClientGroup::empty() const { return clients_.empty(); }
-
-size_t ProblemData::ClientGroup::size() const { return clients_.size(); }
-
-std::vector<size_t>::const_iterator ProblemData::ClientGroup::begin() const
-{
-    return clients_.begin();
-}
-
-std::vector<size_t>::const_iterator ProblemData::ClientGroup::end() const
-{
-    return clients_.end();
-}
-
-std::vector<size_t> const &ProblemData::ClientGroup::clients() const
-{
-    return clients_;
-}
-
-void ProblemData::ClientGroup::addClient(size_t client)
-{
-    if (std::find(clients_.begin(), clients_.end(), client) != clients_.end())
-        throw std::invalid_argument("Client already in group.");
-
-    clients_.push_back(client);
-}
-
-void ProblemData::ClientGroup::clear() { clients_.clear(); }
-
-ProblemData::Depot::Depot(Coordinate x,
-                          Coordinate y,
-                          Duration twEarly,
-                          Duration twLate,
-                          Duration serviceDuration,
-                          std::string name)
-    : x(x),
-      y(y),
-      serviceDuration(serviceDuration),
-      twEarly(twEarly),
-      twLate(twLate),
-      name(duplicate(name.data()))
-{
-    if (serviceDuration < 0)
-        throw std::invalid_argument("service_duration must be >= 0.");
-
-    if (twEarly > twLate)
-        throw std::invalid_argument("tw_early must be <= tw_late.");
-
-    if (twEarly < 0)
-        throw std::invalid_argument("tw_early must be >= 0.");
-}
-
-ProblemData::Depot::Depot(Depot const &depot)
-    : x(depot.x),
-      y(depot.y),
-      serviceDuration(depot.serviceDuration),
-      twEarly(depot.twEarly),
-      twLate(depot.twLate),
-      name(duplicate(depot.name))
-{
-}
-
-ProblemData::Depot::Depot(Depot &&depot)
-    : x(depot.x),
-      y(depot.y),
-      serviceDuration(depot.serviceDuration),
-      twEarly(depot.twEarly),
-      twLate(depot.twLate),
-      name(depot.name)  // we can steal
-{
-    depot.name = nullptr;  // stolen
-}
-
-ProblemData::Depot::~Depot() { delete[] name; }
-
-bool ProblemData::Depot::operator==(Depot const &other) const
-{
-    // clang-format off
-    return x == other.x 
-        && y == other.y
-        && twEarly == other.twEarly
-        && twLate == other.twLate
-        && serviceDuration == other.serviceDuration
-        && std::strcmp(name, other.name) == 0;
-    // clang-format on
-}
-
-ProblemData::VehicleType::VehicleType(size_t numAvailable,
-                                      std::vector<Load> capacity,
-                                      size_t startDepot,
-                                      size_t endDepot,
-                                      Cost fixedCost,
-                                      Duration twEarly,
-                                      Duration twLate,
-                                      Duration shiftDuration,
-                                      Distance maxDistance,
-                                      Cost unitDistanceCost,
-                                      Cost unitDurationCost,
-                                      size_t profile,
-                                      std::optional<Duration> startLate,
-                                      std::vector<Load> initialLoad,
-                                      std::vector<size_t> reloadDepots,
-                                      size_t maxReloads,
-                                      Duration maxOvertime,
-                                      Cost unitOvertimeCost,
-                                      std::string name)
-    : numAvailable(numAvailable),
-      startDepot(startDepot),
-      endDepot(endDepot),
-      capacity(pad(capacity, initialLoad)),
-      twEarly(twEarly),
-      twLate(twLate),
-      shiftDuration(shiftDuration),
-      maxDistance(maxDistance),
-      fixedCost(fixedCost),
-      unitDistanceCost(unitDistanceCost),
-      unitDurationCost(unitDurationCost),
-      profile(profile),
-      startLate(startLate.value_or(twLate)),
-      initialLoad(pad(initialLoad, capacity)),
-      reloadDepots(reloadDepots),
-      maxReloads(maxReloads),
-      maxOvertime(maxOvertime),
-      unitOvertimeCost(unitOvertimeCost),
-      // We need to check >= 0 here to avoid overflow. If the arguments are
-      // negative the validation checks further below will raise, so it doesn't
-      // matter what we set as long as we get to those checks.
-      maxDuration(shiftDuration >= 0 && maxOvertime >= 0
-                          && maxOvertime < std::numeric_limits<Duration>::max()
-                                               - shiftDuration
-                      ? shiftDuration + maxOvertime
-                      : std::numeric_limits<Duration>::max()),
-      name(duplicate(name.data()))
-{
-    if (numAvailable == 0)
-        throw std::invalid_argument("num_available must be > 0.");
-
-    if (std::any_of(capacity.begin(), capacity.end(), isNegative<Load>))
-        throw std::invalid_argument("capacity amounts must be >= 0.");
-
-    if (twEarly > this->startLate)
-        throw std::invalid_argument("tw_early must be <= start_late.");
-
-    if (this->startLate > twLate)
-        throw std::invalid_argument("start_late must be <= tw_late.");
-
-    if (twEarly < 0)
-        throw std::invalid_argument("tw_early must be >= 0.");
-
-    if (shiftDuration < 0)
-        throw std::invalid_argument("shift_duration must be >= 0.");
-
-    if (maxDistance < 0)
-        throw std::invalid_argument("max_distance must be >= 0.");
-
-    if (fixedCost < 0)
-        throw std::invalid_argument("fixed_cost must be >= 0.");
-
-    if (unitDistanceCost < 0)
-        throw std::invalid_argument("unit_distance_cost must be >= 0.");
-
-    if (unitDurationCost < 0)
-        throw std::invalid_argument("unit_duration_cost must be >= 0.");
-
-    if (std::any_of(initialLoad.begin(), initialLoad.end(), isNegative<Load>))
-        throw std::invalid_argument("initial load amounts must be >= 0.");
-
-    for (size_t dim = 0; dim != initialLoad.size(); ++dim)
-        if (initialLoad[dim] > capacity[dim])
-            throw std::invalid_argument("initial load exceeds capacity.");
-
-    if (maxOvertime < 0)
-        throw std::invalid_argument("max_overtime must be >= 0.");
-
-    if (unitOvertimeCost < 0)
-        throw std::invalid_argument("unit_overtime_cost must be >= 0.");
-}
-
-ProblemData::VehicleType::VehicleType(VehicleType const &vehicleType)
-    : numAvailable(vehicleType.numAvailable),
-      startDepot(vehicleType.startDepot),
-      endDepot(vehicleType.endDepot),
-      capacity(vehicleType.capacity),
-      twEarly(vehicleType.twEarly),
-      twLate(vehicleType.twLate),
-      shiftDuration(vehicleType.shiftDuration),
-      maxDistance(vehicleType.maxDistance),
-      fixedCost(vehicleType.fixedCost),
-      unitDistanceCost(vehicleType.unitDistanceCost),
-      unitDurationCost(vehicleType.unitDurationCost),
-      profile(vehicleType.profile),
-      startLate(vehicleType.startLate),
-      initialLoad(vehicleType.initialLoad),
-      reloadDepots(vehicleType.reloadDepots),
-      maxReloads(vehicleType.maxReloads),
-      maxOvertime(vehicleType.maxOvertime),
-      unitOvertimeCost(vehicleType.unitOvertimeCost),
-      maxDuration(vehicleType.maxDuration),
-      name(duplicate(vehicleType.name))
-{
-}
-
-ProblemData::VehicleType::VehicleType(VehicleType &&vehicleType)
-    : numAvailable(vehicleType.numAvailable),
-      startDepot(vehicleType.startDepot),
-      endDepot(vehicleType.endDepot),
-      capacity(std::move(vehicleType.capacity)),
-      twEarly(vehicleType.twEarly),
-      twLate(vehicleType.twLate),
-      shiftDuration(vehicleType.shiftDuration),
-      maxDistance(vehicleType.maxDistance),
-      fixedCost(vehicleType.fixedCost),
-      unitDistanceCost(vehicleType.unitDistanceCost),
-      unitDurationCost(vehicleType.unitDurationCost),
-      profile(vehicleType.profile),
-      startLate(vehicleType.startLate),
-      initialLoad(std::move(vehicleType.initialLoad)),
-      reloadDepots(std::move(vehicleType.reloadDepots)),
-      maxReloads(vehicleType.maxReloads),
-      maxOvertime(vehicleType.maxOvertime),
-      unitOvertimeCost(vehicleType.unitOvertimeCost),
-      maxDuration(vehicleType.maxDuration),
-      name(vehicleType.name)  // we can steal
-{
-    vehicleType.name = nullptr;  // stolen
-}
-
-ProblemData::VehicleType::~VehicleType() { delete[] name; }
-
-ProblemData::VehicleType ProblemData::VehicleType::replace(
-    std::optional<size_t> numAvailable,
-    std::optional<std::vector<Load>> capacity,
-    std::optional<size_t> startDepot,
-    std::optional<size_t> endDepot,
-    std::optional<Cost> fixedCost,
-    std::optional<Duration> twEarly,
-    std::optional<Duration> twLate,
-    std::optional<Duration> shiftDuration,
-    std::optional<Distance> maxDistance,
-    std::optional<Cost> unitDistanceCost,
-    std::optional<Cost> unitDurationCost,
-    std::optional<size_t> profile,
-    std::optional<Duration> startLate,
-    std::optional<std::vector<Load>> initialLoad,
-    std::optional<std::vector<size_t>> reloadDepots,
-    std::optional<size_t> maxReloads,
-    std::optional<Duration> maxOvertime,
-    std::optional<Cost> unitOvertimeCost,
-    std::optional<std::string> name) const
-{
-    return {numAvailable.value_or(this->numAvailable),
-            capacity.value_or(this->capacity),
-            startDepot.value_or(this->startDepot),
-            endDepot.value_or(this->endDepot),
-            fixedCost.value_or(this->fixedCost),
-            twEarly.value_or(this->twEarly),
-            twLate.value_or(this->twLate),
-            shiftDuration.value_or(this->shiftDuration),
-            maxDistance.value_or(this->maxDistance),
-            unitDistanceCost.value_or(this->unitDistanceCost),
-            unitDurationCost.value_or(this->unitDurationCost),
-            profile.value_or(this->profile),
-            startLate.value_or(this->startLate),
-            initialLoad.value_or(this->initialLoad),
-            reloadDepots.value_or(this->reloadDepots),
-            maxReloads.value_or(this->maxReloads),
-            maxOvertime.value_or(this->maxOvertime),
-            unitOvertimeCost.value_or(this->unitOvertimeCost),
-            name.value_or(this->name)};
-}
-
-size_t ProblemData::VehicleType::maxTrips() const
-{
-    // When maxReloads is at its maximum size, maxReloads + 1 wraps around to 0,
-    // and then std::max() ensures we still return a reasonable value.
-    return reloadDepots.empty() ? 1 : std::max(maxReloads, maxReloads + 1);
-}
-
-bool ProblemData::VehicleType::operator==(VehicleType const &other) const
-{
-    // clang-format off
-    return numAvailable == other.numAvailable
-        && capacity == other.capacity
-        && startDepot == other.startDepot
-        && endDepot == other.endDepot
-        && fixedCost == other.fixedCost
-        && twEarly == other.twEarly
-        && twLate == other.twLate
-        && shiftDuration == other.shiftDuration
-        && maxDistance == other.maxDistance
-        && unitDistanceCost == other.unitDistanceCost
-        && unitDurationCost == other.unitDurationCost
-        && profile == other.profile
-        && startLate == other.startLate
-        && initialLoad == other.initialLoad
-        && reloadDepots == other.reloadDepots
-        && maxReloads == other.maxReloads
-        && maxOvertime == other.maxOvertime
-        && unitOvertimeCost == other.unitOvertimeCost
-        && std::strcmp(name, other.name) == 0;
-    // clang-format on
-}
-
-std::vector<ProblemData::Client> const &ProblemData::clients() const
-{
-    return clients_;
-}
-
-std::vector<ProblemData::Depot> const &ProblemData::depots() const
-{
-    return depots_;
-}
-
-std::vector<ProblemData::ClientGroup> const &ProblemData::groups() const
-{
-    return groups_;
-}
-
-std::vector<ProblemData::VehicleType> const &ProblemData::vehicleTypes() const
+std::vector<VehicleType> const &ProblemData::vehicleTypes() const
 {
     return vehicleTypes_;
 }
@@ -527,23 +69,22 @@ std::vector<Matrix<Duration>> const &ProblemData::durationMatrices() const
     return durs_;
 }
 
-ProblemData::ClientGroup const &ProblemData::group(size_t group) const
+Location const &ProblemData::location(size_t location) const
+{
+    assert(location < numLocations());
+    return locations_[location];
+}
+
+ClientGroup const &ProblemData::group(size_t group) const
 {
     assert(group < groups_.size());
     return groups_[group];
 }
 
-ProblemData::VehicleType const &
-ProblemData::vehicleType(size_t vehicleType) const
+VehicleType const &ProblemData::vehicleType(size_t vehicleType) const
 {
     assert(vehicleType < vehicleTypes_.size());
     return vehicleTypes_[vehicleType];
-}
-
-std::pair<pyvrp::Coordinate, pyvrp::Coordinate> const &
-ProblemData::centroid() const
-{
-    return centroid_;
 }
 
 size_t ProblemData::numClients() const { return clients_.size(); }
@@ -552,7 +93,9 @@ size_t ProblemData::numDepots() const { return depots_.size(); }
 
 size_t ProblemData::numGroups() const { return groups_.size(); }
 
-size_t ProblemData::numLocations() const { return numDepots() + numClients(); }
+size_t ProblemData::numLocations() const { return locations_.size(); }
+
+size_t ProblemData::numShipments() const { return shipments_.size(); }
 
 size_t ProblemData::numVehicleTypes() const { return vehicleTypes_.size(); }
 
@@ -569,9 +112,12 @@ size_t ProblemData::numLoadDimensions() const { return numLoadDimensions_; }
 void ProblemData::validate() const
 {
     // Client checks.
-    for (size_t idx = numDepots(); idx != numLocations(); ++idx)
+    for (size_t idx = 0; idx != numClients(); ++idx)
     {
-        ProblemData::Client const &client = location(idx);
+        auto const &client = clients_[idx];
+
+        if (client.location >= numLocations())
+            throw std::out_of_range("Client references invalid location.");
 
         if (client.delivery.size() != numLoadDimensions_)
         {
@@ -609,6 +155,10 @@ void ProblemData::validate() const
     if (depots_.empty())
         throw std::invalid_argument("Expected at least one depot.");
 
+    for (auto const &depot : depots_)
+        if (depot.location >= numLocations())
+            throw std::out_of_range("Depot references invalid location.");
+
     // Group checks.
     for (size_t idx = 0; idx != numGroups(); ++idx)
     {
@@ -619,16 +169,32 @@ void ProblemData::validate() const
 
         for (auto const client : group)
         {
-            if (client < numDepots() || client >= numLocations())
+            if (client >= numClients())
                 throw std::out_of_range("Group references invalid client.");
 
-            ProblemData::Client const &clientData = location(client);
+            auto const &clientData = clients_[client];
             if (!clientData.group || *clientData.group != idx)
             {
                 auto const *msg = "Group references client not in group.";
                 throw std::invalid_argument(msg);
             }
         }
+    }
+
+    // Shipment checks.
+    for (auto const &shipment : shipments_)
+    {
+        if (shipment.pickup.location >= numLocations())
+            throw std::out_of_range(
+                "Shipment pickup references invalid location.");
+
+        if (shipment.delivery.location >= numLocations())
+            throw std::out_of_range(
+                "Shipment delivery references invalid location.");
+
+        if (shipment.amount.size() != numLoadDimensions_)
+            throw std::invalid_argument(
+                "Shipment has inconsistent amount size.");
     }
 
     // Vehicle type checks.
@@ -702,58 +268,67 @@ void ProblemData::validate() const
 }
 
 ProblemData
-ProblemData::replace(std::optional<std::vector<Client>> &clients,
+ProblemData::replace(std::optional<std::vector<Location>> &locations,
+                     std::optional<std::vector<Client>> &clients,
                      std::optional<std::vector<Depot>> &depots,
                      std::optional<std::vector<VehicleType>> &vehicleTypes,
                      std::optional<std::vector<Matrix<Distance>>> &distMats,
                      std::optional<std::vector<Matrix<Duration>>> &durMats,
-                     std::optional<std::vector<ClientGroup>> &groups) const
+                     std::optional<std::vector<ClientGroup>> &groups,
+                     std::optional<std::vector<Shipment>> &shipments) const
 {
-    return {clients.value_or(clients_),
+    return {locations.value_or(locations_),
+            clients.value_or(clients_),
             depots.value_or(depots_),
             vehicleTypes.value_or(vehicleTypes_),
             distMats.value_or(dists_),
             durMats.value_or(durs_),
-            groups.value_or(groups_)};
+            groups.value_or(groups_),
+            shipments.value_or(shipments_)};
 }
 
-ProblemData::ProblemData(std::vector<Client> clients,
+ProblemData::ProblemData(std::vector<Location> locations,
+                         std::vector<Client> clients,
                          std::vector<Depot> depots,
                          std::vector<VehicleType> vehicleTypes,
                          std::vector<Matrix<Distance>> distMats,
                          std::vector<Matrix<Duration>> durMats,
-                         std::vector<ClientGroup> groups)
+                         std::vector<ClientGroup> groups,
+                         std::vector<Shipment> shipments)
     : dists_(std::move(distMats)),
       durs_(std::move(durMats)),
+      locations_(std::move(locations)),
       clients_(std::move(clients)),
       depots_(std::move(depots)),
       vehicleTypes_(std::move(vehicleTypes)),
       groups_(std::move(groups)),
+      shipments_(std::move(shipments)),
       numVehicles_(std::accumulate(vehicleTypes_.begin(),
                                    vehicleTypes_.end(),
                                    0,
                                    [](auto sum, VehicleType const &type)
                                    { return sum + type.numAvailable; })),
       numLoadDimensions_(
-          clients_.empty()
-              // If there are no clients we look at the vehicle types. If both
-              // are empty we default to 0. Clients have pickups and deliveries
-              // but the client constructor already ensures those are of equal
-              // size (within a single client).
-              ? (vehicleTypes_.empty() ? 0 : vehicleTypes_[0].capacity.size())
-              : clients_[0].delivery.size()),
+          // We try to get this from the vehicle types, but if those are empty,
+          // we look at the clients and shipments. Since validation happens
+          // later, we cannot yet assume that any vector is non-empty.
+          vehicleTypes_.empty()
+              ? (clients_.empty()
+                     ? (shipments_.empty() ? 0 : shipments_[0].amount.size())
+                     : clients_[0].delivery.size())
+              : vehicleTypes_[0].capacity.size()),
       hasTimeWindows_(
           std::any_of(clients_.begin(), clients_.end(), hasTimeWindow<Client>)
           || std::any_of(depots_.begin(), depots_.end(), hasTimeWindow<Depot>)
           || std::any_of(vehicleTypes_.begin(),
                          vehicleTypes_.end(),
-                         hasTimeWindow<VehicleType>))
+                         hasTimeWindow<VehicleType>)
+          || std::any_of(shipments_.begin(),
+                         shipments_.end(),
+                         [](Shipment const &shipment) {
+                             return hasTimeWindow(shipment.pickup)
+                                    || hasTimeWindow(shipment.delivery);
+                         }))
 {
-    for (auto const &client : clients_)
-    {
-        centroid_.first += static_cast<double>(client.x) / numClients();
-        centroid_.second += static_cast<double>(client.y) / numClients();
-    }
-
     validate();
 }

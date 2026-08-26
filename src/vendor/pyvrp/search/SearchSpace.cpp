@@ -1,22 +1,27 @@
 #include "SearchSpace.h"
 
 #include <cassert>
-#include <numeric>
+#include <sstream>
 #include <stdexcept>
 
+using pyvrp::Activity;
 using pyvrp::search::Route;
 using pyvrp::search::SearchSpace;
 
 SearchSpace::SearchSpace(ProblemData const &data, Neighbours neighbours)
-    : neighbours_(data.numLocations()),
-      promising_(data.numLocations()),
-      clientOrder_(data.numClients()),
-      routeOrder_(data.numVehicles())
+    : promising_(data.numClients() + data.numShipments())
 {
+    if (neighbours.size() != data.numClients() + data.numShipments())
+        throw std::runtime_error(
+            "Neighbourhood dimension does not match problem dimension.");
+
     setNeighbours(neighbours);
 
-    std::iota(clientOrder_.begin(), clientOrder_.end(), data.numDepots());
-    std::iota(routeOrder_.begin(), routeOrder_.end(), 0);
+    activityOrder_.reserve(data.numClients() + data.numShipments());
+    for (size_t idx = 0; idx != data.numClients(); ++idx)
+        activityOrder_.emplace_back(Activity::ActivityType::CLIENT, idx);
+    for (size_t idx = 0; idx != data.numShipments(); ++idx)
+        activityOrder_.emplace_back(Activity::ActivityType::PICKUP, idx);
 
     size_t offset = 0;
     for (size_t vehType = 0; vehType != data.numVehicleTypes(); vehType++)
@@ -28,23 +33,29 @@ SearchSpace::SearchSpace(ProblemData const &data, Neighbours neighbours)
 
 void SearchSpace::setNeighbours(Neighbours neighbours)
 {
-    if (neighbours.size() != neighbours_.size())
+    if (!neighbours_.empty() && neighbours.size() != neighbours_.size())
         throw std::runtime_error("Neighbourhood dimensions do not match.");
 
-    size_t numDepots = neighbours_.size() - clientOrder_.size();
-    for (size_t client = numDepots; client != neighbours.size(); ++client)
+    for (auto const &[activity, neighbourhood] : neighbours)
     {
-        auto const beginPos = neighbours[client].begin();
-        auto const endPos = neighbours[client].end();
+        if (!activity.isClient() && !activity.isPickup())
+        {
+            std::ostringstream msg;
+            msg << "Expected neighbourhoods for clients and pickups, not "
+                << activity << ".";
+            throw std::runtime_error(msg.str());
+        }
 
-        auto const pred
-            = [&](auto item) { return item == client || item < numDepots; };
+        auto const beginPos = neighbourhood.begin();
+        auto const endPos = neighbourhood.end();
+
+        auto const pred = [&](auto const &item) { return item == activity; };
 
         if (std::any_of(beginPos, endPos, pred))
         {
-            throw std::runtime_error("Neighbourhood of client "
-                                     + std::to_string(client)
-                                     + " contains itself or a depot.");
+            std::ostringstream msg;
+            msg << "Neighbourhood of " << activity << " contains itself.";
+            throw std::runtime_error(msg.str());
         }
     }
 
@@ -56,49 +67,50 @@ SearchSpace::Neighbours const &SearchSpace::neighbours() const
     return neighbours_;
 }
 
-std::vector<size_t> const &SearchSpace::neighboursOf(size_t client) const
+std::vector<Activity> const &
+SearchSpace::neighboursOf(Activity const &activity) const
 {
-    return neighbours_[client];
+    return neighbours_.at(activity);
 }
 
-bool SearchSpace::isPromising(size_t client) const
+bool SearchSpace::isPromising(Activity const &activity) const
 {
-    assert(client < neighbours_.size());
-    return promising_[client];
+    assert(activity.isClient() || activity.isShipment());
+    return activity.isClient()
+               ? promising_[activity.idx()]
+               : promising_[promising_.size() - activity.idx() - 1];
 }
 
-void SearchSpace::markPromising(size_t client)
+void SearchSpace::markPromising(Activity const &activity)
 {
-    assert(client < neighbours_.size());
-    promising_[client] = true;
+    assert(activity.isClient() || activity.isShipment());
+    if (activity.isClient())
+        promising_[activity.idx()] = true;
+    else
+        promising_[promising_.size() - activity.idx() - 1] = true;
 }
 
 void SearchSpace::markPromising(Route::Node const *node)
 {
     assert(node->route());
 
-    if (!node->isDepot())
-        markPromising(node->client());
+    if (node->isClient() || node->isShipment())
+        markPromising(node->activity());
 
-    if (!node->isStartDepot() && !p(node)->isDepot())
-        markPromising(p(node)->client());
+    if (!node->isStartDepot() && (p(node)->isClient() || p(node)->isShipment()))
+        markPromising(p(node)->activity());
 
-    if (!node->isEndDepot() && !n(node)->isDepot())
-        markPromising(n(node)->client());
+    if (!node->isEndDepot() && (n(node)->isClient() || n(node)->isShipment()))
+        markPromising(n(node)->activity());
 }
 
 void SearchSpace::markAllPromising() { promising_.set(); }
 
 void SearchSpace::unmarkAllPromising() { promising_.reset(); }
 
-std::vector<size_t> const &SearchSpace::clientOrder() const
+std::vector<Activity> const &SearchSpace::activityOrder() const
 {
-    return clientOrder_;
-}
-
-std::vector<size_t> const &SearchSpace::routeOrder() const
-{
-    return routeOrder_;
+    return activityOrder_;
 }
 
 std::vector<std::pair<size_t, size_t>> const &SearchSpace::vehTypeOrder() const
@@ -108,7 +120,6 @@ std::vector<std::pair<size_t, size_t>> const &SearchSpace::vehTypeOrder() const
 
 void SearchSpace::shuffle(RandomNumberGenerator &rng)
 {
-    rng.shuffle(clientOrder_.begin(), clientOrder_.end());
-    rng.shuffle(routeOrder_.begin(), routeOrder_.end());
+    rng.shuffle(activityOrder_.begin(), activityOrder_.end());
     rng.shuffle(vehTypeOrder_.begin(), vehTypeOrder_.end());
 }

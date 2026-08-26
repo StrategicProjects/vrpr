@@ -41,18 +41,21 @@ round-half-up) and the objective function.
 
 ## Part B — quality parity
 
-Instance `X-n101-k25` (100 clients, known optimum **27591**), 10 s per solver,
-release build:
+Instance `X-n101-k25` (100 clients, known optimum **27591**), 20 s per solver,
+release build, both sides on **PyVRP 0.14.0** (vrpr 0.2.0):
 
-| Solver | cost | gap to optimum | iterations (10s) |
+| Solver | cost | gap to optimum | iterations (20s) |
 |---|---|---|---|
-| PyVRP | 27591 | 0.00 % | ~18,000 |
-| vrpr  | 27591 | 0.00 % | ~24,000 |
+| PyVRP 0.14.0 | 27591 | 0.00 % | ~70,600 |
+| vrpr 0.2.0   | 27591 | 0.00 % | ~49,100 |
 
-✅ Both reach the **optimum** in 10 s. `vrpr`'s throughput is the same order of
-magnitude as PyVRP's (here even slightly higher) — the R ILS loop is not a
-bottleneck in the release build. Across seeds, `vrpr` stays within 0.00–0.1 % of
-the optimum.
+✅ Both reach the **optimum** in 20 s. `vrpr`'s throughput is the same order of
+magnitude as PyVRP's (iteration ratio ~1.4x — the R ILS loop adds a small
+per-iteration overhead that does not change solution quality). Across seeds,
+`vrpr` stays within 0.00–0.1 % of the optimum.
+
+(vrpr 0.1.x, on the PyVRP 0.13.4 core, showed the same picture: both sides at
+the optimum in 10 s.)
 
 ## Why there is parity
 

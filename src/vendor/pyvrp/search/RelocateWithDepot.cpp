@@ -1,175 +1,130 @@
 #include "RelocateWithDepot.h"
 
-#include "Route.h"
+#include "Activity.h"
+#include "DepotSegment.h"
 
 #include <cassert>
 
 using pyvrp::search::RelocateWithDepot;
 
-namespace
+void RelocateWithDepot::evalSameRoute(Route::Node *U,
+                                      Route::Node *V,
+                                      CostEvaluator const &costEvaluator)
 {
-/**
- * Simple wrapper class that implements the required evaluation interface for
- * a single reload depot.
- */
-class ReloadDepotSegment
-{
-    pyvrp::ProblemData const &data_;
-    size_t depot_;
+    assert(U->route() == V->route());
+    auto const *route = U->route();
+    auto const &vehType = data.vehicleType(route->vehicleType());
 
-public:
-    ReloadDepotSegment(pyvrp::ProblemData const &data, size_t depot)
-        : data_(data), depot_(depot)
-    {
-        assert(depot < data.numDepots());  // must be an actual depot
-    }
-
-    pyvrp::search::Route const *route() const { return nullptr; }
-
-    size_t first() const { return depot_; }
-    size_t last() const { return depot_; }
-    size_t size() const { return 1; }
-
-    bool startsAtReloadDepot() const { return true; }
-    bool endsAtReloadDepot() const { return true; }
-
-    pyvrp::Distance distance([[maybe_unused]] size_t profile) const
-    {
-        return 0;
-    }
-
-    pyvrp::DurationSegment duration([[maybe_unused]] size_t profile) const
-    {
-        pyvrp::ProblemData::Depot const &depot = data_.location(depot_);
-        return {depot, 0};  // service is handled while evaluating proposal
-    }
-
-    pyvrp::LoadSegment load([[maybe_unused]] size_t dimension) const
-    {
-        return {};
-    }
-};
-}  // namespace
-
-void RelocateWithDepot::evalDepotBefore(Cost fixedCost,
-                                        Route::Node *U,
-                                        Route::Node *V,
-                                        CostEvaluator const &costEvaluator)
-{
-    auto const *uRoute = U->route();
-    auto const *vRoute = V->route();
-    auto const &vehType = data.vehicleType(vRoute->vehicleType());
-
-    if (uRoute != vRoute)
-    {
-        auto const uProposal = Route::Proposal(uRoute->before(U->idx() - 1),
-                                               uRoute->after(U->idx() + 1));
-
+    if (!V->isReloadDepot())  // depot first, U after
         for (auto const depot : vehType.reloadDepots)
         {
-            auto deltaCost = fixedCost;
-            costEvaluator.deltaCost(
-                deltaCost,
-                uProposal,
-                Route::Proposal(vRoute->before(V->idx()),
-                                ReloadDepotSegment(data, depot),
-                                uRoute->at(U->idx()),
-                                vRoute->after(V->idx() + 1)));
+            Cost deltaCost = 0;
+            if (U->pos() < V->pos())
+                costEvaluator.deltaCost(
+                    deltaCost,
+                    Route::Proposal(route->before(U->pos() - 1),
+                                    route->between(U->pos() + 1, V->pos()),
+                                    DepotSegment(data, depot),
+                                    route->at(U->pos()),
+                                    route->after(V->pos() + 1)));
+            else
+                costEvaluator.deltaCost(
+                    deltaCost,
+                    Route::Proposal(route->before(V->pos()),
+                                    DepotSegment(data, depot),
+                                    route->at(U->pos()),
+                                    route->between(V->pos() + 1, U->pos() - 1),
+                                    route->after(U->pos() + 1)));
 
             if (deltaCost < move_.cost)
                 move_ = {deltaCost, MoveType::DEPOT_U, depot};
         }
-    }
-    else  // within same route
-    {
-        auto const *route = vRoute;
+
+    if (!n(V)->isReloadDepot())  // U first, depot after
         for (auto const depot : vehType.reloadDepots)
         {
-            auto deltaCost = fixedCost;
-            if (U->idx() < V->idx())
+            Cost deltaCost = 0;
+            if (U->pos() < V->pos())
                 costEvaluator.deltaCost(
                     deltaCost,
-                    Route::Proposal(route->before(U->idx() - 1),
-                                    route->between(U->idx() + 1, V->idx()),
-                                    ReloadDepotSegment(data, depot),
-                                    route->at(U->idx()),
-                                    route->after(V->idx() + 1)));
+                    Route::Proposal(route->before(U->pos() - 1),
+                                    route->between(U->pos() + 1, V->pos()),
+                                    route->at(U->pos()),
+                                    DepotSegment(data, depot),
+                                    route->after(V->pos() + 1)));
             else
                 costEvaluator.deltaCost(
                     deltaCost,
-                    Route::Proposal(route->before(V->idx()),
-                                    ReloadDepotSegment(data, depot),
-                                    route->at(U->idx()),
-                                    route->between(V->idx() + 1, U->idx() - 1),
-                                    route->after(U->idx() + 1)));
+                    Route::Proposal(route->before(V->pos()),
+                                    route->at(U->pos()),
+                                    DepotSegment(data, depot),
+                                    route->between(V->pos() + 1, U->pos() - 1),
+                                    route->after(U->pos() + 1)));
 
             if (deltaCost < move_.cost)
-                move_ = {deltaCost, MoveType::DEPOT_U, depot};
+                move_ = {deltaCost, MoveType::U_DEPOT, depot};
         }
-    }
 }
 
-void RelocateWithDepot::evalDepotAfter(Cost fixedCost,
-                                       Route::Node *U,
-                                       Route::Node *V,
-                                       CostEvaluator const &costEvaluator)
+void RelocateWithDepot::evalDifferentRoutes(Route::Node *U,
+                                            Route::Node *V,
+                                            CostEvaluator const &costEvaluator)
 {
+    assert(U->route() != V->route());
     auto const *uRoute = U->route();
     auto const *vRoute = V->route();
     auto const &vehType = data.vehicleType(vRoute->vehicleType());
 
-    if (uRoute != vRoute)
+    if (!hasCachedRemoveCost_[U->idx()])
     {
-        auto const uProposal = Route::Proposal(uRoute->before(U->idx() - 1),
-                                               uRoute->after(U->idx() + 1));
+        Cost removeCost = 0;
+        if (uRoute->numClients() == 1 && uRoute->numShipments() == 0)
+            // This move leaves the route empty, so the cost delta is just the
+            // current route cost.
+            removeCost -= costEvaluator.penalisedCost(*uRoute);
+        else
+            costEvaluator.deltaCost<true>(  // exact evaluation when removing U
+                removeCost,                 // so we get the right delta later
+                Route::Proposal(uRoute->before(U->pos() - 1),
+                                uRoute->after(U->pos() + 1)));
 
+        removeCost_[U->idx()] = removeCost;
+        hasCachedRemoveCost_[U->idx()] = true;
+    }
+
+    if (!V->isReloadDepot())  // depot first, U after
         for (auto const depot : vehType.reloadDepots)
         {
-            Cost deltaCost = fixedCost;
+            Cost deltaCost = removeCost_[U->idx()];
             costEvaluator.deltaCost(
                 deltaCost,
-                uProposal,
-                Route::Proposal(vRoute->before(V->idx()),
-                                uRoute->at(U->idx()),
-                                ReloadDepotSegment(data, depot),
-                                vRoute->after(V->idx() + 1)));
+                Route::Proposal(vRoute->before(V->pos()),
+                                DepotSegment(data, depot),
+                                uRoute->at(U->pos()),
+                                vRoute->after(V->pos() + 1)));
 
             if (deltaCost < move_.cost)
-                move_ = {deltaCost, MoveType::U_DEPOT, depot};
+                move_ = {deltaCost, MoveType::DEPOT_U, depot};
         }
-    }
-    else  // within same route
-    {
-        auto const *route = vRoute;
+
+    if (!n(V)->isReloadDepot())  // U first, depot after
         for (auto const depot : vehType.reloadDepots)
         {
-            Cost deltaCost = fixedCost;
-            if (U->idx() < V->idx())
-                costEvaluator.deltaCost(
-                    deltaCost,
-                    Route::Proposal(route->before(U->idx() - 1),
-                                    route->between(U->idx() + 1, V->idx()),
-                                    route->at(U->idx()),
-                                    ReloadDepotSegment(data, depot),
-                                    route->after(V->idx() + 1)));
-            else
-                costEvaluator.deltaCost(
-                    deltaCost,
-                    Route::Proposal(route->before(V->idx()),
-                                    route->at(U->idx()),
-                                    ReloadDepotSegment(data, depot),
-                                    route->between(V->idx() + 1, U->idx() - 1),
-                                    route->after(U->idx() + 1)));
+            Cost deltaCost = removeCost_[U->idx()];
+            costEvaluator.deltaCost(
+                deltaCost,
+                Route::Proposal(vRoute->before(V->pos()),
+                                uRoute->at(U->pos()),
+                                DepotSegment(data, depot),
+                                vRoute->after(V->pos() + 1)));
 
             if (deltaCost < move_.cost)
                 move_ = {deltaCost, MoveType::U_DEPOT, depot};
         }
-    }
 }
 
-pyvrp::Cost RelocateWithDepot::evaluate(Route::Node *U,
-                                        Route::Node *V,
-                                        CostEvaluator const &costEvaluator)
+std::pair<pyvrp::Cost, bool> RelocateWithDepot::evaluate(
+    Route::Node *U, Route::Node *V, CostEvaluator const &costEvaluator)
 {
     assert(!U->isDepot() && !V->isEndDepot());
     stats_.numEvaluations++;
@@ -177,36 +132,32 @@ pyvrp::Cost RelocateWithDepot::evaluate(Route::Node *U,
     auto const *uRoute = U->route();
     auto const *vRoute = V->route();
 
-    if (U == n(V) || vRoute->empty())  // if V's empty, Exchange<1, 0> suffices
-        return 0;
+    if (!U->isClient() || !uRoute || U == n(V) || vRoute->empty())
+        return std::make_pair(0, false);
 
     if (vRoute->numTrips() == vRoute->maxTrips())
-        return 0;
+        return std::make_pair(0, false);
 
     // Cannot evaluate this move because it requires a load segment to contain
     // a reload depot in the middle, which makes concatenation far more complex.
     if (uRoute == vRoute && U->trip() != V->trip())
-        return 0;
+        return std::make_pair(0, false);
+
+    // Cannot evaluate this move because it would insert a depot after V, but
+    // there is an uncompleted shipment loaded before V that would then need to
+    // visit a reload depot before delivery, which makes the load segment
+    // concatenation more complex and is not handled.
+    if (vRoute->numPickups(V->pos()) != vRoute->numDeliveries(V->pos()))
+        return std::make_pair(0, false);
 
     move_ = {};
 
-    Cost fixedCost = 0;
-    if (uRoute != vRoute && uRoute->numClients() == 1)  // empty after move
-        fixedCost -= uRoute->fixedVehicleCost();
+    if (uRoute == vRoute)
+        evalSameRoute(U, V, costEvaluator);
+    else
+        evalDifferentRoutes(U, V, costEvaluator);
 
-    if (!V->isReloadDepot())
-        // If V is already a reload depot, there is no point inserting another
-        // reload depot directly after it. If V is a start depot, however, that
-        // might be OK to deal with initial vehicle load.
-        evalDepotBefore(fixedCost, U, V, costEvaluator);
-
-    if (!n(V)->isReloadDepot())
-        // If n(V) is a reload depot, there is no point inserting another reload
-        // depot directly before it. If n(V) is the end depot, however, that
-        // might be OK to ensure the vehicle returns empty.
-        evalDepotAfter(fixedCost, U, V, costEvaluator);
-
-    return move_.cost;
+    return std::make_pair(move_.cost, move_.cost < 0);
 }
 
 void RelocateWithDepot::apply(Route::Node *U, Route::Node *V) const
@@ -214,15 +165,15 @@ void RelocateWithDepot::apply(Route::Node *U, Route::Node *V) const
     stats_.numApplications++;
 
     auto *uRoute = U->route();
-    uRoute->remove(U->idx());
+    uRoute->remove(U->pos());
 
     auto *vRoute = V->route();
-    Route::Node depot = {move_.depot};
+    Route::Node depot = {Activity::ActivityType::DEPOT, move_.depot};
 
     if (move_.type == MoveType::DEPOT_U)
     {
-        vRoute->insert(V->idx() + 1, U);
-        vRoute->insert(V->idx() + 1, &depot);
+        vRoute->insert(V->pos() + 1, U);
+        vRoute->insert(V->pos() + 1, &depot);
     }
 
     // We need to be careful to insert the depot last, because doing so could
@@ -230,13 +181,20 @@ void RelocateWithDepot::apply(Route::Node *U, Route::Node *V) const
     // layout, which could invalidate V if V is a depot).
     if (move_.type == MoveType::U_DEPOT)
     {
-        vRoute->insert(V->idx() + 1, U);
-        vRoute->insert(V->idx() + 2, &depot);
+        vRoute->insert(V->pos() + 1, U);
+        vRoute->insert(V->pos() + 2, &depot);
     }
 }
 
-template <>
-bool pyvrp::search::supports<RelocateWithDepot>(ProblemData const &data)
+void RelocateWithDepot::init(Solution &solution)
+{
+    BinaryOperator::init(solution);
+    hasCachedRemoveCost_.reset();
+}
+
+std::string RelocateWithDepot::name() const { return "RelocateWithDepot"; }
+
+bool RelocateWithDepot::supports(ProblemData const &data)
 {
     // We need at least one vehicle type for which reloading is enabled.
     for (auto const &vehType : data.vehicleTypes())
@@ -244,4 +202,18 @@ bool pyvrp::search::supports<RelocateWithDepot>(ProblemData const &data)
             return true;
 
     return false;
+}
+
+void RelocateWithDepot::update(Route const *route)
+{
+    for (auto const *node : *route)
+        if (node->isClient())
+            hasCachedRemoveCost_[node->idx()] = false;
+}
+
+RelocateWithDepot::RelocateWithDepot(ProblemData const &data)
+    : BinaryOperator(data),
+      hasCachedRemoveCost_(data.numClients()),
+      removeCost_(data.numClients())
+{
 }

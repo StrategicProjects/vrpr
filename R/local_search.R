@@ -5,13 +5,13 @@
 
 # Creates the persistent local-search engine (data + RNG + perturbation + operators).
 new_local_search <- function(problem_data,
-                             num_neighbours = 20L,
+                             num_neighbours = 50L,
                              seed = 42L,
                              min_perturbations = 1L,
                              max_perturbations = 25L) {
   check_problem_data(problem_data)
-  n_clients <- problem_data$summary$num_clients
-  k <- min(as.integer(num_neighbours), max(1L, n_clients - 1L))
+  # The C++ neighbourhood caps k internally; just require a positive value.
+  k <- max(1L, as.integer(num_neighbours))
 
   ptr <- vrpr_local_search_create(
     problem_data$ptr,
@@ -21,11 +21,7 @@ new_local_search <- function(problem_data,
     max_perturbations = as.integer(max_perturbations)
   )
   structure(
-    list(
-      ptr = ptr,
-      n_depots = problem_data$summary$num_depots,
-      info = vrpr_local_search_info(ptr)
-    ),
+    list(ptr = ptr, info = vrpr_local_search_info(ptr)),
     class = "vrpr_local_search"
   )
 }
@@ -34,12 +30,12 @@ new_local_search <- function(problem_data,
 # exhaustive = TRUE  -> pure descent (no perturbation), e.g. the initial solution.
 # exhaustive = FALSE -> one ILS iteration (perturb + search).
 run_local_search <- function(ls, solution, cost_evaluator,
-                             exhaustive = FALSE, shuffle = !exhaustive) {
+                             exhaustive = FALSE, shuffle = TRUE) {
   stopifnot(inherits(ls, "vrpr_local_search"))
   check_solution(solution)
   ptr <- vrpr_local_search_run(
     ls$ptr, solution$ptr, cost_evaluator$ptr,
     exhaustive = exhaustive, shuffle = shuffle
   )
-  new_solution(ptr, ls$n_depots)
+  new_solution(ptr)
 }

@@ -147,6 +147,34 @@ res_md <- vrp_solve(mdvrp, stop = max_iterations(500), seed = 1, display = FALSE
 routes(res_md)[, c("route_id", "depot", "client")]
 ```
 
+## Pickup and delivery (shipments)
+
+A *shipment* pairs a pickup point with a delivery point: the same vehicle must
+visit the pickup first and then the delivery, in the same trip. Add shipments
+with `add_shipments()`; they can be mixed freely with regular clients, time
+windows and every other feature.
+
+```{r}
+#| label: shipments
+sh <- tibble::tibble(
+  pickup_x   = c(-20, 10, 30),  pickup_y   = c(10, -25, 20),
+  delivery_x = c(25, -15, -30), delivery_y = c(-10, 30, -20),
+  amount     = c(4, 6, 3)
+)
+
+pdp <- vrp_model() |>
+  add_depot(0, 0) |>
+  add_shipments(sh) |>
+  add_vehicle_type(num_available = 2, capacity = 10)
+
+res_pdp <- vrp_solve(pdp, stop = max_iterations(300), seed = 1, display = FALSE)
+routes(res_pdp)
+```
+
+The `activity` column distinguishes pickups from deliveries, and `shipment`
+identifies the pair. Optional shipments (`required = FALSE`, with a `prize`)
+may be left out; `unplanned()` lists them.
+
 ## Prize-collecting
 
 Mark clients as optional with `required = FALSE` and give them a `prize`. The

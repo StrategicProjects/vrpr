@@ -25,11 +25,9 @@ test_that("plot.vrpr_model returns a ggplot", {
 test_that("route_paths closes each route at the depot", {
   res <- small_result()
   locs <- res$problem_data$locations
-  depots <- locs[locs$kind == "depot", ]
-  clients <- locs[locs$kind == "client", ]
   rt <- routes(res)
 
-  paths <- route_paths(rt, depots, clients)
+  paths <- route_paths(rt, locs)
   # Each route: 1 depot + k clients + 1 depot = k + 2 points.
   por_rota <- tapply(rt$client, rt$route_id, length)
   esperado <- sum(por_rota + 2L)

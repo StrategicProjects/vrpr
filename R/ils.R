@@ -1,17 +1,18 @@
-# Iterated Local Search loop (faithful port of PyVRP's IteratedLocalSearch.py).
+# Iterated Local Search loop (faithful port of PyVRP's IteratedLocalSearch.py,
+# >= 0.14).
 #
 # Uses Late Acceptance Hill-Climbing (Burke & Bykov, 2017): accepts the candidate
 # if it improves on the cost from `history_length` iterations ago OR the current
 # cost. After `num_iters_no_improvement` iterations without improvement, it
 # restarts from the best. When a new best is found, it runs an exhaustive search
 # (no perturbation) to refine it. Penalties are adjusted adaptively between
-# iterations.
+# iterations (see penalty.R).
 
 #' ILS solver parameters
 #'
-#' @param num_neighbours Granular neighbourhood size (k neighbours per client).
+#' @param num_neighbours Granular neighbourhood size (activities per
+#'   neighbourhood). Default 50, as in PyVRP.
 #' @param min_perturbations,max_perturbations Range of perturbations per iteration.
-#' @param init_load,init_tw,init_dist Initial penalties.
 #' @param history_length Length of the late-acceptance history (> 0). Default
 #'   300, as in PyVRP.
 #' @param num_iters_no_improvement Iterations without improvement before
@@ -19,12 +20,9 @@
 #' @param exhaustive_on_best Refine each new best with an exhaustive search?
 #' @return A list of parameters.
 #' @export
-ils_params <- function(num_neighbours = 20L,
+ils_params <- function(num_neighbours = 50L,
                        min_perturbations = 1L,
                        max_perturbations = 25L,
-                       init_load = 20,
-                       init_tw = 6,
-                       init_dist = 6,
                        history_length = 300L,
                        num_iters_no_improvement = 150000L,
                        exhaustive_on_best = TRUE) {
@@ -32,7 +30,6 @@ ils_params <- function(num_neighbours = 20L,
     num_neighbours = as.integer(num_neighbours),
     min_perturbations = as.integer(min_perturbations),
     max_perturbations = as.integer(max_perturbations),
-    init_load = init_load, init_tw = init_tw, init_dist = init_dist,
     history_length = as.integer(history_length),
     num_iters_no_improvement = as.integer(num_iters_no_improvement),
     exhaustive_on_best = isTRUE(exhaustive_on_best)
@@ -55,8 +52,7 @@ feasible_cost <- function(sol) {
 run_ils <- function(problem_data, stop, seed = 42L,
                     params = ils_params(), display = TRUE) {
   pm <- new_penalty_manager(
-    num_load_dims = problem_data$summary$num_load_dimensions,
-    init_load = params$init_load, init_tw = params$init_tw, init_dist = params$init_dist
+    num_load_dims = problem_data$summary$num_load_dimensions
   )
   ls <- new_local_search(
     problem_data,
@@ -66,8 +62,10 @@ run_ils <- function(problem_data, stop, seed = 42L,
   )
 
   start <- Sys.time()
-  ce <- pm_cost_evaluator(pm)
-  init <- run_local_search(ls, vrp_random_solution(problem_data, seed), ce,
+  # Initial solution: exhaustive descent from a random solution under maximum
+  # penalties, as in PyVRP's solve().
+  init <- run_local_search(ls, vrp_random_solution(problem_data, seed),
+                           pm_max_cost_evaluator(pm),
                            exhaustive = TRUE)
   best <- curr <- init
 
@@ -85,9 +83,6 @@ run_ils <- function(problem_data, stop, seed = 42L,
     buf <<- vector("list", hlen)
     ridx <<- 0L
   }
-
-  # Penalised cost of a solution under the current evaluator.
-  pen <- function(sol) as.numeric(solution_cost(sol, ce))
 
   iters <- 0L
   iters_no_improve <- 0L
@@ -114,17 +109,18 @@ run_ils <- function(problem_data, stop, seed = 42L,
     }
 
     ce <- pm_cost_evaluator(pm)
-    cand <- run_local_search(ls, curr, ce, exhaustive = FALSE, shuffle = TRUE)
+    # Penalised cost of a solution under the current evaluator.
+    pen <- function(sol) as.numeric(solution_cost(sol, ce))
 
-    cs <- cand$summary
-    pm_register(pm, !cs$has_excess_load, !cs$has_time_warp, !cs$has_excess_distance)
+    cand <- run_local_search(ls, curr, ce, exhaustive = FALSE)
+    pm_register(pm, cand$summary)
 
     iters_no_improve <- iters_no_improve + 1L
     if (feasible_cost(cand) < best_true) {
       best <- cand
       iters_no_improve <- 0L
       if (params$exhaustive_on_best) {
-        refined <- run_local_search(ls, cand, ce, exhaustive = TRUE, shuffle = FALSE)
+        refined <- run_local_search(ls, cand, ce, exhaustive = TRUE)
         if (isTRUE(refined$summary$is_feasible)) {
           best <- refined
           cand <- refined

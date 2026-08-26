@@ -2,6 +2,7 @@
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/vrpr)](https://CRAN.R-project.org/package=vrpr)
+[![Devel version](https://img.shields.io/github/r-package/v/StrategicProjects/vrpr?label=devel&color=blue)](https://github.com/StrategicProjects/vrpr)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/vrpr)](https://CRAN.R-project.org/package=vrpr)
 [![R-CMD-check](https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/StrategicProjects/vrpr/actions/workflows/R-CMD-check.yaml)
 [![pkgdown](https://github.com/StrategicProjects/vrpr/actions/workflows/pkgdown.yaml/badge.svg)](https://strategicprojects.github.io/vrpr/)
@@ -27,11 +28,12 @@ but no modern, strong, friendly solver for production vehicle routing.
 
 - **All the classic VRP variants**, from one tidy interface: capacitated VRP, time windows (VRPTW),
   heterogeneous fleets, multiple depots (MDVRP), prize-collecting with optional clients and mutually
-  exclusive groups, simultaneous pickup & delivery / backhaul, and multi-trip routes.
+  exclusive groups, simultaneous pickup & delivery / backhaul, paired pickup-and-delivery shipments
+  (PDP/PDPTW), and multi-trip routes.
 - **Fast** — the search runs entirely in PyVRP's C++ core (iterated local search with late-acceptance
   hill-climbing). No Python required.
 - **Verified parity with PyVRP** — identical objective, and on the X-n101-k25 benchmark (optimum
-  27591) both reach the optimum in 10 s (see `tools/benchmark/`).
+  27591) both reach the optimum in 20 s (see `tools/benchmark/`).
 - **Reads standard instances** (VRPLIB / TSPLIB and Solomon) and **plots** solutions with ggplot2.
 
 ## Installation
@@ -82,6 +84,7 @@ plot(res)      # the routes, with {ggplot2}
 | Multiple depots (MDVRP) | several `add_depot()` + `add_vehicle_type(depot = i)` |
 | Prize-collecting | `required = FALSE` + `prize` on clients; `add_client_group()` for exclusive sets |
 | Pickup & delivery / backhaul | add a `pickup` column to clients |
+| Paired pickup-and-delivery (PDP) | `add_shipments()` with pickup/delivery points |
 | Multi-trip | `add_vehicle_type(reload_depots = i, max_reloads = k)` |
 
 See the [Getting started](https://strategicprojects.github.io/vrpr/articles/vrpr.html) guide and the

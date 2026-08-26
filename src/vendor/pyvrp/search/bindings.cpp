@@ -1,15 +1,26 @@
 #include "bindings.h"
-#include "Exchange.h"
+#include "InsertOptionalClient.h"
+#include "InsertOptionalShipment.h"
 #include "LocalSearch.h"
 #include "PerturbationManager.h"
+#include "Relocate.h"
+#include "RelocateAlternative.h"
+#include "RelocateDelivery.h"
+#include "RelocatePickup.h"
+#include "RelocateShipment.h"
 #include "RelocateWithDepot.h"
+#include "RemoveAdjacentDepot.h"
+#include "RemoveOptionalClient.h"
+#include "RemoveOptionalShipment.h"
+#include "ReplaceGroup.h"
+#include "ReplaceOptionalClient.h"
+#include "ReplaceOptionalShipment.h"
 #include "Route.h"
 #include "SearchSpace.h"
 #include "Solution.h"
-#include "SwapRoutes.h"
-#include "SwapStar.h"
+#include "Swap.h"
 #include "SwapTails.h"
-#include "primitives.h"
+#include "neighbourhood.h"
 #include "search_docs.h"
 
 #include <pybind11/operators.h>
@@ -17,216 +28,435 @@
 #include <pybind11/stl.h>
 
 #include <sstream>
+#include <string>
 
 namespace py = pybind11;
 
-using pyvrp::search::Exchange;
-using pyvrp::search::inplaceCost;
-using pyvrp::search::insertCost;
+using pyvrp::search::BinaryOperator;
+using pyvrp::search::InsertOptionalClient;
+using pyvrp::search::InsertOptionalShipment;
 using pyvrp::search::LocalSearch;
-using pyvrp::search::NodeOperator;
+using pyvrp::search::NeighbourhoodParams;
 using pyvrp::search::OperatorStatistics;
 using pyvrp::search::PerturbationManager;
 using pyvrp::search::PerturbationParams;
+using pyvrp::search::Relocate;
+using pyvrp::search::RelocateAlternative;
+using pyvrp::search::RelocateDelivery;
+using pyvrp::search::RelocatePickup;
+using pyvrp::search::RelocateShipment;
 using pyvrp::search::RelocateWithDepot;
-using pyvrp::search::removeCost;
+using pyvrp::search::RemoveAdjacentDepot;
+using pyvrp::search::RemoveOptionalClient;
+using pyvrp::search::RemoveOptionalShipment;
+using pyvrp::search::ReplaceGroup;
+using pyvrp::search::ReplaceOptionalClient;
+using pyvrp::search::ReplaceOptionalShipment;
 using pyvrp::search::Route;
-using pyvrp::search::RouteOperator;
 using pyvrp::search::SearchSpace;
 using pyvrp::search::Solution;
-using pyvrp::search::supports;
-using pyvrp::search::SwapRoutes;
-using pyvrp::search::SwapStar;
+using pyvrp::search::Swap;
 using pyvrp::search::SwapTails;
+using pyvrp::search::UnaryOperator;
 
 PYBIND11_MODULE(_search, m)
 {
-    py::class_<NodeOperator>(m, "NodeOperator");
-    py::class_<RouteOperator>(m, "RouteOperator");
+    pyvrp::registerLogger("pyvrp.search");
+
+    py::class_<UnaryOperator>(m, "UnaryOperator");
+    py::class_<BinaryOperator>(m, "BinaryOperator");
 
     py::class_<OperatorStatistics>(
         m, "OperatorStatistics", DOC(pyvrp, search, OperatorStatistics))
         .def_readonly("num_evaluations", &OperatorStatistics::numEvaluations)
         .def_readonly("num_applications", &OperatorStatistics::numApplications);
 
-    py::class_<Exchange<1, 0>, NodeOperator>(
-        m, "Exchange10", DOC(pyvrp, search, Exchange))
+    py::class_<RelocateDelivery, UnaryOperator>(
+        m, "RelocateDelivery", DOC(pyvrp, search, RelocateDelivery))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<1, 0>::statistics,
+                               &RelocateDelivery::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RelocateDelivery::name)
         .def("evaluate",
-             &Exchange<1, 0>::evaluate,
+             &RelocateDelivery::evaluate,
              py::arg("U"),
-             py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<1, 0>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<1, 0>>, py::arg("data"));
+        .def("apply", &RelocateDelivery::apply, py::arg("U"))
+        .def("init", &RelocateDelivery::init, py::arg("solution"))
+        .def_static("supports", &RelocateDelivery::supports, py::arg("data"));
 
-    py::class_<Exchange<2, 0>, NodeOperator>(
-        m, "Exchange20", DOC(pyvrp, search, Exchange))
+    py::class_<RelocatePickup, UnaryOperator>(
+        m, "RelocatePickup", DOC(pyvrp, search, RelocatePickup))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<2, 0>::statistics,
+                               &RelocatePickup::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RelocatePickup::name)
         .def("evaluate",
-             &Exchange<2, 0>::evaluate,
+             &RelocatePickup::evaluate,
              py::arg("U"),
-             py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<2, 0>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<2, 0>>, py::arg("data"));
+        .def("apply", &RelocatePickup::apply, py::arg("U"))
+        .def("init", &RelocatePickup::init, py::arg("solution"))
+        .def_static("supports", &RelocatePickup::supports, py::arg("data"));
 
-    py::class_<Exchange<3, 0>, NodeOperator>(
-        m, "Exchange30", DOC(pyvrp, search, Exchange))
+    py::class_<RemoveAdjacentDepot, UnaryOperator>(
+        m, "RemoveAdjacentDepot", DOC(pyvrp, search, RemoveAdjacentDepot))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<3, 0>::statistics,
+                               &RemoveAdjacentDepot::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RemoveAdjacentDepot::name)
         .def("evaluate",
-             &Exchange<3, 0>::evaluate,
+             &RemoveAdjacentDepot::evaluate,
              py::arg("U"),
-             py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<3, 0>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<3, 0>>, py::arg("data"));
+        .def("apply", &RemoveAdjacentDepot::apply, py::arg("U"))
+        .def("init", &RemoveAdjacentDepot::init, py::arg("solution"))
+        .def_static(
+            "supports", &RemoveAdjacentDepot::supports, py::arg("data"));
 
-    py::class_<Exchange<1, 1>, NodeOperator>(
-        m, "Exchange11", DOC(pyvrp, search, Exchange))
+    py::class_<RemoveOptionalClient, UnaryOperator>(
+        m, "RemoveOptionalClient", DOC(pyvrp, search, RemoveOptionalClient))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<1, 1>::statistics,
+                               &RemoveOptionalClient::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RemoveOptionalClient::name)
         .def("evaluate",
-             &Exchange<1, 1>::evaluate,
+             &RemoveOptionalClient::evaluate,
              py::arg("U"),
-             py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<1, 1>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<1, 1>>, py::arg("data"));
+        .def("apply", &RemoveOptionalClient::apply, py::arg("U"))
+        .def("init", &RemoveOptionalClient::init, py::arg("solution"))
+        .def_static(
+            "supports", &RemoveOptionalClient::supports, py::arg("data"));
 
-    py::class_<Exchange<2, 1>, NodeOperator>(
-        m, "Exchange21", DOC(pyvrp, search, Exchange))
+    py::class_<RemoveOptionalShipment, UnaryOperator>(
+        m, "RemoveOptionalShipment", DOC(pyvrp, search, RemoveOptionalShipment))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<2, 1>::statistics,
+                               &RemoveOptionalShipment::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RemoveOptionalShipment::name)
         .def("evaluate",
-             &Exchange<2, 1>::evaluate,
+             &RemoveOptionalShipment::evaluate,
              py::arg("U"),
-             py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<2, 1>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<2, 1>>, py::arg("data"));
+        .def("apply", &RemoveOptionalShipment::apply, py::arg("U"))
+        .def("init", &RemoveOptionalShipment::init, py::arg("solution"))
+        .def_static(
+            "supports", &RemoveOptionalShipment::supports, py::arg("data"));
 
-    py::class_<Exchange<3, 1>, NodeOperator>(
-        m, "Exchange31", DOC(pyvrp, search, Exchange))
+    py::class_<ReplaceGroup, UnaryOperator>(
+        m, "ReplaceGroup", DOC(pyvrp, search, ReplaceGroup))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<3, 1>::statistics,
+                               &ReplaceGroup::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &ReplaceGroup::name)
         .def("evaluate",
-             &Exchange<3, 1>::evaluate,
+             &ReplaceGroup::evaluate,
              py::arg("U"),
-             py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<3, 1>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<3, 1>>, py::arg("data"));
+        .def("apply", &ReplaceGroup::apply, py::arg("U"))
+        .def("init", &ReplaceGroup::init, py::arg("solution"))
+        .def_static("supports", &ReplaceGroup::supports, py::arg("data"));
 
-    py::class_<Exchange<2, 2>, NodeOperator>(
-        m, "Exchange22", DOC(pyvrp, search, Exchange))
+    py::class_<RelocateAlternative, BinaryOperator>(
+        m, "RelocateAlternative", DOC(pyvrp, search, RelocateAlternative))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<2, 2>::statistics,
+                               &RelocateAlternative::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RelocateAlternative::name)
         .def("evaluate",
-             &Exchange<2, 2>::evaluate,
+             &RelocateAlternative::evaluate,
              py::arg("U"),
              py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<2, 2>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<2, 2>>, py::arg("data"));
+        .def("apply", &RelocateAlternative::apply, py::arg("U"), py::arg("V"))
+        .def("init", &RelocateAlternative::init, py::arg("solution"))
+        .def_static(
+            "supports", &RelocateAlternative::supports, py::arg("data"));
 
-    py::class_<Exchange<3, 2>, NodeOperator>(
-        m, "Exchange32", DOC(pyvrp, search, Exchange))
+    py::class_<RelocateShipment, BinaryOperator>(
+        m, "RelocateShipment", DOC(pyvrp, search, RelocateShipment))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<3, 2>::statistics,
+                               &RelocateShipment::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RelocateShipment::name)
         .def("evaluate",
-             &Exchange<3, 2>::evaluate,
+             &RelocateShipment::evaluate,
              py::arg("U"),
              py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<3, 2>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<3, 2>>, py::arg("data"));
+        .def("apply", &RelocateShipment::apply, py::arg("U"), py::arg("V"))
+        .def_static("supports", &RelocateShipment::supports, py::arg("data"));
 
-    py::class_<Exchange<3, 3>, NodeOperator>(
-        m, "Exchange33", DOC(pyvrp, search, Exchange))
+    py::class_<InsertOptionalClient, BinaryOperator>(
+        m, "InsertOptionalClient", DOC(pyvrp, search, InsertOptionalClient))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &Exchange<3, 3>::statistics,
+                               &InsertOptionalClient::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &InsertOptionalClient::name)
         .def("evaluate",
-             &Exchange<3, 3>::evaluate,
+             &InsertOptionalClient::evaluate,
              py::arg("U"),
              py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &Exchange<3, 3>::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<Exchange<3, 3>>, py::arg("data"));
+        .def("apply", &InsertOptionalClient::apply, py::arg("U"), py::arg("V"))
+        .def("init", &InsertOptionalClient::init, py::arg("solution"))
+        .def_static(
+            "supports", &InsertOptionalClient::supports, py::arg("data"));
 
-    py::class_<SwapRoutes, RouteOperator>(
-        m, "SwapRoutes", DOC(pyvrp, search, SwapRoutes))
+    py::class_<InsertOptionalShipment, BinaryOperator>(
+        m, "InsertOptionalShipment", DOC(pyvrp, search, InsertOptionalShipment))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &SwapRoutes::statistics,
+                               &InsertOptionalShipment::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &InsertOptionalShipment::name)
         .def("evaluate",
-             &SwapRoutes::evaluate,
+             &InsertOptionalShipment::evaluate,
              py::arg("U"),
              py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &SwapRoutes::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<SwapRoutes>, py::arg("data"));
+        .def(
+            "apply", &InsertOptionalShipment::apply, py::arg("U"), py::arg("V"))
+        .def("init", &InsertOptionalShipment::init, py::arg("solution"))
+        .def_static(
+            "supports", &InsertOptionalShipment::supports, py::arg("data"));
 
-    py::class_<SwapStar, RouteOperator>(
-        m, "SwapStar", DOC(pyvrp, search, SwapStar))
-        .def(py::init<pyvrp::ProblemData const &, double>(),
+    py::class_<ReplaceOptionalClient, BinaryOperator>(
+        m, "ReplaceOptionalClient", DOC(pyvrp, search, ReplaceOptionalClient))
+        .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
-             py::arg("overlap_tolerance") = 0.05,
              py::keep_alive<1, 2>())  // keep data alive
         .def_property_readonly("statistics",
-                               &SwapStar::statistics,
+                               &ReplaceOptionalClient::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &ReplaceOptionalClient::name)
         .def("evaluate",
-             &SwapStar::evaluate,
+             &ReplaceOptionalClient::evaluate,
              py::arg("U"),
              py::arg("V"),
              py::arg("cost_evaluator"))
-        .def("apply", &SwapStar::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<SwapStar>, py::arg("data"));
+        .def("apply", &ReplaceOptionalClient::apply, py::arg("U"), py::arg("V"))
+        .def("init", &ReplaceOptionalClient::init, py::arg("solution"))
+        .def_static(
+            "supports", &ReplaceOptionalClient::supports, py::arg("data"));
 
-    py::class_<SwapTails, NodeOperator>(
+    py::class_<ReplaceOptionalShipment, BinaryOperator>(
+        m,
+        "ReplaceOptionalShipment",
+        DOC(pyvrp, search, ReplaceOptionalShipment))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &ReplaceOptionalShipment::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &ReplaceOptionalShipment::name)
+        .def("evaluate",
+             &ReplaceOptionalShipment::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply",
+             &ReplaceOptionalShipment::apply,
+             py::arg("U"),
+             py::arg("V"))
+        .def("init", &ReplaceOptionalShipment::init, py::arg("solution"))
+        .def_static(
+            "supports", &ReplaceOptionalShipment::supports, py::arg("data"));
+
+    py::class_<Relocate<1>, BinaryOperator>(
+        m, "Relocate1", DOC(pyvrp, search, Relocate))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Relocate<1>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Relocate<1>::name)
+        .def("evaluate",
+             &Relocate<1>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Relocate<1>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Relocate<1>::init, py::arg("solution"))
+        .def_static("supports", &Relocate<1>::supports, py::arg("data"));
+
+    py::class_<Relocate<2>, BinaryOperator>(
+        m, "Relocate2", DOC(pyvrp, search, Relocate))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Relocate<2>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Relocate<2>::name)
+        .def("evaluate",
+             &Relocate<2>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Relocate<2>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Relocate<2>::init, py::arg("solution"))
+        .def_static("supports", &Relocate<2>::supports, py::arg("data"));
+
+    py::class_<Relocate<3>, BinaryOperator>(
+        m, "Relocate3", DOC(pyvrp, search, Relocate))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Relocate<3>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Relocate<3>::name)
+        .def("evaluate",
+             &Relocate<3>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Relocate<3>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Relocate<3>::init, py::arg("solution"))
+        .def_static("supports", &Relocate<3>::supports, py::arg("data"));
+
+    py::class_<Swap<1, 1>, BinaryOperator>(
+        m, "Swap11", DOC(pyvrp, search, Swap))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Swap<1, 1>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Swap<1, 1>::name)
+        .def("evaluate",
+             &Swap<1, 1>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Swap<1, 1>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Swap<1, 1>::init, py::arg("solution"))
+        .def_static("supports", &Swap<1, 1>::supports, py::arg("data"));
+
+    py::class_<Swap<2, 1>, BinaryOperator>(
+        m, "Swap21", DOC(pyvrp, search, Swap))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Swap<2, 1>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Swap<2, 1>::name)
+        .def("evaluate",
+             &Swap<2, 1>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Swap<2, 1>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Swap<2, 1>::init, py::arg("solution"))
+        .def_static("supports", &Swap<2, 1>::supports, py::arg("data"));
+
+    py::class_<Swap<3, 1>, BinaryOperator>(
+        m, "Swap31", DOC(pyvrp, search, Swap))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Swap<3, 1>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Swap<3, 1>::name)
+        .def("evaluate",
+             &Swap<3, 1>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Swap<3, 1>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Swap<3, 1>::init, py::arg("solution"))
+        .def_static("supports", &Swap<3, 1>::supports, py::arg("data"));
+
+    py::class_<Swap<2, 2>, BinaryOperator>(
+        m, "Swap22", DOC(pyvrp, search, Swap))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Swap<2, 2>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Swap<2, 2>::name)
+        .def("evaluate",
+             &Swap<2, 2>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Swap<2, 2>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Swap<2, 2>::init, py::arg("solution"))
+        .def_static("supports", &Swap<2, 2>::supports, py::arg("data"));
+
+    py::class_<Swap<3, 2>, BinaryOperator>(
+        m, "Swap32", DOC(pyvrp, search, Swap))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Swap<3, 2>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Swap<3, 2>::name)
+        .def("evaluate",
+             &Swap<3, 2>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Swap<3, 2>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Swap<3, 2>::init, py::arg("solution"))
+        .def_static("supports", &Swap<3, 2>::supports, py::arg("data"));
+
+    py::class_<Swap<3, 3>, BinaryOperator>(
+        m, "Swap33", DOC(pyvrp, search, Swap))
+        .def(py::init<pyvrp::ProblemData const &>(),
+             py::arg("data"),
+             py::keep_alive<1, 2>())  // keep data alive
+        .def_property_readonly("statistics",
+                               &Swap<3, 3>::statistics,
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &Swap<3, 3>::name)
+        .def("evaluate",
+             &Swap<3, 3>::evaluate,
+             py::arg("U"),
+             py::arg("V"),
+             py::arg("cost_evaluator"))
+        .def("apply", &Swap<3, 3>::apply, py::arg("U"), py::arg("V"))
+        .def("init", &Swap<3, 3>::init, py::arg("solution"))
+        .def_static("supports", &Swap<3, 3>::supports, py::arg("data"));
+
+    py::class_<SwapTails, BinaryOperator>(
         m, "SwapTails", DOC(pyvrp, search, SwapTails))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
@@ -234,15 +464,17 @@ PYBIND11_MODULE(_search, m)
         .def_property_readonly("statistics",
                                &SwapTails::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &SwapTails::name)
         .def("evaluate",
              &SwapTails::evaluate,
              py::arg("U"),
              py::arg("V"),
              py::arg("cost_evaluator"))
         .def("apply", &SwapTails::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<SwapTails>, py::arg("data"));
+        .def("init", &SwapTails::init, py::arg("solution"))
+        .def_static("supports", &SwapTails::supports, py::arg("data"));
 
-    py::class_<RelocateWithDepot, NodeOperator>(
+    py::class_<RelocateWithDepot, BinaryOperator>(
         m, "RelocateWithDepot", DOC(pyvrp, search, RelocateWithDepot))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
@@ -250,17 +482,18 @@ PYBIND11_MODULE(_search, m)
         .def_property_readonly("statistics",
                                &RelocateWithDepot::statistics,
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("name", &RelocateWithDepot::name)
         .def("evaluate",
              &RelocateWithDepot::evaluate,
              py::arg("U"),
              py::arg("V"),
              py::arg("cost_evaluator"))
         .def("apply", &RelocateWithDepot::apply, py::arg("U"), py::arg("V"))
-        .def_static("supports", &supports<RelocateWithDepot>, py::arg("data"));
+        .def("init", &RelocateWithDepot::init, py::arg("solution"))
+        .def_static("supports", &RelocateWithDepot::supports, py::arg("data"));
 
     py::class_<SearchSpace>(m, "SearchSpace", DOC(pyvrp, search, SearchSpace))
-        .def(py::init<pyvrp::ProblemData const &,
-                      std::vector<std::vector<size_t>>>(),
+        .def(py::init<pyvrp::ProblemData const &, SearchSpace::Neighbours>(),
              py::arg("data"),
              py::arg("neighbours"))
         .def_property("neighbours",
@@ -269,15 +502,16 @@ PYBIND11_MODULE(_search, m)
                       py::return_value_policy::reference_internal)
         .def("neighbours_of",
              &SearchSpace::neighboursOf,
-             py::arg("client"),
+             py::arg("activity"),
              DOC(pyvrp, search, SearchSpace, neighboursOf))
         .def("is_promising",
              &SearchSpace::isPromising,
-             py::arg("client"),
+             py::arg("activity"),
              DOC(pyvrp, search, SearchSpace, isPromising))
         .def("mark_promising",
-             py::overload_cast<size_t>(&SearchSpace::markPromising),
-             py::arg("client"),
+             py::overload_cast<pyvrp::Activity const &>(
+                 &SearchSpace::markPromising),
+             py::arg("activity"),
              DOC(pyvrp, search, SearchSpace, markPromising, 1))
         .def(
             "mark_promising",
@@ -290,12 +524,9 @@ PYBIND11_MODULE(_search, m)
         .def("unmark_all_promising",
              &SearchSpace::unmarkAllPromising,
              DOC(pyvrp, search, SearchSpace, unmarkAllPromising))
-        .def("client_order",
-             &SearchSpace::clientOrder,
-             DOC(pyvrp, search, SearchSpace, clientOrder))
-        .def("route_order",
-             &SearchSpace::routeOrder,
-             DOC(pyvrp, search, SearchSpace, routeOrder))
+        .def("activity_order",
+             &SearchSpace::activityOrder,
+             DOC(pyvrp, search, SearchSpace, activityOrder))
         .def("veh_type_order",
              &SearchSpace::vehTypeOrder,
              DOC(pyvrp, search, SearchSpace, vehTypeOrder))
@@ -342,7 +573,7 @@ PYBIND11_MODULE(_search, m)
 
     py::class_<LocalSearch>(m, "LocalSearch")
         .def(py::init<pyvrp::ProblemData const &,
-                      std::vector<std::vector<size_t>>,
+                      SearchSpace::Neighbours,
                       PerturbationManager &>(),
              py::arg("data"),
              py::arg("neighbours"),
@@ -354,18 +585,18 @@ PYBIND11_MODULE(_search, m)
                       &LocalSearch::setNeighbours,
                       py::return_value_policy::reference_internal)
         .def_property_readonly("statistics", &LocalSearch::statistics)
-        .def_property_readonly("node_operators",
-                               &LocalSearch::nodeOperators,
+        .def_property_readonly("unary_operators",
+                               &LocalSearch::unaryOperators,
                                py::return_value_policy::reference_internal)
-        .def_property_readonly("route_operators",
-                               &LocalSearch::routeOperators,
+        .def_property_readonly("binary_operators",
+                               &LocalSearch::binaryOperators,
                                py::return_value_policy::reference_internal)
-        .def("add_node_operator",
-             &LocalSearch::addNodeOperator,
+        .def("add_operator",
+             py::overload_cast<UnaryOperator &>(&LocalSearch::addOperator),
              py::arg("op"),
              py::keep_alive<1, 2>())
-        .def("add_route_operator",
-             &LocalSearch::addRouteOperator,
+        .def("add_operator",
+             py::overload_cast<BinaryOperator &>(&LocalSearch::addOperator),
              py::arg("op"),
              py::keep_alive<1, 2>())
         .def("__call__",
@@ -374,55 +605,69 @@ PYBIND11_MODULE(_search, m)
              py::arg("cost_evaluator"),
              py::arg("exhaustive") = false,
              py::call_guard<py::gil_scoped_release>())
-        .def("search",
-             py::overload_cast<pyvrp::Solution const &,
-                               pyvrp::CostEvaluator const &>(
-                 &LocalSearch::search),
-             py::arg("solution"),
-             py::arg("cost_evaluator"),
-             py::call_guard<py::gil_scoped_release>())
-        .def("intensify",
-             py::overload_cast<pyvrp::Solution const &,
-                               pyvrp::CostEvaluator const &>(
-                 &LocalSearch::intensify),
-             py::arg("solution"),
-             py::arg("cost_evaluator"),
-             py::call_guard<py::gil_scoped_release>())
         .def("shuffle", &LocalSearch::shuffle, py::arg("rng"));
 
     py::class_<Solution>(m, "Solution", DOC(pyvrp, search, Solution))
         .def(py::init<pyvrp::ProblemData const &>(),
              py::arg("data"),
              py::keep_alive<1, 2>())  // keep data alive
-        .def_readonly("nodes", &Solution::nodes)
-        .def_readonly("routes", &Solution::routes)
+        .def_readonly("clients",
+                      &Solution::clients,
+                      py::return_value_policy::reference_internal)
+        .def_readonly("shipments",
+                      &Solution::shipments,
+                      py::return_value_policy::reference_internal)
+        .def_readonly("routes",
+                      &Solution::routes,
+                      py::return_value_policy::reference_internal)
         .def("load", &Solution::load, py::arg("solution"))
         .def("unload", &Solution::unload)
         .def("insert",
-             &Solution::insert,
-             py::arg("node"),
+             py::overload_cast<Route::Node *,
+                               SearchSpace const &,
+                               pyvrp::CostEvaluator const &,
+                               bool>(&Solution::insert),
+             py::arg("client"),
              py::arg("search_space"),
              py::arg("cost_evaluator"),
-             py::arg("required"));
+             py::arg("required"))
+        .def("insert",
+             py::overload_cast<Route::Node *,
+                               Route::Node *,
+                               SearchSpace const &,
+                               pyvrp::CostEvaluator const &,
+                               bool>(&Solution::insert),
+             py::arg("pickup"),
+             py::arg("delivery"),
+             py::arg("search_space"),
+             py::arg("cost_evaluator"),
+             py::arg("required"))
+        .def("__getitem__",
+             &Solution::operator[],
+             py::arg("activity"),
+             py::return_value_policy::reference_internal)
+        .def("__str__",
+             [](Solution const &solution)
+             {
+                 std::stringstream stream;
+                 stream << solution;
+                 return stream.str();
+             });
 
     py::class_<Route>(m, "Route", DOC(pyvrp, search, Route))
-        .def(py::init<pyvrp::ProblemData const &, size_t, size_t>(),
+        .def(py::init<pyvrp::ProblemData const &, size_t>(),
              py::arg("data"),
-             py::arg("idx"),
              py::arg("vehicle_type"),
              py::keep_alive<1, 2>())  // keep data alive
-        .def_property_readonly("idx", &Route::idx)
         .def_property_readonly("vehicle_type", &Route::vehicleType)
         .def("num_clients", &Route::numClients)
+        .def("num_shipments", &Route::numShipments)
+        .def("num_pickups",
+             [](Route const &route) { return route.numPickups(); })
         .def("num_depots", &Route::numDepots)
         .def("num_trips", &Route::numTrips)
         .def("max_trips", &Route::maxTrips)
         .def(py::self == py::self, py::arg("other"))  // this is __eq__
-        .def(  // __eq__ overload for pyvrp.Route
-            "__eq__",
-            [](Route const &route, pyvrp::Route const &other)
-            { return route == other; },
-            py::is_operator())
         .def("__delitem__", &Route::remove, py::arg("idx"))
         .def(
             "__getitem__",
@@ -551,11 +796,6 @@ PYBIND11_MODULE(_search, m)
             [](Route const &route, size_t end)
             { return route.before(end).duration(route.profile()); },
             py::arg("end"))
-        .def("centroid", &Route::centroid)
-        .def("overlaps_with",
-             &Route::overlapsWith,
-             py::arg("other"),
-             py::arg("tolerance"))
         .def("append",
              &Route::push_back,
              py::arg("node"),
@@ -574,15 +814,26 @@ PYBIND11_MODULE(_search, m)
         .def("update", &Route::update);
 
     py::class_<Route::Node>(m, "Node", DOC(pyvrp, search, Route, Node))
-        .def(py::init<size_t>(), py::arg("loc"))
-        .def_property_readonly("client", &Route::Node::client)
+        .def(py::init<pyvrp::Activity>(), py::arg("activity"))
+        .def(py::init<pyvrp::Activity::ActivityType, size_t>(),
+             py::arg("type"),
+             py::arg("idx"))
+        .def(py::init([](std::string const &description)  // for testing
+                      { return Route::Node(description); }))
+        .def_property_readonly("activity", &Route::Node::activity)
         .def_property_readonly("idx", &Route::Node::idx)
+        .def_property_readonly("type", &Route::Node::type)
+        .def_property_readonly("pos", &Route::Node::pos)
         .def_property_readonly("trip", &Route::Node::trip)
         .def_property_readonly("route", &Route::Node::route)
+        .def("is_client", &Route::Node::isClient)
         .def("is_depot", &Route::Node::isDepot)
         .def("is_start_depot", &Route::Node::isStartDepot)
         .def("is_end_depot", &Route::Node::isEndDepot)
         .def("is_reload_depot", &Route::Node::isReloadDepot)
+        .def("is_shipment", &Route::Node::isShipment)
+        .def("is_pickup", &Route::Node::isPickup)
+        .def("is_delivery", &Route::Node::isDelivery)
         .def("__str__",
              [](Route::Node const &node)
              {
@@ -591,26 +842,20 @@ PYBIND11_MODULE(_search, m)
                  return stream.str();
              });
 
-    m.def("insert_cost",
-          &insertCost,
-          py::arg("U"),
-          py::arg("V"),
-          py::arg("data"),
-          py::arg("cost_evaluator"),
-          DOC(pyvrp, search, insertCost));
+    py::class_<NeighbourhoodParams>(
+        m, "NeighbourhoodParams", DOC(pyvrp, search, NeighbourhoodParams))
+        .def(py::init<double, size_t, bool>(),
+             py::arg("weight_wait_time") = 0.2,
+             py::arg("num_neighbours") = 50,
+             py::arg("symmetric_proximity") = true)
+        .def(py::self == py::self, py::arg("other"))  // this is __eq__
+        .def_readonly("weight_wait_time", &NeighbourhoodParams::weightWaitTime)
+        .def_readonly("num_neighbours", &NeighbourhoodParams::numNeighbours)
+        .def_readonly("symmetric_proximity",
+                      &NeighbourhoodParams::symmetricProximity);
 
-    m.def("inplace_cost",
-          &inplaceCost,
-          py::arg("U"),
-          py::arg("V"),
+    m.def("compute_neighbours",
+          &pyvrp::search::computeNeighbours,
           py::arg("data"),
-          py::arg("cost_evaluator"),
-          DOC(pyvrp, search, inplaceCost));
-
-    m.def("remove_cost",
-          &removeCost,
-          py::arg("U"),
-          py::arg("data"),
-          py::arg("cost_evaluator"),
-          DOC(pyvrp, search, removeCost));
+          py::arg("params"));
 }

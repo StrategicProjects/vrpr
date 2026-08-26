@@ -1,7 +1,8 @@
 #' Assemble the problem data (ProblemData) from a model
 #'
 #' Builds PyVRP's C++ `ProblemData` structure from a [vrp_model()]. Locations
-#' follow PyVRP's convention: depots first (low indices), then clients.
+#' follow vrpr's convention: depots first (low indices), then clients, then one
+#' pickup and one delivery location per shipment.
 #'
 #' Integer measures (distance, duration, cost, load) travel as R `numeric` with
 #' integer semantics; non-integer values are rejected at the C++ boundary. Use
@@ -9,9 +10,9 @@
 #'
 #' @param model A [vrp_model()] with at least one depot and one vehicle type.
 #' @param distance,duration Matrices (`numeric`, `n x n`, locations in
-#'   depots-then-clients order) of distance and duration. If `NULL`, they are
-#'   computed as the rounded Euclidean distance between coordinates; `duration`
-#'   defaults to `distance`.
+#'   depots/clients/shipments order) of distance and duration. If `NULL`, they
+#'   are computed as the rounded Euclidean distance between coordinates;
+#'   `duration` defaults to `distance`.
 #'
 #' @return A `vrpr_problem_data` object (a wrapper around a C++ external pointer).
 #' @export
@@ -24,8 +25,15 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     cli::cli_abort("The model needs at least one vehicle type.")
   }
 
-  loc_x <- c(model$depots$x, model$clients$x)
-  loc_y <- c(model$depots$y, model$clients$y)
+  sh <- model$shipments
+  loc_x <- c(
+    model$depots$x, model$clients$x,
+    as.vector(rbind(sh$pickup_x, sh$delivery_x))
+  )
+  loc_y <- c(
+    model$depots$y, model$clients$y,
+    as.vector(rbind(sh$pickup_y, sh$delivery_y))
+  )
   n <- length(loc_x)
 
   if (is.null(distance)) {
@@ -40,8 +48,7 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
   vt <- with_vehicle_defaults(model$vehicle_types)
   cl <- model$clients
 
-  # Depots: 1-based in the model -> 0-based location indices (depots occupy
-  # locations 0..D-1).
+  # Depots: 1-based in the model -> 0-based depot indices.
   n_depots <- nrow(model$depots)
   for (col in c("start_depot", "end_depot")) {
     d <- vt[[col]]
@@ -52,8 +59,8 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     }
   }
 
-  # Multi-trip: 1-based reload depots -> 0-based location indices.
-  reload_loc <- lapply(vt$reload_depots, function(r) {
+  # Multi-trip: 1-based reload depots -> 0-based depot indices.
+  reload_idx <- lapply(vt$reload_depots, function(r) {
     r <- as.integer(r)
     if (length(r) > 0 && any(r < 1L | r > n_depots)) {
       cli::cli_abort("{.field reload_depots} must be in 1..{n_depots}.")
@@ -62,7 +69,8 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
   })
 
   # Mutually exclusive client groups. Each client belongs to at most one group;
-  # group members become optional (the group carries the requirement).
+  # group members become optional (the group carries the requirement). Members
+  # are 0-based client indices (PyVRP >= 0.14).
   n_clients <- nrow(cl)
   client_group <- rep(-1L, n_clients) # 0-based group index, -1 = no group
   group_members <- list()
@@ -78,7 +86,7 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     }
     client_group[members] <- g - 1L
     cl$required[members] <- FALSE # the group is mutually exclusive
-    group_members[[g]] <- as.integer(n_depots + members - 1L) # -> location
+    group_members[[g]] <- as.integer(members - 1L) # 0-based client indices
     group_required[g] <- isTRUE(grp$required)
   }
 
@@ -109,20 +117,41 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
     veh_unit_duration_cost = as.double(vt$unit_duration_cost),
     veh_start_depot = as.integer(vt$start_depot - 1L),
     veh_end_depot = as.integer(vt$end_depot - 1L),
-    veh_reload_depots = reload_loc,
+    veh_reload_depots = reload_idx,
     veh_max_reloads = as.double(vt$max_reloads),
     client_group = client_group,
     group_members = group_members,
     group_required = group_required,
+    ship_pickup_x = as.double(sh$pickup_x),
+    ship_pickup_y = as.double(sh$pickup_y),
+    ship_delivery_x = as.double(sh$delivery_x),
+    ship_delivery_y = as.double(sh$delivery_y),
+    ship_pickup_tw_early = as.double(sh$pickup_tw_early),
+    ship_pickup_tw_late = as.double(sh$pickup_tw_late),
+    ship_pickup_service = as.double(sh$pickup_service),
+    ship_delivery_tw_early = as.double(sh$delivery_tw_early),
+    ship_delivery_tw_late = as.double(sh$delivery_tw_late),
+    ship_delivery_service = as.double(sh$delivery_service),
+    ship_amount = as.double(sh$amount),
+    ship_prize = as.double(sh$prize),
+    ship_required = as.logical(sh$required),
     distance = distance,
     duration = duration
   )
 
-  # Locations (depots then clients), kept for plotting/inspection.
+  # Locations (depots, clients, shipment pickup/delivery pairs), kept for
+  # plotting/inspection. `index` is 1-based within each kind.
+  n_shipments <- nrow(sh)
   locations <- tibble::tibble(
     x = loc_x, y = loc_y,
-    kind = c(rep("depot", n_depots), rep("client", n_clients)),
-    index = c(seq_len(n_depots), seq_len(n_clients))
+    kind = c(
+      rep("depot", n_depots), rep("client", n_clients),
+      rep(c("pickup", "delivery"), n_shipments)
+    ),
+    index = c(
+      seq_len(n_depots), seq_len(n_clients),
+      rep(seq_len(n_shipments), each = 2)
+    )
   )
 
   structure(
@@ -138,6 +167,9 @@ print.vrpr_problem_data <- function(x, ...) {
   cli::cli_bullets(c(
     "*" = "{s$num_clients} client{?s} - {s$num_depots} depot{?s} \\
            ({s$num_locations} locations)",
+    if (s$num_shipments > 0) {
+      c("*" = "{s$num_shipments} shipment{?s}")
+    },
     "*" = "{s$num_vehicle_types} vehicle type{?s} - {s$num_vehicles} vehicle{?s}",
     "*" = "{s$num_load_dimensions} load dimension{?s} - \\
            {s$num_profiles} profile{?s}",

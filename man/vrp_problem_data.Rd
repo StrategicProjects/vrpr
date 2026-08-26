@@ -10,16 +10,17 @@ vrp_problem_data(model, distance = NULL, duration = NULL)
 \item{model}{A \code{\link[=vrp_model]{vrp_model()}} with at least one depot and one vehicle type.}
 
 \item{distance, duration}{Matrices (\code{numeric}, \verb{n x n}, locations in
-depots-then-clients order) of distance and duration. If \code{NULL}, they are
-computed as the rounded Euclidean distance between coordinates; \code{duration}
-defaults to \code{distance}.}
+depots/clients/shipments order) of distance and duration. If \code{NULL}, they
+are computed as the rounded Euclidean distance between coordinates;
+\code{duration} defaults to \code{distance}.}
 }
 \value{
 A \code{vrpr_problem_data} object (a wrapper around a C++ external pointer).
 }
 \description{
 Builds PyVRP's C++ \code{ProblemData} structure from a \code{\link[=vrp_model]{vrp_model()}}. Locations
-follow PyVRP's convention: depots first (low indices), then clients.
+follow vrpr's convention: depots first (low indices), then clients, then one
+pickup and one delivery location per shipment.
 }
 \details{
 Integer measures (distance, duration, cost, load) travel as R \code{numeric} with

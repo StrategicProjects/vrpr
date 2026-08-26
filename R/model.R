@@ -28,6 +28,16 @@ vrp_model <- function() {
         tw_early = double(), tw_late = double(), service = double(),
         release_time = double(), prize = double(), required = logical()
       ),
+      shipments = tibble::tibble(
+        pickup_x = double(), pickup_y = double(),
+        delivery_x = double(), delivery_y = double(),
+        amount = double(),
+        pickup_tw_early = double(), pickup_tw_late = double(),
+        pickup_service = double(),
+        delivery_tw_early = double(), delivery_tw_late = double(),
+        delivery_service = double(),
+        prize = double(), required = logical()
+      ),
       vehicle_types = tibble::tibble(
         num_available = integer(), capacity = double(), fixed_cost = double(),
         tw_early = double(), tw_late = double(), max_duration = double(),
@@ -110,6 +120,43 @@ add_clients <- function(model, data) {
   model
 }
 
+#' Add shipments (pickup and delivery pairs) to the model
+#'
+#' A shipment is a paired pickup and delivery: the same vehicle must pick up
+#' the goods at the pickup point and drop them off at the delivery point,
+#' with the pickup happening first, in the same trip. This models the classic
+#' pickup-and-delivery problem (PDPTW when combined with time windows).
+#'
+#' @param model A `vrpr_model`.
+#' @param data A tibble/data.frame with at least the columns `pickup_x`,
+#'   `pickup_y`, `delivery_x` and `delivery_y`. Optional columns: `amount`
+#'   (load carried between pickup and delivery), `pickup_tw_early`,
+#'   `pickup_tw_late`, `pickup_service`, `delivery_tw_early`,
+#'   `delivery_tw_late`, `delivery_service`, `prize` and `required`.
+#' @return The updated `vrpr_model`.
+#' @export
+add_shipments <- function(model, data) {
+  check_model(model)
+  data <- tibble::as_tibble(data)
+  required_cols <- c("pickup_x", "pickup_y", "delivery_x", "delivery_y")
+  missing <- setdiff(required_cols, names(data))
+  if (length(missing) > 0) {
+    cli::cli_abort("{.arg data} needs the column{?s} {.field {missing}}.")
+  }
+  defaults <- list(
+    amount = 0,
+    pickup_tw_early = 0, pickup_tw_late = Inf, pickup_service = 0,
+    delivery_tw_early = 0, delivery_tw_late = Inf, delivery_service = 0,
+    prize = 0, required = TRUE
+  )
+  for (col in names(defaults)) {
+    if (is.null(data[[col]])) data[[col]] <- defaults[[col]]
+  }
+  data$required <- as.logical(data$required)
+  model$shipments <- vctrs::vec_rbind(model$shipments, data[names(model$shipments)])
+  model
+}
+
 #' Add a vehicle type to the model
 #' @param model A `vrpr_model`.
 #' @param num_available Number of vehicles available of this type.
@@ -165,6 +212,7 @@ print.vrpr_model <- function(x, ...) {
     "*" = "{nrow(x$depots)} depot{?s}",
     "*" = "{nrow(x$clients)} client{?s}",
     "*" = "{nrow(x$vehicle_types)} vehicle type{?s}",
+    if (nrow(x$shipments) > 0) c("*" = "{nrow(x$shipments)} shipment{?s}"),
     if (length(x$groups) > 0) c("*" = "{length(x$groups)} client group{?s}")
   ))
   invisible(x)

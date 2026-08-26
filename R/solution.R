@@ -38,11 +38,16 @@ vrp_solution <- function(problem_data, routes) {
   if (!is.list(routes)) {
     cli::cli_abort("{.arg routes} must be a list of client vectors.")
   }
-  n_depots <- problem_data$summary$num_depots
-  # Client c (1..C) -> location index (depots first).
-  loc_routes <- lapply(routes, function(r) as.integer(n_depots + as.integer(r) - 1L))
-  ptr <- vrpr_solution_from_routes(problem_data$ptr, loc_routes)
-  new_solution(ptr, n_depots)
+  # Client c (1..C) -> CLIENT activity with 0-based index.
+  act_routes <- lapply(routes, function(r) {
+    r <- as.integer(r)
+    list(type = rep(1L, length(r)), idx = r - 1L)
+  })
+  ptr <- vrpr_solution_from_routes(
+    problem_data$ptr, act_routes,
+    veh_types = rep(0L, length(act_routes))
+  )
+  new_solution(ptr)
 }
 
 #' Generate a random solution
@@ -55,12 +60,12 @@ vrp_random_solution <- function(problem_data, seed = 42L) {
   check_problem_data(problem_data)
   rng <- vrpr_rng_create(as.integer(seed))
   ptr <- vrpr_solution_random(problem_data$ptr, rng)
-  new_solution(ptr, problem_data$summary$num_depots)
+  new_solution(ptr)
 }
 
-new_solution <- function(ptr, n_depots) {
+new_solution <- function(ptr) {
   structure(
-    list(ptr = ptr, n_depots = n_depots, summary = vrpr_solution_summary(ptr)),
+    list(ptr = ptr, summary = vrpr_solution_summary(ptr)),
     class = "vrpr_solution"
   )
 }
@@ -84,10 +89,13 @@ solution_cost <- function(solution, cost_evaluator = NULL) {
 #'
 #' @param x A [vrp_solution()].
 #' @param ... Unused.
-#' @return A tibble with one row per visit: `route_id`, `depot` (start depot,
-#'   1-based), `position`, `client`, `vehicle_type`, `start_service` (start of
-#'   service) and `wait` (waiting time). The last two are only meaningful with
-#'   time windows (VRPTW); `depot` varies in the MDVRP.
+#' @return A tibble with one row per client, pickup or delivery visit:
+#'   `route_id`, `depot` (start depot, 1-based), `position`, `activity`
+#'   (`"client"`, `"pickup"` or `"delivery"`), `client` (client number, `NA`
+#'   for shipment visits), `shipment` (shipment number, `NA` for client
+#'   visits), `trip`, `vehicle_type`, `start_service` (start of service) and
+#'   `wait` (waiting time). The last two are only meaningful with time windows
+#'   (VRPTW); `depot` varies in the MDVRP; `trip` in multi-trip routes.
 #' @export
 routes <- function(x, ...) {
   UseMethod("routes")
@@ -95,29 +103,65 @@ routes <- function(x, ...) {
 
 #' @export
 routes.vrpr_solution <- function(x, ...) {
-  detail <- vrpr_solution_routes(x$ptr, x$n_depots)
+  detail <- vrpr_solution_routes(x$ptr)
+  empty <- tibble::tibble(
+    route_id = integer(), depot = integer(), position = integer(),
+    activity = character(), client = integer(), shipment = integer(),
+    trip = integer(), vehicle_type = integer(),
+    start_service = double(), wait = double()
+  )
   if (length(detail) == 0) {
-    return(tibble::tibble(
-      route_id = integer(), depot = integer(), position = integer(),
-      client = integer(), vehicle_type = integer(),
-      start_service = double(), wait = double()
-    ))
+    return(empty)
   }
   rows <- lapply(seq_along(detail), function(i) {
     r <- detail[[i]]
-    # Location index -> client number.
-    clients <- r$visits - x$n_depots + 1L
+    keep <- r$type != 0L # drop start/reload/end depots from the tidy view
+    if (!any(keep)) {
+      return(NULL)
+    }
+    type <- r$type[keep]
+    idx <- r$idx[keep]
     tibble::tibble(
       route_id = i,
-      depot = r$start_depot + 1L, # 0-based location -> 1-based depot
-      position = seq_along(clients),
-      client = as.integer(clients),
+      depot = r$start_depot + 1L, # 0-based depot -> 1-based
+      position = seq_along(idx),
+      activity = c("depot", "client", "pickup", "delivery")[type + 1L],
+      client = ifelse(type == 1L, idx + 1L, NA_integer_),
+      shipment = ifelse(type >= 2L, idx + 1L, NA_integer_),
+      trip = r$trip[keep] + 1L,
       vehicle_type = r$vehicle_type + 1L,
-      start_service = r$start_service,
-      wait = r$wait
+      start_service = r$start_time[keep],
+      wait = r$wait[keep]
     )
   })
+  rows <- Filter(Negate(is.null), rows)
+  if (length(rows) == 0) {
+    return(empty)
+  }
   vctrs::vec_rbind(!!!rows)
+}
+
+#' Unplanned activities of a solution
+#'
+#' Optional clients and shipments that are not part of any route
+#' (prize-collecting problems).
+#'
+#' @param x A [vrp_solution()] or [vrp_solve()] result.
+#' @param ... Unused.
+#' @return A tibble with columns `activity` (`"client"` or `"pickup"`/
+#'   `"delivery"`) and `index` (1-based client or shipment number).
+#' @export
+unplanned <- function(x, ...) {
+  UseMethod("unplanned")
+}
+
+#' @export
+unplanned.vrpr_solution <- function(x, ...) {
+  u <- vrpr_solution_unplanned(x$ptr)
+  tibble::tibble(
+    activity = c("depot", "client", "pickup", "delivery")[u$type + 1L],
+    index = u$idx + 1L
+  )
 }
 
 #' @export
@@ -127,6 +171,7 @@ print.vrpr_solution <- function(x, ...) {
   feas <- if (s$is_feasible) cli::col_green("feasible") else cli::col_red("infeasible")
   cli::cli_bullets(c(
     "*" = "{s$num_routes} route{?s} - {s$num_clients} client{?s} visited",
+    if (s$num_shipments > 0) c("*" = "{s$num_shipments} shipment{?s} served"),
     "*" = "distance {s$distance} - duration {s$duration}",
     "*" = "status: {feas}{if (s$num_missing_clients > 0) \\
            paste0(' - ', s$num_missing_clients, ' client(s) missing') else ''}"

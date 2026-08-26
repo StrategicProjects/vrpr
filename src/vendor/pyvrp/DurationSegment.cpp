@@ -18,7 +18,7 @@ Duration DurationSegment::slack() const
     return std::min(startLate() - startEarly(), prevSlack);
 }
 
-DurationSegment::DurationSegment(ProblemData::Client const &client)
+DurationSegment::DurationSegment(Client const &client)
     : duration_(client.serviceDuration),
       startEarly_(client.twEarly),
       startLate_(client.twLate),
@@ -26,7 +26,7 @@ DurationSegment::DurationSegment(ProblemData::Client const &client)
 {
 }
 
-DurationSegment::DurationSegment(ProblemData::Depot const &depot,
+DurationSegment::DurationSegment(Depot const &depot,
                                  Duration const serviceDuration)
     : duration_(serviceDuration),
       startEarly_(depot.twEarly),
@@ -34,7 +34,14 @@ DurationSegment::DurationSegment(ProblemData::Depot const &depot,
 {
 }
 
-DurationSegment::DurationSegment(ProblemData::VehicleType const &vehicleType,
+DurationSegment::DurationSegment(Shipment::Step const &step)
+    : duration_(step.serviceDuration),
+      startEarly_(step.twEarly),
+      startLate_(step.twLate)
+{
+}
+
+DurationSegment::DurationSegment(VehicleType const &vehicleType,
                                  Duration const twLate)
     : startEarly_(vehicleType.twEarly), startLate_(twLate)
 {
