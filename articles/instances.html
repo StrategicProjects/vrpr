@@ -151,26 +151,30 @@ instance, the routes <code>[[1, 2], [3, 4, 5]]</code> cost 81 in both
 <code>vrpr</code> and PyVRP.</p>
 <p><strong>Quality parity.</strong> On the <code>X-n101-k25</code>
 instance (100 clients, known optimum <strong>27591</strong>), a
-10-second release build of <code>vrpr</code> reaches the optimum,
-matching PyVRP, with a comparable number of iterations. The reproducible
-benchmark lives in <code>tools/benchmark/</code> (<code>parity.R</code>
-drives <code>vrpr</code>, <code>pyvrp_side.py</code> the reference).</p>
+20-second release build of <code>vrpr</code> 0.2.0 reaches the optimum,
+matching PyVRP 0.14.0, with a comparable number of iterations. The
+reproducible benchmark lives in <code>tools/benchmark/</code>
+(<code>parity.R</code> drives <code>vrpr</code>,
+<code>pyvrp_side.py</code> the reference).</p>
 <table class="table">
 <thead><tr class="header">
 <th>Solver</th>
 <th>cost</th>
 <th>gap to optimum</th>
+<th>iterations (20 s)</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>PyVRP</td>
+<td>PyVRP 0.14.0</td>
 <td>27591</td>
 <td>0.00 %</td>
+<td>~70,600</td>
 </tr>
 <tr class="even">
-<td>vrpr</td>
+<td>vrpr 0.2.0</td>
 <td>27591</td>
 <td>0.00 %</td>
+<td>~49,100</td>
 </tr>
 </tbody>
 </table>

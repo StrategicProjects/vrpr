@@ -83,15 +83,15 @@ bundled `sample-n6-k2` instance, the routes `[[1, 2], [3, 4, 5]]` cost
 81 in both `vrpr` and PyVRP.
 
 **Quality parity.** On the `X-n101-k25` instance (100 clients, known
-optimum **27591**), a 10-second release build of `vrpr` reaches the
-optimum, matching PyVRP, with a comparable number of iterations. The
-reproducible benchmark lives in `tools/benchmark/` (`parity.R` drives
-`vrpr`, `pyvrp_side.py` the reference).
+optimum **27591**), a 20-second release build of `vrpr` 0.2.0 reaches
+the optimum, matching PyVRP 0.14.0, with a comparable number of
+iterations. The reproducible benchmark lives in `tools/benchmark/`
+(`parity.R` drives `vrpr`, `pyvrp_side.py` the reference).
 
-| Solver | cost  | gap to optimum |
-|--------|-------|----------------|
-| PyVRP  | 27591 | 0.00 %         |
-| vrpr   | 27591 | 0.00 %         |
+| Solver       | cost  | gap to optimum | iterations (20 s) |
+|--------------|-------|----------------|-------------------|
+| PyVRP 0.14.0 | 27591 | 0.00 %         | ~70,600           |
+| vrpr 0.2.0   | 27591 | 0.00 %         | ~49,100           |
 
 > When benchmarking, always measure a **release** build
 > (`R CMD INSTALL`), not the debug build of `devtools::load_all()`: the

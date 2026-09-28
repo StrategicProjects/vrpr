@@ -49,6 +49,8 @@ engine.
 
 ## vrpr 0.1.1
 
+CRAN release: 2026-08-27
+
 Portability fixes for CRAN builders; no user-facing changes.
 
 - Fixed compilation with LLVM 23’s libc++ (CRAN’s clang23 additional

@@ -200,7 +200,8 @@ client to the nearest depot’s vehicles.</p>
 them a <code>prize</code>. The solver visits an optional client only
 when its prize offsets the routing cost;
 <code><a href="../reference/unvisited_clients.html">unvisited_clients()</a></code> lists those left out (drawn as hollow
-circles by <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>).</p>
+circles by <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>); <code><a href="../reference/unplanned.html">unplanned()</a></code> gives the same
+view for optional clients and shipments together.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vrp_model.html">vrp_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_depot.html">add_depot</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -243,13 +244,51 @@ pickup and delivery (and backhaul).</p>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="paired-pickup-and-delivery-shipments">Paired pickup and delivery (shipments)<a class="anchor" aria-label="anchor" href="#paired-pickup-and-delivery-shipments"></a>
+</h2>
+<p>A <em>shipment</em> pairs a pickup point with a delivery point (the
+PDP/PDPTW family): the same vehicle must visit the pickup first and then
+the delivery, in the same trip. Add them with
+<code><a href="../reference/add_shipments.html">add_shipments()</a></code>; they mix freely with regular clients, time
+windows and every other feature.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sh</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  pickup_x   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">20</span>, <span class="fl">10</span>, <span class="fl">30</span><span class="op">)</span>,  pickup_y   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">25</span>, <span class="fl">20</span><span class="op">)</span>,</span>
+<span>  delivery_x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25</span>, <span class="op">-</span><span class="fl">15</span>, <span class="op">-</span><span class="fl">30</span><span class="op">)</span>, delivery_y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">10</span>, <span class="fl">30</span>, <span class="op">-</span><span class="fl">20</span><span class="op">)</span>,</span>
+<span>  amount     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">6</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">pdp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vrp_model.html">vrp_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_depot.html">add_depot</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_shipments.html">add_shipments</a></span><span class="op">(</span><span class="va">sh</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/add_vehicle_type.html">add_vehicle_type</a></span><span class="op">(</span>num_available <span class="op">=</span> <span class="fl">2</span>, capacity <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">res_pdp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vrp_solve.html">vrp_solve</a></span><span class="op">(</span><span class="va">pdp</span>, stop <span class="op">=</span> <span class="fu"><a href="../reference/vrpr_stop.html">max_iterations</a></span><span class="op">(</span><span class="fl">300</span><span class="op">)</span>, seed <span class="op">=</span> <span class="fl">1</span>, display <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/routes.html">routes</a></span><span class="op">(</span><span class="va">res_pdp</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"route_id"</span>, <span class="st">"position"</span>, <span class="st">"activity"</span>, <span class="st">"shipment"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 4</span></span></span>
+<span><span class="co">#&gt;   route_id position activity shipment</span></span>
+<span><span class="co">#&gt;      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>        1        1 pickup          1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>        1        2 pickup          3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>        1        3 delivery        1</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>        1        4 pickup          2</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>        1        5 delivery        3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>        1        6 delivery        2</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">res_pdp</span><span class="op">)</span></span></code></pre></div>
+<p><img src="variants_files/figure-html/shipments-1.png" class="r-plt" alt="" width="85%" style="display: block; margin: auto;"></p>
+<p>The <code>activity</code> column tells pickups from deliveries and
+<code>shipment</code> identifies the pair. Optional shipments
+(<code>required = FALSE</code>, with a <code>prize</code>) may be left
+out; <code><a href="../reference/unplanned.html">unplanned()</a></code> lists them.</p>
+</div>
+<div class="section level2">
 <h2 id="multi-trip">Multi-trip<a class="anchor" aria-label="anchor" href="#multi-trip"></a>
 </h2>
 <p>Allow a vehicle to return to a depot mid-route to reload, with
 <code>add_vehicle_type(reload_depots = i, max_reloads = k)</code>. A
 single vehicle can then serve far more than its capacity in one shift;
 <code>summary()$num_trips</code> counts the trips.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vrp_model.html">vrp_model</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_depot.html">add_depot</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/add_clients.html">add_clients</a></span><span class="op">(</span><span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">10</span>, <span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span>, y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">10</span>, <span class="op">-</span><span class="fl">10</span><span class="op">)</span>, demand <span class="op">=</span> <span class="fl">30</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>

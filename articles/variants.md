@@ -143,7 +143,9 @@ Mark clients as optional with `required = FALSE` and give them a
 offsets the routing cost;
 [`unvisited_clients()`](https://strategicprojects.github.io/vrpr/reference/unvisited_clients.md)
 lists those left out (drawn as hollow circles by
-[`plot()`](https://rdrr.io/r/graphics/plot.default.html)).
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html));
+[`unplanned()`](https://strategicprojects.github.io/vrpr/reference/unplanned.md)
+gives the same view for optional clients and shipments together.
 
 ``` r
 
@@ -191,6 +193,50 @@ res_pd <- vrp_solve(pd, stop = max_iterations(300), seed = 1, display = FALSE)
 res_pd$is_feasible
 #> [1] TRUE
 ```
+
+## Paired pickup and delivery (shipments)
+
+A *shipment* pairs a pickup point with a delivery point (the PDP/PDPTW
+family): the same vehicle must visit the pickup first and then the
+delivery, in the same trip. Add them with
+[`add_shipments()`](https://strategicprojects.github.io/vrpr/reference/add_shipments.md);
+they mix freely with regular clients, time windows and every other
+feature.
+
+``` r
+
+sh <- tibble::tibble(
+  pickup_x   = c(-20, 10, 30),  pickup_y   = c(10, -25, 20),
+  delivery_x = c(25, -15, -30), delivery_y = c(-10, 30, -20),
+  amount     = c(4, 6, 3)
+)
+
+pdp <- vrp_model() |>
+  add_depot(0, 0) |>
+  add_shipments(sh) |>
+  add_vehicle_type(num_available = 2, capacity = 10)
+
+res_pdp <- vrp_solve(pdp, stop = max_iterations(300), seed = 1, display = FALSE)
+routes(res_pdp)[, c("route_id", "position", "activity", "shipment")]
+#> # A tibble: 6 × 4
+#>   route_id position activity shipment
+#>      <int>    <int> <chr>       <int>
+#> 1        1        1 pickup          1
+#> 2        1        2 pickup          3
+#> 3        1        3 delivery        1
+#> 4        1        4 pickup          2
+#> 5        1        5 delivery        3
+#> 6        1        6 delivery        2
+plot(res_pdp)
+```
+
+![](variants_files/figure-html/shipments-1.png)
+
+The `activity` column tells pickups from deliveries and `shipment`
+identifies the pair. Optional shipments (`required = FALSE`, with a
+`prize`) may be left out;
+[`unplanned()`](https://strategicprojects.github.io/vrpr/reference/unplanned.md)
+lists them.
 
 ## Multi-trip
 
