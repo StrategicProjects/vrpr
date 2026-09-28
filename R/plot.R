@@ -28,9 +28,11 @@ plot.vrpr_result <- function(x, show_clients = TRUE, ...) {
   clients$visited <- clients$index %in% visited
 
   cost_lbl <- if (is.finite(x$cost)) round(x$cost) else NA
+  num_shipments <- sum(shipment_locs$kind == "pickup")
   subtitle <- sprintf(
-    "%d route(s) - %d client(s) - cost %s%s",
+    "%d route(s) - %d client(s)%s - cost %s%s",
     x$solution$summary$num_routes, nrow(clients),
+    if (num_shipments > 0) sprintf(" - %d shipment(s)", num_shipments) else "",
     if (is.na(cost_lbl)) "-" else cost_lbl,
     if (x$is_feasible) "" else " - infeasible"
   )
@@ -52,20 +54,23 @@ plot.vrpr_result <- function(x, show_clients = TRUE, ...) {
       size = 2.2, colour = "grey25", fill = "grey70"
     )
   }
+  if (nrow(clients) > 0) {
+    p <- p +
+      ggplot2::geom_point(
+        data = clients,
+        ggplot2::aes(x = .data$x, y = .data$y, shape = .data$visited),
+        size = 2.2, colour = "grey25"
+      ) +
+      ggplot2::scale_shape_manual(
+        values = c(`TRUE` = 19, `FALSE` = 1),
+        labels = c(`TRUE` = "visited", `FALSE` = "not visited"),
+        name = NULL, drop = FALSE
+      )
+  }
   p +
-    ggplot2::geom_point(
-      data = clients,
-      ggplot2::aes(x = .data$x, y = .data$y, shape = .data$visited),
-      size = 2.2, colour = "grey25"
-    ) +
     ggplot2::geom_point(
       data = depots, ggplot2::aes(x = .data$x, y = .data$y),
       shape = 15, size = 4, colour = "black"
-    ) +
-    ggplot2::scale_shape_manual(
-      values = c(`TRUE` = 19, `FALSE` = 1),
-      labels = c(`TRUE` = "visited", `FALSE` = "not visited"),
-      name = NULL, drop = FALSE
     ) +
     ggplot2::coord_equal() +
     ggplot2::labs(title = "VRP solution", subtitle = subtitle,

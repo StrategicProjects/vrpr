@@ -13,6 +13,24 @@ test_that("plot.vrpr_result returns a ggplot", {
   expect_s3_class(p, "ggplot")
 })
 
+test_that("plot.vrpr_result handles shipment-only instances", {
+  skip_if_not_installed("ggplot2")
+  sh <- tibble::tibble(
+    pickup_x = c(-20, 10), pickup_y = c(10, -25),
+    delivery_x = c(25, -15), delivery_y = c(-10, 30),
+    amount = c(4, 6)
+  )
+  res <- vrp_model() |>
+    add_depot(0, 0) |>
+    add_shipments(sh) |>
+    add_vehicle_type(num_available = 2, capacity = 10) |>
+    vrp_solve(stop = max_iterations(100), seed = 1, display = FALSE)
+  p <- plot(res)
+  expect_s3_class(p, "ggplot")
+  expect_no_warning(ggplot2::ggplot_build(p))
+  expect_match(p$labels$subtitle, "2 shipment(s)", fixed = TRUE)
+})
+
 test_that("plot.vrpr_model returns a ggplot", {
   skip_if_not_installed("ggplot2")
   m <- vrp_model() |>
