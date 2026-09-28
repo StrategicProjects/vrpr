@@ -1,28 +1,32 @@
 ## Submission
 
-vrpr 0.1.1 is a patch release fixing the compilation problems reported by
-Prof Brian Ripley on 2026-08-26 (deadline 2026-09-16):
+vrpr 0.2.0 is a feature release. It upgrades the bundled solver core from
+PyVRP 0.13.4 to PyVRP 0.14.0 and exposes the new upstream capabilities:
 
-* The clang23 additional issue (LLVM 23's libc++ dropped transitive includes):
-  `std::back_inserter` is now included explicitly via `<iterator>` in the
-  bundled `search/LocalSearch.cpp` (and `Solution.cpp`).
-* The installation ERRORs on r-release-macos-x86_64 and the r-oldrel-macos
-  builders: their MacOSX11.3 SDK ships a libc++ whose `<concepts>` implements
-  only `std::same_as`. A small compatibility header now supplies
-  `convertible_to` (in its own namespace, keyed on `__cpp_lib_concepts`) where
-  the standard library does not provide it. A custom iterator also gained the
-  two member typedefs required by that SDK's pre-C++20 `std::iterator_traits`.
+* Pickup-and-delivery problems (shipments) via `add_shipments()`.
+* A new `unplanned()` accessor for optional clients/shipments left out of a
+  solution (prize collecting).
+* `routes()` gains `activity`, `shipment` and `trip` columns; existing columns
+  and their meaning are unchanged for pure client instances.
+* The search engine and penalty manager follow the upstream 0.14 design; the
+  `init_load`/`init_tw`/`init_dist` arguments of `ils_params()` were removed
+  because upstream no longer uses them (documented in NEWS).
 
-All translation units were verified to compile against the MacOSX11.3 SDK's
-libc++ headers (reproducing the reported errors first, then confirming the
-fix). There are no user-facing changes.
+The previous release (0.1.1, 2026-08-27) addressed the compilation problems
+reported by Prof Brian Ripley; those portability fixes (explicit `<iterator>`
+include for LLVM 23's libc++, and the `convertible_to` shim for the MacOSX11.3
+SDK) are still applied to the new vendored sources by `tools/vendor.R`, and the
+0.1.1 CRAN check results are clean on all flavours with no additional issues.
 
 ## Test environments
 
 * local: macOS, R 4.6.0
 * GitHub Actions: macOS / Windows / Ubuntu, R release, R-devel and R oldrel-1
 * win-builder: R-devel and R-release
-* macbuilder (CRAN's macOS release toolchain)
+* macbuilder (CRAN's macOS toolchain, R-release and R-devel)
+* every translation unit syntax-checked against the libc++ headers of Apple's
+  MacOSX11.3 SDK (the toolchain of the r-release-macos-x86_64 and
+  r-oldrel-macos CRAN builders, which macbuilder does not cover)
 
 ## R CMD check results
 
@@ -34,7 +38,7 @@ The package bundles the C++ source of the PyVRP solver (MIT-licensed) under
 `src/vendor/pyvrp/` and rewires it with cpp11. The original copyright holders
 (Niels Wouda and the PyVRP contributors, Thibaut Vidal, and ORTEC) are credited
 with `cph`/`ctb` roles in `Authors@R` and detailed in `inst/COPYRIGHTS`. The
-exact upstream version is pinned in `tools/PYVRP_VERSION` (PyVRP 0.13.4).
+exact upstream version is pinned in `tools/PYVRP_VERSION` (PyVRP 0.14.0).
 
 ## Downstream dependencies
 
