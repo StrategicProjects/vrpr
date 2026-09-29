@@ -39,7 +39,7 @@ res
 #> ── vrpr result ─────────────────────────────────────────────────────────────────
 #> • cost 567 - feasible
 #> • 5 routes - 20 clients
-#> • 500 iterations - 0.13s
+#> • 500 iterations - 0.07s
 ```
 
 Inspect the result with

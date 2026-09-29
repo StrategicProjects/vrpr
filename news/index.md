@@ -2,6 +2,8 @@
 
 ## vrpr 0.2.0
 
+CRAN release: 2026-09-28
+
 Upgrades the vendored solver core to **PyVRP 0.14.0** (from 0.13.4), a
 major upstream release that reworks the data model and the search
 engine.

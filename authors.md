@@ -2,7 +2,7 @@
 
 ## Authors
 
-- **Andre Leite**. Author, maintainer.
+- **André Leite**. Author, maintainer.
 
 - **Marcos Wasiliew**. Author. [](https://orcid.org/0009-0004-4694-3159)
 
@@ -35,7 +35,7 @@ Vehicle Routing Problem Solver (PyVRP for R)*. R package version 0.1.0,
 
     @Manual{,
       title = {{vrpr}: Vehicle Routing Problem Solver (PyVRP for R)},
-      author = {Andre Leite and Marcos Wasiliew and Hugo Vasconcelos and Carlos Amorim and Diogo Bezerra},
+      author = {André Leite and Marcos Wasiliew and Hugo Vasconcelos and Carlos Amorim and Diogo Bezerra},
       year = {2026},
       note = {R package version 0.1.0},
       url = {https://github.com/StrategicProjects/vrpr},
