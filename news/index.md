@@ -1,5 +1,14 @@
 # Changelog
 
+## vrpr 0.2.1
+
+- Fixes the installation failure on the CRAN macOS builders that use
+  Apple’s MacOSX11.3 SDK (r-release-macos-x86_64, r-oldrel-macos-arm64
+  and r-oldrel-macos-x86_64): a lambda in the vendored `SearchSpace.cpp`
+  captured a structured binding, which older Apple clang rejects
+  (allowed only from C++20). `tools/vendor.R` now copies the binding
+  into a plain reference before the lambda.
+
 ## vrpr 0.2.0
 
 CRAN release: 2026-09-28
