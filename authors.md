@@ -31,15 +31,15 @@
 Source:
 [`inst/CITATION`](https://github.com/StrategicProjects/vrpr/blob/main/inst/CITATION)
 
-Leite A, Wasiliew M, Vasconcelos H, Amorim C, Bezerra D (2026). *vrpr:
-Vehicle Routing Problem Solver (PyVRP for R)*. R package version 0.1.0,
-<https://github.com/StrategicProjects/vrpr>.
+Leite A, Wasiliew M, Vasconcelos H, Amorim C, Bezerra D, Nascimento
+Barreto J (2026). *vrpr: Vehicle Routing Problem Solver (PyVRP for R)*.
+R package version 0.2.1, <https://github.com/StrategicProjects/vrpr>.
 
     @Manual{,
       title = {{vrpr}: Vehicle Routing Problem Solver (PyVRP for R)},
-      author = {André Leite and Marcos Wasiliew and Hugo Vasconcelos and Carlos Amorim and Diogo Bezerra},
+      author = {André Leite and Marcos Wasiliew and Hugo Vasconcelos and Carlos Amorim and Diogo Bezerra and Júlia {Nascimento Barreto}},
       year = {2026},
-      note = {R package version 0.1.0},
+      note = {R package version 0.2.1},
       url = {https://github.com/StrategicProjects/vrpr},
     }
 
