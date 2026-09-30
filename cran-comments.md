@@ -1,36 +1,43 @@
 ## Submission
 
-vrpr 0.2.0 is a feature release. It upgrades the bundled solver core from
-PyVRP 0.13.4 to PyVRP 0.14.0 and exposes the new upstream capabilities:
+vrpr 0.2.1 is a patch release that fixes the ERROR in the CRAN checks of 0.2.0
+on r-release-macos-x86_64, r-oldrel-macos-arm64 and r-oldrel-macos-x86_64:
 
-* Pickup-and-delivery problems (shipments) via `add_shipments()`.
-* A new `unplanned()` accessor for optional clients/shipments left out of a
-  solution (prize collecting).
-* `routes()` gains `activity`, `shipment` and `trip` columns; existing columns
-  and their meaning are unchanged for pure client instances.
-* The search engine and penalty manager follow the upstream 0.14 design; the
-  `init_load`/`init_tw`/`init_dist` arguments of `ils_params()` were removed
-  because upstream no longer uses them (documented in NEWS).
+```
+vendor/pyvrp/search/SearchSpace.cpp:52:66: error: reference to local binding
+'activity' declared in enclosing function
+```
 
-The previous release (0.1.1, 2026-08-27) addressed the compilation problems
-reported by Prof Brian Ripley; those portability fixes (explicit `<iterator>`
-include for LLVM 23's libc++, and the `convertible_to` shim for the MacOSX11.3
-SDK) are still applied to the new vendored sources by `tools/vendor.R`, and the
-0.1.1 CRAN check results are clean on all flavours with no additional issues.
+A lambda in the bundled PyVRP sources captured a structured binding, which is
+valid only from C++20 and is rejected by the Apple clang of the MacOSX11.3 SDK.
+The binding is now copied into a plain reference before the lambda (applied by
+`tools/vendor.R`, so it survives re-vendoring). I scanned the rest of the
+bundled sources for the same pattern and found no other occurrence.
+
+The only other change is author metadata: the maintainer's name is now spelled
+with its accent ("André Leite"; same person and e-mail address), a
+co-author's surname and e-mail were corrected (Marcos Wasiliew), ORCID iDs were
+added and Júlia Nascimento Barreto joins as author. The code is otherwise
+identical to 0.2.0.
 
 ## Test environments
 
-* local: macOS, R 4.6.0
-* GitHub Actions: macOS / Windows / Ubuntu, R release, R-devel and R oldrel-1
-* win-builder: R-devel and R-release
-* macbuilder (CRAN's macOS toolchain, R-release and R-devel)
-* every translation unit syntax-checked against the libc++ headers of Apple's
-  MacOSX11.3 SDK (the toolchain of the r-release-macos-x86_64 and
-  r-oldrel-macos CRAN builders, which macbuilder does not cover)
+* local: macOS 26.6 (arm64), R 4.6.0, `R CMD check --as-cran`
+* macbuilder: r-release (macOS 26.6 host, SDK 14.4, arm64) -- Status: OK
+* every translation unit compiled with clang's `-Wpre-c++20-compat`
+  diagnostic, which flags lambda captures of structured bindings: the 0.2.0
+  `SearchSpace.cpp` triggers it at the same line and column as the CRAN error
+  (52:66), and no translation unit of 0.2.1 does. None of the builders
+  available to me uses the MacOSX11.3 SDK toolchain of the failing flavours, so
+  this is the closest reproduction I can offer.
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 2 notes
+
+* `Days since last update: 2` -- this release only fixes the ERROR above.
+* `checking HTML version of manual ... NOTE`: skipped because the local HTML
+  Tidy is too old (local tooling, not a package issue).
 
 ## Bundled code
 

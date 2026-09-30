@@ -49,7 +49,8 @@ void SearchSpace::setNeighbours(Neighbours neighbours)
         auto const beginPos = neighbourhood.begin();
         auto const endPos = neighbourhood.end();
 
-        auto const pred = [&](auto const &item) { return item == activity; };
+        auto const &target = activity;  // vrpr: no lambda capture of bindings before C++20
+        auto const pred = [&](auto const &item) { return item == target; };
 
         if (std::any_of(beginPos, endPos, pred))
         {

@@ -183,6 +183,19 @@ patch_vendor <- function(dest) {
     )
   )
 
+  # (5) Lambdas may capture structured bindings only from C++20 (P1091/P1381);
+  # Apple clang in the MacOSX11.3 SDK builders (r-release-macos-x86_64,
+  # r-oldrel-macos-*) rejects it ("reference to local binding declared in
+  # enclosing function"). Copy the binding into a plain reference first.
+  sub_in_text(
+    "search/SearchSpace.cpp",
+    "        auto const pred = [&](auto const &item) { return item == activity; };",
+    paste0(
+      "        auto const &target = activity;  // vrpr: no lambda capture of bindings before C++20\n",
+      "        auto const pred = [&](auto const &item) { return item == target; };"
+    )
+  )
+
   invisible(NULL)
 }
 
