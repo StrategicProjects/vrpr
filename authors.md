@@ -33,13 +33,13 @@ Source:
 
 Leite A, Wasiliew M, Vasconcelos H, Amorim C, Bezerra D, Nascimento
 Barreto J (2026). *vrpr: Vehicle Routing Problem Solver (PyVRP for R)*.
-R package version 0.2.1, <https://github.com/StrategicProjects/vrpr>.
+R package version 0.2.2, <https://github.com/StrategicProjects/vrpr>.
 
     @Manual{,
       title = {{vrpr}: Vehicle Routing Problem Solver (PyVRP for R)},
       author = {André Leite and Marcos Wasiliew and Hugo Vasconcelos and Carlos Amorim and Diogo Bezerra and Júlia {Nascimento Barreto}},
       year = {2026},
-      note = {R package version 0.2.1},
+      note = {R package version 0.2.2},
       url = {https://github.com/StrategicProjects/vrpr},
     }
 
