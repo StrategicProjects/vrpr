@@ -1,3 +1,10 @@
+# vrpr 0.2.2
+
+* Fixes the installation failure in CRAN's additional `clang23` checks (LLVM 23
+  libc++, which no longer provides `<algorithm>` transitively): the vendored
+  `Client.cpp` and `VehicleType.cpp` use `std::any_of` without including it.
+  `tools/vendor.R` now adds the include, as it already did for `<iterator>`.
+
 # vrpr 0.2.1
 
 * Fixes the installation failure on the CRAN macOS builders that use Apple's

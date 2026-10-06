@@ -1,5 +1,6 @@
 #include "VehicleType.h"
 
+#include <algorithm>  // vrpr: missing on older standard libraries
 #include <cstring>
 
 using pyvrp::VehicleType;

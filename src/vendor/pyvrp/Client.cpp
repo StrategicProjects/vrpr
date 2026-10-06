@@ -1,5 +1,6 @@
 #include "Client.h"
 
+#include <algorithm>  // vrpr: missing on older standard libraries
 #include <cassert>
 #include <cstring>
 

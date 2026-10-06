@@ -1,43 +1,36 @@
 ## Submission
 
-vrpr 0.2.1 is a patch release that fixes the ERROR in the CRAN checks of 0.2.0
-on r-release-macos-x86_64, r-oldrel-macos-arm64 and r-oldrel-macos-x86_64:
+vrpr 0.2.2 is a patch release requested by the CRAN team (e-mail of
+2026-10-06, deadline 2026-10-27). It fixes the installation failure in the
+additional `clang23` checks (LLVM 23.1 libc++, Fedora):
 
 ```
-vendor/pyvrp/search/SearchSpace.cpp:52:66: error: reference to local binding
-'activity' declared in enclosing function
+vendor/pyvrp/Client.cpp:57:14: error: no member named 'any_of' in namespace 'std'
+vendor/pyvrp/VehicleType.cpp:81:14: error: no member named 'any_of' in namespace 'std'
 ```
 
-A lambda in the bundled PyVRP sources captured a structured binding, which is
-valid only from C++20 and is rejected by the Apple clang of the MacOSX11.3 SDK.
-The binding is now copied into a plain reference before the lambda (applied by
-`tools/vendor.R`, so it survives re-vendoring). I scanned the rest of the
-bundled sources for the same pattern and found no other occurrence.
-
-The only other change is author metadata: the maintainer's name is now spelled
-with its accent ("André Leite"; same person and e-mail address), a
-co-author's surname and e-mail were corrected (Marcos Wasiliew), ORCID iDs were
-added and Júlia Nascimento Barreto joins as author. The code is otherwise
-identical to 0.2.0.
+libc++ 23 dropped many transitive includes; two of the bundled PyVRP sources
+used `std::any_of` without including `<algorithm>`. The include is now added
+by `tools/vendor.R` (so it survives re-vendoring), next to the `<iterator>`
+fixups made for the same reason in 0.1.1. The code is otherwise identical to
+0.2.1, which is OK on all 13 regular CRAN flavours.
 
 ## Test environments
 
 * local: macOS 26.6 (arm64), R 4.6.0, `R CMD check --as-cran`
-* macbuilder: r-release (macOS 26.6 host, SDK 14.4, arm64) -- Status: OK
-* every translation unit compiled with clang's `-Wpre-c++20-compat`
-  diagnostic, which flags lambda captures of structured bindings: the 0.2.0
-  `SearchSpace.cpp` triggers it at the same line and column as the CRAN error
-  (52:66), and no translation unit of 0.2.1 does. None of the builders
-  available to me uses the MacOSX11.3 SDK toolchain of the failing flavours, so
-  this is the closest reproduction I can offer.
+* every translation unit compiled (`-fsyntax-only`) against the libc++
+  headers of LLVM 23.1.2 (Homebrew), which reproduces the eight clang23
+  errors on 0.2.1 character for character and none on 0.2.2
+* every translation unit also compiled against the libc++ headers of Apple's
+  MacOSX11.3 SDK (the toolchain of the r-release-macos-x86_64 and
+  r-oldrel-macos builders), with no errors
 
 ## R CMD check results
 
-0 errors | 0 warnings | 2 notes
+0 errors | 0 warnings | 0 notes (local, `--as-cran --no-manual`)
 
-* `Days since last update: 2` -- this release only fixes the ERROR above.
-* `checking HTML version of manual ... NOTE`: skipped because the local HTML
-  Tidy is too old (local tooling, not a package issue).
+The CRAN incoming checks will report `Days since last update: 5`: this release
+only fixes the clang23 ERROR above, at the CRAN team's request.
 
 ## Bundled code
 

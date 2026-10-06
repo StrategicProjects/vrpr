@@ -94,6 +94,8 @@ patch_vendor <- function(dest) {
   # not. Verified by compiling every TU against the MacOSX11.3 SDK headers.
   ensure_std_include("Solution.cpp", "iterator")       # std::back_inserter
   ensure_std_include("search/LocalSearch.cpp", "iterator")
+  ensure_std_include("Client.cpp", "algorithm")        # std::any_of (clang23, Oct 2026)
+  ensure_std_include("VehicleType.cpp", "algorithm")   # std::any_of (clang23, Oct 2026)
   ensure_std_include("Client.h", "optional")           # std::optional group
   ensure_std_include("Shipment.h", "string")           # std::string ctor arg
   ensure_std_include("Shipment.h", "vector")           # std::vector<Load>
