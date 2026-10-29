@@ -4,7 +4,15 @@
 \alias{vrp_solve}
 \title{Solve a VRP model}
 \usage{
-vrp_solve(model, stop, seed = 42L, params = ils_params(), display = TRUE)
+vrp_solve(
+  model,
+  stop,
+  seed = 42L,
+  params = ils_params(),
+  display = TRUE,
+  distance = NULL,
+  duration = NULL
+)
 }
 \arguments{
 \item{model}{A \code{\link[=vrp_model]{vrp_model()}} or an already-assembled \code{\link[=vrp_problem_data]{vrp_problem_data()}}.}
@@ -16,6 +24,13 @@ vrp_solve(model, stop, seed = 42L, params = ils_params(), display = TRUE)
 \item{params}{Solver parameters (see \code{\link[=ils_params]{ils_params()}}).}
 
 \item{display}{Show progress via \code{{cli}}?}
+
+\item{distance, duration}{Optional \verb{n x n} integer-valued matrices of travel
+distance and travel duration between all locations (depots, then clients,
+then shipment pickup/delivery pairs), e.g. from a road network. By default
+the rounded Euclidean distance between coordinates is used for both. See
+\code{\link[=vrp_problem_data]{vrp_problem_data()}} for the details. Only used when \code{model} is a
+\code{\link[=vrp_model]{vrp_model()}}.}
 }
 \value{
 A \code{vrpr_result} object with the best solution, cost, routes and run
@@ -38,4 +53,19 @@ res <- vrp_model() |>
 
 cost(res)
 routes(res)
+
+# With travel distances (m) and times (s) from a road network instead of
+# Euclidean distances: pass the matrices directly. Here a toy asymmetric
+# matrix stands in for the output of a routing engine.
+n <- nrow(clients) + 1
+set.seed(1)
+dist <- matrix(sample(500:3000, n * n, replace = TRUE), n)
+diag(dist) <- 0
+res_road <- vrp_model() |>
+  add_depot(x = 0, y = 0) |>
+  add_clients(clients) |>
+  add_vehicle_type(num_available = 3, capacity = 50) |>
+  vrp_solve(stop = max_iterations(200), display = FALSE,
+            distance = dist, duration = round(dist / 10))
+cost(res_road)
 }

@@ -47,3 +47,33 @@ test_that("duration defaults to distance", {
     add_vehicle_type(num_available = 1, capacity = 10)
   expect_no_error(vrp_problem_data(m, distance = d))
 })
+
+test_that("matrices with non-integer, negative or NA entries get a clear error", {
+  m <- cvrp_model()
+  bad <- euclidean_matrix(c(0, 10, 25, 40), c(0, 5, 30, 12)) + 0.5
+  expect_error(vrp_problem_data(m, distance = bad), "integer values")
+  expect_error(vrp_problem_data(m, distance = bad), "round")
+  neg <- bad - 1
+  neg[] <- floor(neg)
+  expect_error(vrp_problem_data(m, duration = neg), "non-negative")
+  withna <- floor(bad)
+  withna[1, 2] <- NA
+  expect_error(vrp_problem_data(m, distance = withna), "NA")
+})
+
+test_that("reusing an explicit distance as duration warns only with temporal features", {
+  d <- euclidean_matrix(c(0, 10, 25, 40), c(0, 5, 30, 12))
+  expect_no_warning(vrp_problem_data(cvrp_model(), distance = d))
+  expect_warning(
+    vrp_problem_data(cvrp_model(tw_late = c(100, 100, 100)), distance = d),
+    "duration"
+  )
+  expect_warning(
+    vrp_problem_data(cvrp_model(service = c(5, 5, 5)), distance = d),
+    "duration"
+  )
+  expect_no_warning(
+    vrp_problem_data(cvrp_model(tw_late = c(100, 100, 100)),
+                     distance = d, duration = d)
+  )
+})

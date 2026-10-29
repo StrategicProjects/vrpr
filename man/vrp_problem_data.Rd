@@ -9,10 +9,20 @@ vrp_problem_data(model, distance = NULL, duration = NULL)
 \arguments{
 \item{model}{A \code{\link[=vrp_model]{vrp_model()}} with at least one depot and one vehicle type.}
 
-\item{distance, duration}{Matrices (\code{numeric}, \verb{n x n}, locations in
-depots/clients/shipments order) of distance and duration. If \code{NULL}, they
-are computed as the rounded Euclidean distance between coordinates;
-\code{duration} defaults to \code{distance}.}
+\item{distance, duration}{Optional \verb{n x n} numeric matrices of travel
+distance and travel duration between all \code{n} locations, e.g. from a road
+network or a routing engine (OSRM, osmnx, ...). Rows and columns follow
+vrpr's location order: depots (in the order they were added), then
+clients, then one pickup and one delivery location per shipment.
+Asymmetric matrices are fine. Entries must be non-negative integers (PyVRP
+uses integer measures), so round to the unit you want (metres, seconds)
+first. If \code{distance} is \code{NULL}, it is computed as the rounded Euclidean
+distance between the coordinates (the TSPLIB \code{EUC_2D} convention). If
+\code{duration} is \code{NULL}, it is taken equal to \code{distance}; a warning is issued
+when that happens with an explicit \code{distance} and the model has temporal
+features (time windows, service times, maximum duration, ...), because
+those are then measured in distance units. With explicit matrices the
+coordinates in \code{\link[=add_depot]{add_depot()}}/\code{\link[=add_clients]{add_clients()}} are only used by \code{plot()}.}
 }
 \value{
 A \code{vrpr_problem_data} object (a wrapper around a C++ external pointer).
@@ -26,4 +36,21 @@ pickup and one delivery location per shipment.
 Integer measures (distance, duration, cost, load) travel as R \code{numeric} with
 integer semantics; non-integer values are rejected at the C++ boundary. Use
 \code{Inf} for "unconstrained" limits (e.g. \code{tw_late}).
+}
+\examples{
+# A triangle depot/A/B with an asymmetric road-network matrix (metres) and
+# a separate travel-time matrix (seconds).
+clients <- tibble::tibble(x = c(1, 2), y = c(0, 1), demand = c(5, 5))
+dist <- matrix(c(0, 1200, 1500,
+                 1300, 0, 800,
+                 1500, 900, 0), 3, byrow = TRUE)
+time <- matrix(c(0, 180, 240,
+                 200, 0, 120,
+                 240, 130, 0), 3, byrow = TRUE)
+m <- vrp_model() |>
+  add_depot(0, 0) |>
+  add_clients(clients) |>
+  add_vehicle_type(num_available = 1, capacity = 10)
+pd <- vrp_problem_data(m, distance = dist, duration = time)
+pd
 }

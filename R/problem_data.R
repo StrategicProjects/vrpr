@@ -9,13 +9,39 @@
 #' `Inf` for "unconstrained" limits (e.g. `tw_late`).
 #'
 #' @param model A [vrp_model()] with at least one depot and one vehicle type.
-#' @param distance,duration Matrices (`numeric`, `n x n`, locations in
-#'   depots/clients/shipments order) of distance and duration. If `NULL`, they
-#'   are computed as the rounded Euclidean distance between coordinates;
-#'   `duration` defaults to `distance`.
+#' @param distance,duration Optional `n x n` numeric matrices of travel
+#'   distance and travel duration between all `n` locations, e.g. from a road
+#'   network or a routing engine (OSRM, osmnx, ...). Rows and columns follow
+#'   vrpr's location order: depots (in the order they were added), then
+#'   clients, then one pickup and one delivery location per shipment.
+#'   Asymmetric matrices are fine. Entries must be non-negative integers (PyVRP
+#'   uses integer measures), so round to the unit you want (metres, seconds)
+#'   first. If `distance` is `NULL`, it is computed as the rounded Euclidean
+#'   distance between the coordinates (the TSPLIB `EUC_2D` convention). If
+#'   `duration` is `NULL`, it is taken equal to `distance`; a warning is issued
+#'   when that happens with an explicit `distance` and the model has temporal
+#'   features (time windows, service times, maximum duration, ...), because
+#'   those are then measured in distance units. With explicit matrices the
+#'   coordinates in [add_depot()]/[add_clients()] are only used by `plot()`.
 #'
 #' @return A `vrpr_problem_data` object (a wrapper around a C++ external pointer).
 #' @export
+#' @examples
+#' # A triangle depot/A/B with an asymmetric road-network matrix (metres) and
+#' # a separate travel-time matrix (seconds).
+#' clients <- tibble::tibble(x = c(1, 2), y = c(0, 1), demand = c(5, 5))
+#' dist <- matrix(c(0, 1200, 1500,
+#'                  1300, 0, 800,
+#'                  1500, 900, 0), 3, byrow = TRUE)
+#' time <- matrix(c(0, 180, 240,
+#'                  200, 0, 120,
+#'                  240, 130, 0), 3, byrow = TRUE)
+#' m <- vrp_model() |>
+#'   add_depot(0, 0) |>
+#'   add_clients(clients) |>
+#'   add_vehicle_type(num_available = 1, capacity = 10)
+#' pd <- vrp_problem_data(m, distance = dist, duration = time)
+#' pd
 vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
   check_model(model)
   if (nrow(model$depots) == 0) {
@@ -36,11 +62,20 @@ vrp_problem_data <- function(model, distance = NULL, duration = NULL) {
   )
   n <- length(loc_x)
 
-  if (is.null(distance)) {
+  explicit_distance <- !is.null(distance)
+  if (!explicit_distance) {
     distance <- euclidean_matrix(loc_x, loc_y)
   }
   check_square_matrix(distance, n, "distance")
   if (is.null(duration)) {
+    if (explicit_distance && model_uses_time(model)) {
+      cli::cli_warn(c(
+        "{.arg duration} not supplied; using {.arg distance} as travel time.",
+        "i" = "The model has time windows, service times or duration limits, \\
+               which are then measured in distance units.",
+        "i" = "Pass a {.arg duration} matrix to silence this warning."
+      ))
+    }
     duration <- distance
   }
   check_square_matrix(duration, n, "duration")
@@ -197,6 +232,41 @@ check_square_matrix <- function(m, n, arg, call = rlang::caller_env()) {
       call = call
     )
   }
+  if (anyNA(m) || any(!is.finite(m))) {
+    cli::cli_abort(
+      "{.arg {arg}} must not contain NA, NaN or infinite values.",
+      call = call
+    )
+  }
+  if (any(m < 0)) {
+    cli::cli_abort("{.arg {arg}} must be non-negative.", call = call)
+  }
+  if (any(m != trunc(m))) {
+    cli::cli_abort(c(
+      "{.arg {arg}} must contain integer values (PyVRP uses integer measures).",
+      "i" = "Round the matrix to the unit you want, e.g. {.code round({arg})} \\
+             for metres/seconds, or scale it first ({.code round({arg} * 1000)}).",
+      "i" = "Coordinates and the default Euclidean distance are rounded for you."
+    ), call = call)
+  }
+}
+
+# Does the model use any temporal feature? Used to warn when an explicit
+# distance matrix is silently reused as the duration matrix.
+model_uses_time <- function(model) {
+  cl <- model$clients
+  sh <- model$shipments
+  dp <- model$depots
+  vt <- with_vehicle_defaults(model$vehicle_types)
+  any(
+    is.finite(dp$tw_late), dp$tw_early > 0, dp$service > 0,
+    is.finite(cl$tw_late), cl$tw_early > 0, cl$service > 0, cl$release_time > 0,
+    is.finite(sh$pickup_tw_late), sh$pickup_tw_early > 0, sh$pickup_service > 0,
+    is.finite(sh$delivery_tw_late), sh$delivery_tw_early > 0,
+    sh$delivery_service > 0,
+    is.finite(vt$tw_late), vt$tw_early > 0, is.finite(vt$max_duration),
+    vt$unit_duration_cost > 0
+  )
 }
 
 # Fills `max_distance` (the only column not yet coming from the model).

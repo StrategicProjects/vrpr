@@ -60,3 +60,36 @@ test_that("an invalid stop is rejected", {
     "stopping criterion"
   )
 })
+
+test_that("vrp_solve accepts explicit distance and duration matrices", {
+  m <- solve_model(n = 8)
+  n <- 9
+  withr::with_seed(3, {
+    d <- matrix(sample(100:1000, n * n, replace = TRUE), n)
+  })
+  diag(d) <- 0
+  res <- vrp_solve(m, stop = max_iterations(100), seed = 1, display = FALSE,
+                   distance = d, duration = round(d / 10))
+  expect_true(res$is_feasible)
+  # Cost is the sum of the matrix entries along the routes, not Euclidean.
+  rt <- routes(res)
+  total <- 0
+  for (r in split(rt, rt$route_id)) {
+    loc <- c(1L, r$client + 1L, 1L) # depot -> clients -> depot
+    total <- total + sum(d[cbind(loc[-length(loc)], loc[-1])])
+  }
+  expect_equal(cost(res), total)
+
+  # Euclidean default gives a different objective on the same model.
+  res_euc <- vrp_solve(m, stop = max_iterations(100), seed = 1, display = FALSE)
+  expect_false(isTRUE(all.equal(cost(res), cost(res_euc))))
+})
+
+test_that("vrp_solve rejects matrices together with assembled problem data", {
+  pd <- vrp_problem_data(solve_model(n = 5))
+  expect_error(
+    vrp_solve(pd, stop = max_iterations(10), display = FALSE,
+              distance = matrix(0, 6, 6)),
+    "vrp_problem_data"
+  )
+})
