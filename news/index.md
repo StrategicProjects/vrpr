@@ -1,6 +1,6 @@
 # Changelog
 
-## vrpr (development version)
+## vrpr 0.2.3
 
 - Custom travel distances and durations are now a first-class feature:
   [`vrp_solve()`](https://strategicprojects.github.io/vrpr/reference/vrp_solve.md)

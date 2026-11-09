@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">vrpr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="vrpr-development-version">vrpr (development version)<a class="anchor" aria-label="anchor" href="#vrpr-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.3" id="vrpr-023">vrpr 0.2.3<a class="anchor" aria-label="anchor" href="#vrpr-023"></a></h2>
 <ul><li>Custom travel distances and durations are now a first-class feature: <code><a href="../reference/vrp_solve.html">vrp_solve()</a></code> gains <code>distance</code> and <code>duration</code> arguments (forwarded to <code><a href="../reference/vrp_problem_data.html">vrp_problem_data()</a></code>), so matrices from a road network or a routing engine can be used without assembling the problem data by hand (<a href="https://github.com/StrategicProjects/vrpr/issues/4" class="external-link">#4</a>).</li>
 <li>
 <code><a href="../reference/vrp_problem_data.html">vrp_problem_data()</a></code> documents the location order of the matrices, checks them on the R side (square, finite, non-negative, integer-valued) and explains how to round or scale non-integer matrices instead of failing with a terse error at the C++ boundary.</li>
