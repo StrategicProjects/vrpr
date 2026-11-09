@@ -1,4 +1,4 @@
-# vrpr (development version)
+# vrpr 0.2.3
 
 * Custom travel distances and durations are now a first-class feature:
   `vrp_solve()` gains `distance` and `duration` arguments (forwarded to
