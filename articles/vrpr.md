@@ -39,7 +39,7 @@ res
 #> ── vrpr result ─────────────────────────────────────────────────────────────────
 #> • cost 567 - feasible
 #> • 5 routes - 20 clients
-#> • 500 iterations - 0.11s
+#> • 500 iterations - 0.13s
 ```
 
 Inspect the result with
@@ -131,6 +131,95 @@ routes(res_tw)[, c("route_id", "client", "start_service", "wait")]
 #> 5        1      6           150    10
 #> 6        1      5           170     0
 ```
+
+## Distances and durations
+
+So far every example used the default: the rounded Euclidean distance
+between the coordinates, with travel time equal to distance. Real
+deliveries happen on a road network, where the trip from A to B is
+longer than the straight line, often differs from the trip back, and
+time is not proportional to distance.
+
+[`vrp_solve()`](https://strategicprojects.github.io/vrpr/reference/vrp_solve.md)
+(and
+[`vrp_problem_data()`](https://strategicprojects.github.io/vrpr/reference/vrp_problem_data.md))
+accept explicit `distance` and `duration` matrices, so you can plug in
+the output of a routing engine such as OSRM (via the `osrm` package),
+Valhalla, GraphHopper, or a graph built with
+`osmnx`/`sfnetworks`/`dodgr`. The matrices must be:
+
+- `n x n`, where `n` is the number of locations: the depots (in the
+  order they were added), then the clients, then one pickup and one
+  delivery per shipment;
+- integer-valued (PyVRP works with integer measures), so round to the
+  unit you want, e.g. metres and seconds;
+- non-negative; asymmetric is fine.
+
+Here a toy “road network” inflates the Euclidean distances by a random
+detour factor and makes travel times depend on the direction of travel:
+
+``` r
+
+n <- nrow(clients) + 1 # locations: 1 depot + clients
+coords <- rbind(c(0, 0), as.matrix(clients[, c("x", "y")]))
+euclid <- as.matrix(dist(coords))
+
+set.seed(1)
+detour <- matrix(runif(n * n, 1.1, 1.6), n)   # road / straight-line ratio
+road_m <- round(euclid * detour * 100)        # metres (asymmetric)
+road_s <- round(road_m / runif(n * n, 8, 14)) # seconds, 8-14 m/s
+diag(road_m) <- diag(road_s) <- 0
+
+res_road <- vrp_model() |>
+  add_depot(0, 0) |>
+  add_clients(clients) |>
+  add_vehicle_type(num_available = 3, capacity = 50) |>
+  vrp_solve(stop = max_iterations(500), seed = 1, display = FALSE,
+            distance = road_m, duration = road_s)
+
+summary(res_road)                            # cost and distance in metres
+#> # A tibble: 1 × 9
+#>    cost is_feasible num_routes num_trips num_clients num_shipments distance
+#>   <dbl> <lgl>            <int>     <int>       <int>         <int>    <dbl>
+#> 1 57322 FALSE                3         3          20             0    57322
+#> # ℹ 2 more variables: iterations <int>, runtime <dbl>
+routes(res_road)[, c("route_id", "client", "start_service")] # seconds
+#> # A tibble: 20 × 3
+#>    route_id client start_service
+#>       <int>  <int>         <dbl>
+#>  1        1      3           193
+#>  2        1     17           482
+#>  3        1     15           542
+#>  4        1      9           727
+#>  5        1     16           978
+#>  6        2     14           460
+#>  7        2      2           485
+#>  8        2      5           697
+#>  9        2     10           911
+#> 10        2     11          1233
+#> 11        2     12          1388
+#> 12        2      1          1857
+#> 13        2     19          2242
+#> 14        3      8           338
+#> 15        3      7           846
+#> 16        3     18           992
+#> 17        3      4          1094
+#> 18        3      6          1437
+#> 19        3     20          1555
+#> 20        3     13          1679
+```
+
+With explicit matrices the coordinates passed to
+[`add_depot()`](https://strategicprojects.github.io/vrpr/reference/add_depot.md)/[`add_clients()`](https://strategicprojects.github.io/vrpr/reference/add_clients.md)
+no longer affect the solution; they are only used by
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html).
+
+Two things to keep in mind. Time windows, service times and
+`max_duration` are expressed in the same unit as `duration`, so with
+`road_s` above they are in seconds. And if you pass `distance` but not
+`duration`, the distance matrix is reused as travel time; `vrpr` warns
+when the model has temporal features, because those would then be
+measured in metres.
 
 ## Heterogeneous fleet
 

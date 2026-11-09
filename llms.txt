@@ -91,6 +91,31 @@ guide and the
 [Articles](https://strategicprojects.github.io/vrpr/articles/) for
 worked examples of each.
 
+## Distances and durations
+
+By default `vrpr` uses the rounded Euclidean distance between
+coordinates, and travel time equals distance. For real road networks,
+pass your own matrices (e.g. from OSRM, `osrm`, `osmnx`, or any routing
+engine) to
+[`vrp_solve()`](https://strategicprojects.github.io/vrpr/reference/vrp_solve.md)
+or
+[`vrp_problem_data()`](https://strategicprojects.github.io/vrpr/reference/vrp_problem_data.md):
+
+``` r
+
+# dist: n x n metres, time: n x n seconds, for depots, then clients
+# (then shipment pickup/delivery pairs), in the order they were added.
+res <- vrp_model() |>
+  add_depot(x = 0, y = 0) |>
+  add_clients(clients) |>
+  add_vehicle_type(num_available = 3, capacity = 50) |>
+  vrp_solve(stop = max_runtime(2), distance = dist, duration = time)
+```
+
+Matrices may be asymmetric and must be integer-valued (round to
+metres/seconds first). With explicit matrices, the coordinates are only
+used by [`plot()`](https://rdrr.io/r/graphics/plot.default.html).
+
 ## Reading standard instances
 
 ``` r

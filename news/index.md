@@ -1,6 +1,29 @@
 # Changelog
 
+## vrpr (development version)
+
+- Custom travel distances and durations are now a first-class feature:
+  [`vrp_solve()`](https://strategicprojects.github.io/vrpr/reference/vrp_solve.md)
+  gains `distance` and `duration` arguments (forwarded to
+  [`vrp_problem_data()`](https://strategicprojects.github.io/vrpr/reference/vrp_problem_data.md)),
+  so matrices from a road network or a routing engine can be used
+  without assembling the problem data by hand
+  ([\#4](https://github.com/StrategicProjects/vrpr/issues/4)).
+- [`vrp_problem_data()`](https://strategicprojects.github.io/vrpr/reference/vrp_problem_data.md)
+  documents the location order of the matrices, checks them on the R
+  side (square, finite, non-negative, integer-valued) and explains how
+  to round or scale non-integer matrices instead of failing with a terse
+  error at the C++ boundary.
+- When an explicit `distance` matrix is reused as `duration` and the
+  model has temporal features (time windows, service times, duration
+  limits), a warning points out that those are then measured in distance
+  units.
+- New “Distances and durations” section in the Getting started vignette
+  and the README.
+
 ## vrpr 0.2.2
+
+CRAN release: 2026-10-06
 
 - Fixes the installation failure in CRAN’s additional `clang23` checks
   (LLVM 23 libc++, which no longer provides `<algorithm>` transitively):
