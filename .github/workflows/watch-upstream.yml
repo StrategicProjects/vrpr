@@ -1,7 +1,8 @@
 name: watch-pyvrp-upstream
 
 # Watches PyVRP stable releases. When the latest release is newer than the
-# vendored version (tools/PYVRP_VERSION), it opens/keeps a tracking issue.
+# vendored version (tools/PYVRP_VERSION), it opens a tracking issue (once per release;
+# closing it marks the release as reviewed).
 # It never touches code -- it only notifies, for human review before re-vendoring.
 
 on:
@@ -55,12 +56,14 @@ jobs:
           EOF
           )
 
-          # Update the existing tracking issue (same title) or open a new one.
-          existing="$(gh issue list --state open --search "in:title PyVRP update available" --json number,title \
+          # One tracking issue per upstream release. Look at open AND closed
+          # issues: closing it means "reviewed, not re-vendoring this release",
+          # so it must not be reopened every week.
+          existing="$(gh issue list --state all --limit 100 --search "in:title PyVRP update available" --json number,title \
             --jq ".[] | select(.title==\"${title}\") | .number" | head -n1)"
 
           if [ -n "${existing:-}" ]; then
-            echo "Issue #${existing} already exists for ${latest}. Nothing to do."
+            echo "Issue #${existing} already exists for ${latest} (open or closed). Nothing to do."
           else
             gh issue create --title "$title" --body "$body" --label "upstream" || \
               gh issue create --title "$title" --body "$body"
