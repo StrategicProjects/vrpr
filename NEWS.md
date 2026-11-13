@@ -1,3 +1,16 @@
+# vrpr (development version)
+
+* **Credit.** vrpr is derived from [PyVRP](https://pyvrp.org): besides bundling
+  its C++ core, the iterated local search loop (`R/ils.R`) and the penalty
+  manager (`R/penalty.R`) are ports to R of PyVRP's Python code, which the
+  description and `inst/COPYRIGHTS` did not say. The description, README,
+  website and package help now state it; `inst/COPYRIGHTS` reproduces PyVRP's
+  MIT license in full (and no longer names the wrong upstream version);
+  `citation("vrpr")` gives Wouda, Lan and Kool (2024)
+  <doi:10.1287/ijoc.2023.0055> first; Leon Lan, Wouter Kool and the PyVRP
+  contributors are listed in `Authors@R`; and the documentation states that
+  the package is not affiliated with or endorsed by the PyVRP project.
+
 # vrpr 0.2.3
 
 * Custom travel distances and durations are now a first-class feature:

@@ -1,27 +1,41 @@
-citHeader("To cite vrpr in publications, please cite both the package and the underlying PyVRP solver:")
-
-bibentry(
-  bibtype  = "Manual",
-  title    = "{vrpr}: Vehicle Routing Problem Solver (PyVRP for R)",
-  author   = c(person("André", "Leite"),
-               person("Marcos", "Wasiliew"),
-               person("Hugo", "Vasconcelos"),
-               person("Carlos", "Amorim"),
-               person("Diogo", "Bezerra"),
-               person("Júlia", "Nascimento Barreto")),
-  year     = "2026",
-  note     = paste("R package version", meta$Version),
-  url      = "https://github.com/StrategicProjects/vrpr"
+citHeader(
+  "vrpr is built on PyVRP: it bundles PyVRP's C++ core and ports its search",
+  "loop to R. If you use vrpr, please cite the PyVRP paper; cite the R package",
+  "as well if you want to record the software you ran."
 )
 
 bibentry(
   bibtype  = "Article",
+  key      = "wouda2024",
   title    = "{PyVRP}: a high-performance {VRP} solver package",
   author   = c(person("Niels A.", "Wouda"),
                person("Leon", "Lan"),
                person("Wouter", "Kool")),
   journal  = "INFORMS Journal on Computing",
   year     = "2024",
+  volume   = "36",
+  number   = "4",
+  pages    = "943--955",
   doi      = "10.1287/ijoc.2023.0055",
-  note     = "vrpr vendors and rewires the PyVRP C++ core"
+  textVersion = paste(
+    "Wouda, N. A., Lan, L., & Kool, W. (2024). PyVRP: a high-performance VRP",
+    "solver package. INFORMS Journal on Computing, 36(4), 943-955.",
+    "doi:10.1287/ijoc.2023.0055"
+  )
+)
+
+bibentry(
+  bibtype  = "Manual",
+  key      = "vrpr",
+  title    = "{vrpr}: Vehicle Routing Problem Solver Built on {PyVRP}",
+  author   = c(person("Andr\u00e9", "Leite"),
+               person("Marcos", "Wasiliew"),
+               person("Hugo", "Vasconcelos"),
+               person("Carlos", "Amorim"),
+               person("Diogo", "Bezerra"),
+               person("J\u00falia", "Nascimento Barreto")),
+  year     = format(Sys.Date(), "%Y"),
+  note     = paste0("R package version ", meta$Version,
+                    ". Bundles the C++ core of PyVRP and ports its search loop to R"),
+  url      = "https://github.com/StrategicProjects/vrpr"
 )

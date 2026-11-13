@@ -16,17 +16,30 @@ Authors@R: c(
            comment = c(ORCID = "0009-0004-2851-7770")),
     person("Niels", "Wouda", role = c("ctb", "cph"),
            comment = "author of the vendored PyVRP C++ core"),
+    person("Leon", "Lan", role = "ctb",
+           comment = "author of PyVRP"),
+    person("Wouter", "Kool", role = "ctb",
+           comment = "author of PyVRP"),
+    person("PyVRP contributors", role = "cph",
+           comment = "PyVRP: the vendored C++ core and the Python code ported to R"),
     person("Thibaut", "Vidal", role = "cph",
            comment = "HGS-CVRP, parts of the vendored C++ core"),
     person("ORTEC", role = "cph",
            comment = "HGS-DIMACS, parts of the vendored C++ core")
   )
 Description: A 'tidyverse'-style interface to high-performance vehicle routing
-    problem (VRP) solving. Vendors the C++ core of the 'PyVRP' solver
-    (<https://github.com/PyVRP/PyVRP>) and rewires it through 'cpp11', with no
-    'Python' runtime dependency. Supports the capacitated VRP, time windows,
+    problem (VRP) solving, derived from the 'PyVRP' solver of Wouda, Lan and
+    Kool (2024) <doi:10.1287/ijoc.2023.0055>. Vendors the C++ core of 'PyVRP'
+    (<https://github.com/PyVRP/PyVRP>) and rewires it through 'cpp11'; the
+    iterated local search loop and the penalty manager that drive that core
+    are ports to R of the corresponding 'Python' code of 'PyVRP', so there is
+    no 'Python' runtime dependency. Supports the capacitated VRP, time windows,
     multiple depots, heterogeneous fleets, prize-collecting and multi-trip
-    variants, driven by an iterated local search metaheuristic.
+    variants. Not affiliated with or endorsed by the 'PyVRP' project.
+Copyright: 'PyVRP', whose C++ core is bundled and whose 'Python' search loop
+    is ported to R, is copyright (c) Thibaut Vidal, ORTEC and the PyVRP
+    contributors and distributed under the MIT license; its notice is
+    reproduced in inst/COPYRIGHTS.
 License: MIT + file LICENSE
 URL: https://github.com/StrategicProjects/vrpr,
     https://strategicprojects.github.io/vrpr/

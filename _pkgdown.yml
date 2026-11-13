@@ -48,3 +48,15 @@ reference:
   - vrp_random_solution
   - vrp_cost_evaluator
   - solution_cost
+
+footer:
+  structure:
+    left: [developed_by, lineage]
+    right: built_with
+  components:
+    lineage: >
+      Built on [PyVRP](https://pyvrp.org) by Niels Wouda, Leon Lan, Wouter
+      Kool and the PyVRP contributors
+      ([cite it](https://doi.org/10.1287/ijoc.2023.0055)): its C++ core is
+      bundled and its search loop ported to R. Not affiliated with or
+      endorsed by the PyVRP project.
