@@ -68,6 +68,18 @@
           <br><small>author of the vendored PyVRP C++ core</small></p>
         </li>
         <li>
+          <p><strong>Leon Lan</strong>. Contributor.
+          <br><small>author of PyVRP</small></p>
+        </li>
+        <li>
+          <p><strong>Wouter Kool</strong>. Contributor.
+          <br><small>author of PyVRP</small></p>
+        </li>
+        <li>
+          <p><strong>PyVRP contributors</strong>. Copyright holder.
+          <br><small>PyVRP: the vendored C++ core and the Python code ported to R</small></p>
+        </li>
+        <li>
           <p><strong>Thibaut Vidal</strong>. Copyright holder.
           <br><small>HGS-CVRP, parts of the vendored C++ core</small></p>
         </li>
@@ -81,30 +93,27 @@
       <h2 id="citation">Citation</h2>
       <p><small class="dont-index">Source: <a href="https://github.com/StrategicProjects/vrpr/blob/main/inst/CITATION" class="external-link"><code>inst/CITATION</code></a></small></p>
 
-      <p>Leite A, Wasiliew M, Vasconcelos H, Amorim C, Bezerra D, Nascimento Barreto J (2026).
-<em>vrpr: Vehicle Routing Problem Solver (PyVRP for R)</em>.
-R package version 0.2.3, <a href="https://github.com/StrategicProjects/vrpr" class="external-link">https://github.com/StrategicProjects/vrpr</a>.
-</p>
-      <pre>@Manual{,
-  title = {{vrpr}: Vehicle Routing Problem Solver (PyVRP for R)},
-  author = {André Leite and Marcos Wasiliew and Hugo Vasconcelos and Carlos Amorim and Diogo Bezerra and Júlia {Nascimento Barreto}},
-  year = {2026},
-  note = {R package version 0.2.3},
-  url = {https://github.com/StrategicProjects/vrpr},
-}</pre>
-      <p>Wouda N, Lan L, Kool W (2024).
-“PyVRP: a high-performance VRP solver package.”
-<em>INFORMS Journal on Computing</em>.
-<a href="https://doi.org/10.1287/ijoc.2023.0055" class="external-link">doi:10.1287/ijoc.2023.0055</a>.
-vrpr vendors and rewires the PyVRP C++ core.
-</p>
-      <pre>@Article{,
+      <p>Wouda, N. A., Lan, L., &amp; Kool, W. (2024). PyVRP: a high-performance VRP solver package. INFORMS Journal on Computing, 36(4), 943-955. doi:10.1287/ijoc.2023.0055</p>
+      <pre>@Article{wouda2024,
   title = {{PyVRP}: a high-performance {VRP} solver package},
   author = {Niels A. Wouda and Leon Lan and Wouter Kool},
   journal = {INFORMS Journal on Computing},
   year = {2024},
+  volume = {36},
+  number = {4},
+  pages = {943--955},
   doi = {10.1287/ijoc.2023.0055},
-  note = {vrpr vendors and rewires the PyVRP C++ core},
+}</pre>
+      <p>Leite A, Wasiliew M, Vasconcelos H, Amorim C, Bezerra D, Nascimento Barreto J (2026).
+<em>vrpr: Vehicle Routing Problem Solver Built on PyVRP</em>.
+R package version 0.2.3. Bundles the C++ core of PyVRP and ports its search loop to R, <a href="https://github.com/StrategicProjects/vrpr" class="external-link">https://github.com/StrategicProjects/vrpr</a>.
+</p>
+      <pre>@Manual{vrpr,
+  title = {{vrpr}: Vehicle Routing Problem Solver Built on {PyVRP}},
+  author = {André Leite and Marcos Wasiliew and Hugo Vasconcelos and Carlos Amorim and Diogo Bezerra and Júlia {Nascimento Barreto}},
+  year = {2026},
+  note = {R package version 0.2.3. Bundles the C++ core of PyVRP and ports its search loop to R},
+  url = {https://github.com/StrategicProjects/vrpr},
 }</pre>
     </div>
 
@@ -113,7 +122,7 @@ vrpr vendors and rewires the PyVRP C++ core.
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by André Leite, Marcos Wasiliew, Hugo Vasconcelos, Carlos Amorim, Diogo Bezerra, Júlia Nascimento Barreto.</p>
+  <p>Developed by André Leite, Marcos Wasiliew, Hugo Vasconcelos, Carlos Amorim, Diogo Bezerra, Júlia Nascimento Barreto. Built on <a href="https://pyvrp.org" class="external-link">PyVRP</a> by Niels Wouda, Leon Lan, Wouter Kool and the PyVRP contributors (<a href="https://doi.org/10.1287/ijoc.2023.0055" class="external-link">cite it</a>): its C++ core is bundled and its search loop ported to R. Not affiliated with or endorsed by the PyVRP project.</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -15,8 +15,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Vehicle Routing Problem Solver Built on PyVRP">
-<meta name="description" content="A tidyverse-style interface to high-performance vehicle routing problem (VRP) solving. Vendors the C++ core of the PyVRP solver (&lt;https://github.com/PyVRP/PyVRP&gt;) and rewires it through cpp11, with no Python runtime dependency. Supports the capacitated VRP, time windows, multiple depots, heterogeneous fleets, prize-collecting and multi-trip variants, driven by an iterated local search metaheuristic.">
-<meta property="og:description" content="A tidyverse-style interface to high-performance vehicle routing problem (VRP) solving. Vendors the C++ core of the PyVRP solver (&lt;https://github.com/PyVRP/PyVRP&gt;) and rewires it through cpp11, with no Python runtime dependency. Supports the capacitated VRP, time windows, multiple depots, heterogeneous fleets, prize-collecting and multi-trip variants, driven by an iterated local search metaheuristic.">
+<meta name="description" content="A tidyverse-style interface to high-performance vehicle routing problem (VRP) solving, derived from the PyVRP solver of Wouda, Lan and Kool (2024) &lt;doi:10.1287/ijoc.2023.0055&gt;. Vendors the C++ core of PyVRP (&lt;https://github.com/PyVRP/PyVRP&gt;) and rewires it through cpp11; the iterated local search loop and the penalty manager that drive that core are ports to R of the corresponding Python code of PyVRP, so there is no Python runtime dependency. Supports the capacitated VRP, time windows, multiple depots, heterogeneous fleets, prize-collecting and multi-trip variants. Not affiliated with or endorsed by the PyVRP project.">
+<meta property="og:description" content="A tidyverse-style interface to high-performance vehicle routing problem (VRP) solving, derived from the PyVRP solver of Wouda, Lan and Kool (2024) &lt;doi:10.1287/ijoc.2023.0055&gt;. Vendors the C++ core of PyVRP (&lt;https://github.com/PyVRP/PyVRP&gt;) and rewires it through cpp11; the iterated local search loop and the penalty manager that drive that core are ports to R of the corresponding Python code of PyVRP, so there is no Python runtime dependency. Supports the capacitated VRP, time windows, multiple depots, heterogeneous fleets, prize-collecting and multi-trip variants. Not affiliated with or endorsed by the PyVRP project.">
 <meta property="og:image" content="https://strategicprojects.github.io/vrpr/logo.svg">
 </head>
 <body>
@@ -69,7 +69,10 @@
 <blockquote>
 <p>A production-grade vehicle routing problem (VRP) solver for R.</p>
 </blockquote>
-<p><strong>vrpr</strong> brings the state-of-the-art <a href="https://github.com/PyVRP/PyVRP" class="external-link">PyVRP</a> solver to R. It vendors PyVRP’s high-performance C++ core and rewires it with <a href="https://cpp11.r-lib.org" class="external-link">cpp11</a>, wrapped in an idiomatic, <strong>tidyverse-style</strong> API: a pipe-friendly model builder, data in tibbles, and logging via <a href="https://cli.r-lib.org" class="external-link">cli</a> — with <strong>no Python runtime dependency</strong>.</p>
+<p><strong>vrpr</strong> brings the state-of-the-art <a href="https://pyvrp.org" class="external-link">PyVRP</a> solver, by Niels Wouda, Leon Lan, Wouter Kool and the <a href="https://github.com/PyVRP/PyVRP" class="external-link">PyVRP contributors</a>, to R. It vendors PyVRP’s high-performance C++ core and rewires it with <a href="https://cpp11.r-lib.org" class="external-link">cpp11</a>, wrapped in an idiomatic, <strong>tidyverse-style</strong> API: a pipe-friendly model builder, data in tibbles, and logging via <a href="https://cli.r-lib.org" class="external-link">cli</a> — with <strong>no Python runtime dependency</strong>. The R code that drives that core — the iterated local search loop (<code>R/ils.R</code>) and the penalty manager (<code>R/penalty.R</code>) — is a port to R of PyVRP’s Python code, not a new design: the algorithms and the solver are PyVRP’s work. If you use vrpr, please <a href="#citation">cite PyVRP</a>.</p>
+<blockquote>
+<p>vrpr is an independent project: it is not affiliated with, maintained by or endorsed by the PyVRP project or its authors. Please report problems with the R package <a href="https://github.com/StrategicProjects/vrpr/issues" class="external-link">here</a>, not to PyVRP. The R port of the search loop was written with the assistance of AI coding tools.</p>
+</blockquote>
 <p>It fills a real gap in the R ecosystem: there are <code>ompr</code>, <code>ROI</code>, <code>lpSolve</code>, <code>igraph</code> and <code>dodgr</code>, but no modern, strong, friendly solver for production vehicle routing.</p>
 <p align="center">
 <img src="reference/figures/README-example.png" width="80%" alt="A CVRP solution drawn by vrpr"></p>
@@ -214,9 +217,18 @@
 <p>The light R loop drives the heavy C++ search, so you get PyVRP-grade performance with a pure-R, Python-free workflow.</p>
 </div>
 <div class="section level2">
+<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h2>
+<p>vrpr is built on PyVRP, so the work to cite is PyVRP:</p>
+<blockquote>
+<p>Wouda, N. A., Lan, L., &amp; Kool, W. (2024). PyVRP: a high-performance VRP solver package. <em>INFORMS Journal on Computing</em>, 36(4), 943–955. <a href="doi:%5B10.1287/ijoc.2023.0055" class="uri">doi:[10.1287/ijoc.2023.0055</a>](<a href="https://doi.org/10.1287/ijoc.2023.0055" class="external-link uri">https://doi.org/10.1287/ijoc.2023.0055</a>)</p>
+</blockquote>
+<p><code>citation("vrpr")</code> gives this reference first, followed by the entry for the R package itself.</p>
+</div>
+<div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
-<p>MIT. Derived from PyVRP (© PyVRP contributors, Thibaut Vidal, ORTEC), whose copyright is preserved; see <a href="inst/COPYRIGHTS"><code>inst/COPYRIGHTS</code></a>.</p>
+<p>MIT. Derived from PyVRP (© PyVRP contributors, Thibaut Vidal, ORTEC; MIT), whose C++ core is bundled and whose Python search loop is ported to R; its copyright and license notice are preserved in <a href="inst/COPYRIGHTS"><code>inst/COPYRIGHTS</code></a>. vrpr is not affiliated with or endorsed by the PyVRP project.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -277,7 +289,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by André Leite, Marcos Wasiliew, Hugo Vasconcelos, Carlos Amorim, Diogo Bezerra, Júlia Nascimento Barreto.</p>
+  <p>Developed by André Leite, Marcos Wasiliew, Hugo Vasconcelos, Carlos Amorim, Diogo Bezerra, Júlia Nascimento Barreto. Built on <a href="https://pyvrp.org" class="external-link">PyVRP</a> by Niels Wouda, Leon Lan, Wouter Kool and the PyVRP contributors (<a href="https://doi.org/10.1287/ijoc.2023.0055" class="external-link">cite it</a>): its C++ core is bundled and its search loop ported to R. Not affiliated with or endorsed by the PyVRP project.</p>
 </div>
 
 <div class="pkgdown-footer-right">

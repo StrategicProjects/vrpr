@@ -1,11 +1,16 @@
 # vrpr: Vehicle Routing Problem Solver Built on 'PyVRP'
 
 A 'tidyverse'-style interface to high-performance vehicle routing
-problem (VRP) solving. Vendors the C++ core of the 'PyVRP' solver
-(<https://github.com/PyVRP/PyVRP>) and rewires it through 'cpp11', with
-no 'Python' runtime dependency. Supports the capacitated VRP, time
-windows, multiple depots, heterogeneous fleets, prize-collecting and
-multi-trip variants, driven by an iterated local search metaheuristic.
+problem (VRP) solving, derived from the 'PyVRP' solver of Wouda, Lan and
+Kool (2024)
+[doi:10.1287/ijoc.2023.0055](https://doi.org/10.1287/ijoc.2023.0055) .
+Vendors the C++ core of 'PyVRP' (<https://github.com/PyVRP/PyVRP>) and
+rewires it through 'cpp11'; the iterated local search loop and the
+penalty manager that drive that core are ports to R of the corresponding
+'Python' code of 'PyVRP', so there is no 'Python' runtime dependency.
+Supports the capacitated VRP, time windows, multiple depots,
+heterogeneous fleets, prize-collecting and multi-trip variants. Not
+affiliated with or endorsed by the 'PyVRP' project.
 
 ## See also
 
@@ -46,6 +51,13 @@ Other contributors:
 
 - Niels Wouda (author of the vendored PyVRP C++ core) \[contributor,
   copyright holder\]
+
+- Leon Lan (author of PyVRP) \[contributor\]
+
+- Wouter Kool (author of PyVRP) \[contributor\]
+
+- PyVRP contributors (PyVRP: the vendored C++ core and the Python code
+  ported to R) \[copyright holder\]
 
 - Thibaut Vidal (HGS-CVRP, parts of the vendored C++ core) \[copyright
   holder\]

@@ -2,13 +2,25 @@
 
 > A production-grade vehicle routing problem (VRP) solver for R.
 
-**vrpr** brings the state-of-the-art
-[PyVRP](https://github.com/PyVRP/PyVRP) solver to R. It vendors PyVRP’s
+**vrpr** brings the state-of-the-art [PyVRP](https://pyvrp.org) solver,
+by Niels Wouda, Leon Lan, Wouter Kool and the [PyVRP
+contributors](https://github.com/PyVRP/PyVRP), to R. It vendors PyVRP’s
 high-performance C++ core and rewires it with
 [cpp11](https://cpp11.r-lib.org), wrapped in an idiomatic,
 **tidyverse-style** API: a pipe-friendly model builder, data in tibbles,
 and logging via [cli](https://cli.r-lib.org) — with **no Python runtime
-dependency**.
+dependency**. The R code that drives that core — the iterated local
+search loop (`R/ils.R`) and the penalty manager (`R/penalty.R`) — is a
+port to R of PyVRP’s Python code, not a new design: the algorithms and
+the solver are PyVRP’s work. If you use vrpr, please [cite
+PyVRP](#citation).
+
+> vrpr is an independent project: it is not affiliated with, maintained
+> by or endorsed by the PyVRP project or its authors. Please report
+> problems with the R package
+> [here](https://github.com/StrategicProjects/vrpr/issues), not to
+> PyVRP. The R port of the search loop was written with the assistance
+> of AI coding tools.
 
 It fills a real gap in the R ecosystem: there are `ompr`, `ROI`,
 `lpSolve`, `igraph` and `dodgr`, but no modern, strong, friendly solver
@@ -148,8 +160,21 @@ core](reference/figures/architecture.svg?v=2)
 The light R loop drives the heavy C++ search, so you get PyVRP-grade
 performance with a pure-R, Python-free workflow.
 
+## Citation
+
+vrpr is built on PyVRP, so the work to cite is PyVRP:
+
+> Wouda, N. A., Lan, L., & Kool, W. (2024). PyVRP: a high-performance
+> VRP solver package. *INFORMS Journal on Computing*, 36(4), 943–955.
+> <doi:%5B10.1287/ijoc.2023.0055>\](<https://doi.org/10.1287/ijoc.2023.0055>)
+
+`citation("vrpr")` gives this reference first, followed by the entry for
+the R package itself.
+
 ## License
 
-MIT. Derived from PyVRP (© PyVRP contributors, Thibaut Vidal, ORTEC),
-whose copyright is preserved; see
+MIT. Derived from PyVRP (© PyVRP contributors, Thibaut Vidal, ORTEC;
+MIT), whose C++ core is bundled and whose Python search loop is ported
+to R; its copyright and license notice are preserved in
 [`inst/COPYRIGHTS`](https://strategicprojects.github.io/vrpr/inst/COPYRIGHTS).
+vrpr is not affiliated with or endorsed by the PyVRP project.
